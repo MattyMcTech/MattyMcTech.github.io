@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <base href="https://pixelconquest.world/">
-<title>PixelConquest: Intermediate Version</title>
+<title>PixelConquest: Global Domination (Advanced)</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <style>
   body, html {
@@ -16,72 +16,123 @@
   .game-container {
     display: flex;
     flex-direction: column;
-    align-items: center;
-    padding: 20px;
+    height: 100%;
   }
   h1 {
     text-align: center;
     color: #e74c3c;
+    margin: 20px 0;
     text-transform: uppercase;
     letter-spacing: 2px;
     text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
   }
   .grid-container {
-    margin-top: 20px;
+    flex-grow: 1;
     overflow: auto;
-    max-width: 100%;
+    padding: 10px;
+  }
+  .grid-wrapper {
+    display: inline-block;
+    padding: 10px;
+    background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAEASURBVGhD7ZjBDYMwEARdSEvpIj2kpxTgd3pIFykhLVBArPAiCwvQOWAH3Eja08nec2NpD6edzjmfpmlyIVKKD92HxXG8z/N8uyZoqHmeH+M43h4G+rquebDnYbTXdW2TQqTI0oXuRqBjCK3NpQvdrYgjyBBam0sXulsRR5AhtDaXLnS3Io4gQ2htLl3obkUcQYbQ2ly60N2KOEK6mFqxdKG7FXEEGUJrc+lCdyviCDKE1ubShe5WxBFkCK3NpQvdrYgjpIupFUsXulsRR5AhtDaXLnS3Io4gQ2htLl3obkUcQYbQ2ly60N2KOEK6mFqxdKG7FXEEGUJrc+lCdyviCOliasXSpQTOvQA7iOhQwxt9/AAAAABJRU5ErkJggg==');
+    background-size: 100px 100px;
+    border: 3px solid #e74c3c;
+    border-radius: 5px;
   }
   .grid {
     display: grid;
-    grid-template-columns: repeat(50, 20px);
+    grid-template-columns: repeat(50, 24px);
     gap: 1px;
-    background-color: #34495e;
-    padding: 10px;
-    border-radius: 5px;
   }
   .cell {
-    width: 20px;
-    height: 20px;
+    width: 24px;
+    height: 24px;
     background-color: rgba(236, 240, 241, 0.1);
     border: 1px solid #34495e;
-    cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
     transition: all 0.3s ease;
+    position: relative;
   }
   .cell:hover {
     transform: scale(1.1);
     z-index: 1;
+  }
+  .cell input {
+    display: none;
+  }
+  .cell label {
+    width: 100%;
+    height: 100%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
   .flag {
     width: 100%;
     height: 100%;
     background-size: cover;
     background-position: center;
+    box-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
   }
   #status {
-    margin-top: 20px;
+    text-align: center;
+    margin: 20px 0;
     font-weight: bold;
     color: #f39c12;
     text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
   }
+  .tooltip {
+    visibility: hidden;
+    background-color: rgba(0, 0, 0, 0.8);
+    color: #fff;
+    text-align: center;
+    border-radius: 6px;
+    padding: 5px;
+    position: absolute;
+    z-index: 1;
+    bottom: 125%;
+    left: 50%;
+    margin-left: -60px;
+    opacity: 0;
+    transition: opacity 0.3s, visibility 0.3s;
+    white-space: nowrap;
+  }
+  .cell:hover .tooltip {
+    visibility: visible;
+    opacity: 1;
+    transition-delay: 1s;
+  }
+  .cell:not(:hover) .tooltip {
+    transition-delay: 0s;
+  }
+
+  /* Mobile Styles */
   @media (max-width: 768px) {
     .grid {
       grid-template-columns: repeat(50, 12px);
+      grid-template-rows: repeat(50, 12px);
+      gap: 0;
     }
     .cell {
       width: 12px;
       height: 12px;
+    }
+    .flag {
+      background-size: 12px 12px;
     }
   }
 </style>
 </head>
 <body>
 <div class="game-container">
-  <h1>PixelConquest: Intermediate</h1>
+  <h1>PixelConquest: Global Domination</h1>
   <div class="grid-container">
-    <div class="grid" id="pixelGrid"></div>
+    <div class="grid-wrapper">
+      <div class="grid" id="pixelGrid"></div>
+    </div>
   </div>
   <div id="status">Preparing for conquest...</div>
 </div>
@@ -91,9 +142,22 @@
 const gun = Gun(['https://gun-manhattan.herokuapp.com/gun']);
 const grid = document.getElementById('pixelGrid');
 const statusEl = document.getElementById('status');
-const pixelData = gun.get('pixelConquestIntermediate');
+const pixelData = gun.get('pixelConquestAdvanced');
 
-const countryFlags = ['us', 'gb', 'fr', 'de', 'it', 'es', 'ca', 'au', 'jp', 'kr'];
+const countryNames = {
+  'US': 'United States',
+  'GB': 'United Kingdom',
+  'FR': 'France',
+  'DE': 'Germany',
+  'IT': 'Italy',
+  'ES': 'Spain',
+  'CA': 'Canada',
+  'AU': 'Australia',
+  'JP': 'Japan',
+  'KR': 'South Korea',
+};
+
+const countryFlags = Object.keys(countryNames);
 let userCountry = countryFlags[Math.floor(Math.random() * countryFlags.length)];
 
 function createGrid() {
@@ -101,9 +165,21 @@ function createGrid() {
   for (let i = 0; i < 2500; i++) {
     const cell = document.createElement('div');
     cell.className = 'cell';
-    cell.id = `cell-${i}`;
-    cell.onclick = () => toggleCell(i);
+    const input = document.createElement('input');
+    input.type = 'checkbox';
+    input.id = `cell-${i}`;
+    const label = document.createElement('label');
+    label.htmlFor = `cell-${i}`;
+    const tooltip = document.createElement('span');
+    tooltip.className = 'tooltip';
+    cell.appendChild(input);
+    cell.appendChild(label);
+    cell.appendChild(tooltip);
     grid.appendChild(cell);
+
+    input.addEventListener('change', function() {
+      toggleCell(i, this.checked);
+    });
 
     pixelData.get(i).on(function(data) {
       console.log(`Received update for cell ${i}:`, data);
@@ -112,26 +188,33 @@ function createGrid() {
   }
 }
 
-function toggleCell(cellIndex) {
-  console.log(`Toggling cell ${cellIndex}`);
-  pixelData.get(cellIndex).once(function(data) {
-    const newState = data && data.country ? null : userCountry;
-    console.log(`Setting cell ${cellIndex} to ${newState}`);
-    pixelData.get(cellIndex).put({country: newState});
-  });
+function toggleCell(cellIndex, isChecked) {
+  console.log(`Toggling cell ${cellIndex}, checked: ${isChecked}`);
+  if (isChecked) {
+    pixelData.get(cellIndex).put({country: userCountry, conquered: true});
+  } else {
+    pixelData.get(cellIndex).put({country: null, conquered: false});
+  }
 }
 
 function updateCellUI(cellIndex, data) {
-  const cell = document.getElementById(`cell-${cellIndex}`);
-  if (data && data.country) {
-    cell.innerHTML = `<div class="flag" style="background-image: url('https://flagcdn.com/w20/${data.country}.png')"></div>`;
+  const input = document.getElementById(`cell-${cellIndex}`);
+  const label = input.nextElementSibling;
+  const tooltip = label.nextElementSibling;
+
+  if (data && data.conquered) {
+    input.checked = true;
+    label.innerHTML = `<div class="flag" style="background-image: url('https://flagcdn.com/w20/${data.country.toLowerCase()}.png')"></div>`;
+    tooltip.textContent = countryNames[data.country] || data.country;
   } else {
-    cell.innerHTML = '';
+    input.checked = false;
+    label.innerHTML = '';
+    tooltip.textContent = '';
   }
 }
 
 createGrid();
-statusEl.textContent = `Your country: ${userCountry.toUpperCase()}`;
+statusEl.textContent = `Your country: ${countryNames[userCountry]}`;
 
 // Add a listener for Gun.js connection status
 gun.on('hi', peer => {
