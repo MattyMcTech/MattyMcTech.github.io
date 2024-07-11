@@ -3,119 +3,133 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Territory Game</title>
+    <title>PixelConquest: Global Domination</title>
+    <script src="https://cdn.jsdelivr.net/npm/gun/gun.js"></script>
     <style>
         body, html {
             margin: 0;
             padding: 0;
             height: 100%;
-            overflow: hidden;
+            font-family: Arial, sans-serif;
         }
-        #game-container {
-            display: flex;
-            flex-wrap: wrap;
-            width: 100%;
-            height: 100%;
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
         }
-        .territory {
-            box-sizing: border-box;
+        #pixelGrid {
+            display: grid;
+            grid-template-columns: repeat(30, 1fr);
+            gap: 1px;
+            background-color: #ddd;
+        }
+        .pixel {
+            aspect-ratio: 1;
             border: 1px solid #ccc;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            background-color: #fff;
         }
-        #mobile-controls {
-            display: none;
-            position: fixed;
-            bottom: 10px;
-            left: 50%;
-            transform: translateX(-50%);
+        #status {
+            margin-top: 20px;
+            font-weight: bold;
+        }
+        .pulse {
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
         }
         @media (max-width: 768px) {
-            #game-container {
-                position: absolute;
-                top: 0;
-                left: 0;
-                width: 200%;
-                height: 200%;
-                transform-origin: 0 0;
+            .container {
+                padding: 0;
             }
-            #mobile-controls {
-                display: block;
+            #pixelGrid {
+                width: 100vw;
+                height: 100vh;
+                overflow: auto;
+                grid-template-columns: repeat(60, 20px);
+                grid-template-rows: repeat(60, 20px);
+            }
+            .pixel {
+                width: 20px;
+                height: 20px;
             }
         }
     </style>
 </head>
 <body>
-    <div id="game-container"></div>
-    <div id="mobile-controls">
-        <button id="zoom-in">+</button>
-        <button id="zoom-out">-</button>
+    <div class="container">
+        <h1>PixelConquest: Global Domination</h1>
+        <div id="pixelGrid"></div>
+        <div id="status" class="pulse">Identifying your strategic position...</div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/gun/gun.js"></script>
     <script>
         const gun = Gun();
-        const territories = gun.get('territories');
-
-        const gameContainer = document.getElementById('game-container');
-        const gridSize = 10;
-        let scale = 1;
-        let translateX = 0;
-        let translateY = 0;
+        const pixels = gun.get('pixels');
+        const grid = document.getElementById('pixelGrid');
+        const status = document.getElementById('status');
+        const colors = ['#ff0000', '#00ff00', '#0000ff', '#ffff00', '#ff00ff', '#00ffff'];
+        let userColor = '';
 
         function createGrid() {
-            gameContainer.innerHTML = '';
+            const isMobile = window.innerWidth <= 768;
+            const gridSize = isMobile ? 60 : 30;
+            grid.innerHTML = '';
             for (let i = 0; i < gridSize * gridSize; i++) {
-                const territory = document.createElement('div');
-                territory.className = 'territory';
-                territory.style.width = `${100 / gridSize}%`;
-                territory.style.height = `${100 / gridSize}%`;
-
-                const checkbox = document.createElement('input');
-                checkbox.type = 'checkbox';
-                checkbox.id = `territory-${i}`;
-
-                territory.appendChild(checkbox);
-                gameContainer.appendChild(territory);
-
-                territories.get(`territory-${i}`).on((data) => {
-                    checkbox.checked = data;
+                const pixel = document.createElement('div');
+                pixel.classList.add('pixel');
+                pixel.dataset.id = i;
+                grid.appendChild(pixel);
+                pixels.get(i).on((data) => {
+                    if (data) {
+                        pixel.style.backgroundColor = data.color;
+                    }
                 });
-
-                checkbox.addEventListener('change', (e) => {
-                    territories.get(`territory-${i}`).put(e.target.checked);
+                pixel.addEventListener('click', () => {
+                    pixels.get(i).put({ color: userColor });
                 });
             }
         }
 
-        function handleTouchMove(e) {
-            if (window.innerWidth <= 768) {
-                const touch = e.touches[0];
-                translateX -= touch.movementX / scale;
-                translateY -= touch.movementY / scale;
-                updateTransform();
-            }
+        function initUser() {
+            const userId = localStorage.getItem('userId') || Math.random().toString(36).substr(2, 9);
+            localStorage.setItem('userId', userId);
+            userColor = colors[userId.charCodeAt(0) % colors.length];
+            status.textContent = `Your color: ${userColor}`;
+            status.style.color = userColor;
+            status.classList.remove('pulse');
         }
 
-        function updateTransform() {
-            gameContainer.style.transform = `scale(${scale}) translate(${-translateX}px, ${-translateY}px)`;
-        }
-
-        document.getElementById('zoom-in').addEventListener('click', () => {
-            scale *= 1.1;
-            updateTransform();
+        window.addEventListener('load', () => {
+            createGrid();
+            initUser();
         });
 
-        document.getElementById('zoom-out').addEventListener('click', () => {
-            scale /= 1.1;
-            updateTransform();
-        });
-
-        gameContainer.addEventListener('touchmove', handleTouchMove);
         window.addEventListener('resize', createGrid);
 
-        createGrid();
+        // Mobile touch events
+        let isDragging = false;
+        grid.addEventListener('touchstart', (e) => {
+            isDragging = true;
+            updatePixel(e.touches[0]);
+        });
+        grid.addEventListener('touchmove', (e) => {
+            if (isDragging) {
+                updatePixel(e.touches[0]);
+            }
+        });
+        grid.addEventListener('touchend', () => {
+            isDragging = false;
+        });
+
+        function updatePixel(touch) {
+            const pixel = document.elementFromPoint(touch.clientX, touch.clientY);
+            if (pixel && pixel.classList.contains('pixel')) {
+                pixels.get(pixel.dataset.id).put({ color: userColor });
+            }
+        }
     </script>
 </body>
 </html>
