@@ -131,6 +131,10 @@
         width: 100%;
         height: 100%;
       }
+      .grid {
+        transform: scale(0.5);
+        transform-origin: 0 0;
+      }
     }
   </style>
 </head>
@@ -242,28 +246,38 @@
 
     // Pan and zoom functionality for mobile
     if ('ontouchstart' in window) {
+      let currentScale = 0.5;
+      let currentTranslateX = 0;
+      let currentTranslateY = 0;
+
       const gesture = GestureRecognizer.create({
         element: grid,
         onPan: ({ deltaX, deltaY, first }) => {
           if (first) {
-            const transform = new WebKitCSSMatrix(getComputedStyle(grid).transform);
-            gesture.setOffset([transform.m41, transform.m42]);
+            // Reset the start position on a new pan
+            gesture.setOffset([currentTranslateX, currentTranslateY]);
           }
-          const [x, y] = gesture.offset;
-          grid.style.transform = `translate(${x + deltaX}px, ${y + deltaY}px) scale(${gesture.scale})`;
+          const [startX, startY] = gesture.offset;
+          currentTranslateX = startX + deltaX / currentScale;
+          currentTranslateY = startY + deltaY / currentScale;
+          updateGridTransform();
         },
-        onPinch: ({ scale, first }) => {
-          if (first) {
-            const transform = new WebKitCSSMatrix(getComputedStyle(grid).transform);
-            gesture.setOffset([transform.m41, transform.m42]);
-            gesture.scale = transform.a;
-          }
-          const [x, y] = gesture.offset;
-          const newScale = Math.min(Math.max(gesture.scale * scale, 0.5), 3);
-          grid.style.transform = `translate(${x}px, ${y}px) scale(${newScale})`;
-          gesture.scale = newScale;
+        onPinch: ({ scale, origin }) => {
+          const prevScale = currentScale;
+          currentScale = Math.min(Math.max(currentScale * scale, 0.5), 3);
+          
+          // Adjust translation to keep the pinch point stationary
+          const [originX, originY] = origin;
+          currentTranslateX += (originX / prevScale - originX / currentScale);
+          currentTranslateY += (originY / prevScale - originY / currentScale);
+          
+          updateGridTransform();
         }
       });
+
+      function updateGridTransform() {
+        grid.style.transform = `translate(${currentTranslateX}px, ${currentTranslateY}px) scale(${currentScale})`;
+      }
 
       grid.addEventListener('click', (e) => {
         if (e.target.tagName === 'LABEL') {
