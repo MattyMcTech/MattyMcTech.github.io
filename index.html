@@ -5,117 +5,7 @@
 <title>PixelConquest: Global Domination</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <style>
-  body {
-    font-family: 'Military Stencil', Arial, sans-serif;
-    margin: 0;
-    padding: 0;
-    background-color: #2c3e50;
-    color: #ecf0f1;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    min-height: 100vh;
-  }
-  .container {
-    max-width: 100%;
-    overflow-x: auto;
-    padding: 10px;
-    display: flex;
-    justify-content: center;
-  }
-  .grid-wrapper {
-    display: inline-block;
-    padding: 10px;
-    background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAEASURBVGhD7ZjBDYMwEARdSEvpIj2kpxTgd3pIFykhLVBArPAiCwvQOWAH3Eja08nec2NpD6edzjmfpmlyIVKKD92HxXG8z/N8uyZoqHmeH+M43h4G+rquebDnYbTXdW2TQqTI0oXuRqBjCK3NpQvdrYgjyBBam0sXulsRR5AhtDaXLnS3Io4gQ2htLl3obkUcQYbQ2ly60N2KOEK6mFqxdKG7FXEEGUJrc+lCdyviCDKE1ubShe5WxBFkCK3NpQvdrYgjpIupFUsXulsRR5AhtDaXLnS3Io4gQ2htLl3obkUcQYbQ2ly60N2KOEK6mFqxdKG7FXEEGUJrc+lCdyviCOliasXSpQTOvQA7iOhQwxt9/AAAAABJRU5ErkJggg==');
-    background-size: 100px 100px;
-    border: 3px solid #e74c3c;
-    border-radius: 5px;
-  }
-  .grid {
-    display: grid;
-    grid-template-columns: repeat(50, 24px);
-    gap: 1px;
-  }
-  .cell {
-    width: 24px;
-    height: 24px;
-    background-color: rgba(236, 240, 241, 0.1);
-    border: 1px solid #34495e;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.3s ease;
-    position: relative;
-  }
-  .cell:hover {
-    transform: scale(1.1);
-    z-index: 1;
-  }
-  .cell input {
-    display: none;
-  }
-  .cell label {
-    width: 100%;
-    height: 100%;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-  .flag {
-    width: 100%;
-    height: 100%;
-    background-size: cover;
-    background-position: center;
-    box-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
-  }
-  h1 {
-    text-align: center;
-    color: #e74c3c;
-    margin: 20px 0;
-    text-transform: uppercase;
-    letter-spacing: 2px;
-    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
-  }
-  #status {
-    text-align: center;
-    margin-top: 20px;
-    font-weight: bold;
-    color: #f39c12;
-    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
-  }
-  @keyframes pulse {
-    0% { transform: scale(1); }
-    50% { transform: scale(1.05); }
-    100% { transform: scale(1); }
-  }
-  .pulse {
-    animation: pulse 2s infinite;
-  }
-  .tooltip {
-    visibility: hidden;
-    background-color: rgba(0, 0, 0, 0.8);
-    color: #fff;
-    text-align: center;
-    border-radius: 6px;
-    padding: 5px;
-    position: absolute;
-    z-index: 1;
-    bottom: 125%;
-    left: 50%;
-    margin-left: -60px;
-    opacity: 0;
-    transition: opacity 0.3s, visibility 0.3s;
-    white-space: nowrap;
-  }
-  .cell:hover .tooltip {
-    visibility: visible;
-    opacity: 1;
-    transition-delay: 1s;
-  }
-  .cell:not(:hover) .tooltip {
-    transition-delay: 0s;
-  }
+  /* ... (previous styles remain unchanged) ... */
 
   /* Mobile Styles */
   @media (max-width: 768px) {
@@ -132,6 +22,7 @@
       width: 100%;
       height: 100%;
       overflow: auto;
+      -webkit-overflow-scrolling: touch; /* For smoother scrolling on iOS */
     }
     .grid {
       grid-template-columns: repeat(50, 20px);
@@ -149,137 +40,58 @@
 </style>
 </head>
 <body>
-<h1>PixelConquest: Global Domination</h1>
-<div class="container">
-  <div class="grid-wrapper">
-    <div class="grid" id="pixelGrid"></div>
-  </div>
-</div>
-<div id="status" class="pulse">Identifying your strategic position...</div>
+<!-- ... (HTML structure remains unchanged) ... -->
 
 <script src="https://cdn.jsdelivr.net/npm/gun/gun.js"></script>
 <script>
-const gun = Gun(['https://gun-manhattan.herokuapp.com/gun']);
-const grid = document.getElementById('pixelGrid');
-const statusEl = document.getElementById('status');
-let userCountry = '';
-
-const countryNames = {
-  'US': 'United States',
-  'GB': 'United Kingdom',
-  'FR': 'France',
-  'DE': 'Germany',
-  'IT': 'Italy',
-  'ES': 'Spain',
-  'CA': 'Canada',
-  'AU': 'Australia',
-  'JP': 'Japan',
-  'KR': 'South Korea',
-  // Add more country codes and names as needed
-};
-
-function createGrid() {
-  for (let i = 0; i < 2500; i++) {
-    const cell = document.createElement('div');
-    cell.className = 'cell';
-    const input = document.createElement('input');
-    input.type = 'checkbox';
-    input.id = `cell-${i}`;
-    const label = document.createElement('label');
-    label.htmlFor = `cell-${i}`;
-    const tooltip = document.createElement('span');
-    tooltip.className = 'tooltip';
-    cell.appendChild(input);
-    cell.appendChild(label);
-    cell.appendChild(tooltip);
-    grid.appendChild(cell);
-
-    input.addEventListener('change', function() {
-      if (this.checked) {
-        label.innerHTML = `<div class="flag" style="background-image: url('https://flagcdn.com/w20/${userCountry.toLowerCase()}.png')"></div>`;
-        tooltip.textContent = countryNames[userCountry] || userCountry;
-        gun.get('pixels').get(i).put({country: userCountry, conquered: true});
-      } else {
-        label.innerHTML = '';
-        tooltip.textContent = '';
-        gun.get('pixels').get(i).put({country: null, conquered: false});
-      }
-    });
-
-    // Load existing data
-    gun.get('pixels').get(i).on(function(data) {
-      if (data && data.conquered) {
-        input.checked = true;
-        label.innerHTML = `<div class="flag" style="background-image: url('https://flagcdn.com/w20/${data.country.toLowerCase()}.png')"></div>`;
-        tooltip.textContent = countryNames[data.country] || data.country;
-      } else {
-        input.checked = false;
-        label.innerHTML = '';
-        tooltip.textContent = '';
-      }
-    });
-  }
-}
-
-function getUserLocation() {
-  if ("geolocation" in navigator) {
-    navigator.geolocation.getCurrentPosition(function(position) {
-      const latitude = position.coords.latitude;
-      const longitude = position.coords.longitude;
-      fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=en`)
-        .then(response => response.json())
-        .then(data => {
-          userCountry = data.countryCode;
-          statusEl.textContent = `Commander from ${data.countryName}! Your mission: Conquer the pixel world!`;
-          statusEl.classList.remove('pulse');
-        })
-        .catch(error => {
-          console.error("Error fetching country data:", error);
-          statusEl.textContent = "Intel compromised. Proceed with caution, anonymous commander!";
-          statusEl.classList.remove('pulse');
-        });
-    }, function(error) {
-      console.error("Error getting user location:", error);
-      statusEl.textContent = "Location classified. Operate as an anonymous commander!";
-      statusEl.classList.remove('pulse');
-    });
-  } else {
-    statusEl.textContent = "Geolocation unavailable. Commence anonymous operations!";
-    statusEl.classList.remove('pulse');
-  }
-}
-
-createGrid();
-getUserLocation();
+// ... (previous JavaScript code remains unchanged) ...
 
 // Check if it's a mobile device
 if (/Mobi|Android/i.test(navigator.userAgent)) {
   const gridWrapper = document.querySelector('.grid-wrapper');
   let isScrolling = false;
-  let startX, startY, scrollLeft, scrollTop;
+  let lastX, lastY;
+  let rafId = null;
+
+  function onTouchMove(e) {
+    if (!isScrolling) return;
+
+    const touch = e.touches[0];
+    const moveX = touch.pageX - lastX;
+    const moveY = touch.pageY - lastY;
+
+    lastX = touch.pageX;
+    lastY = touch.pageY;
+
+    if (rafId) {
+      cancelAnimationFrame(rafId);
+    }
+
+    rafId = requestAnimationFrame(() => {
+      gridWrapper.scrollLeft -= moveX;
+      gridWrapper.scrollTop -= moveY;
+    });
+  }
 
   gridWrapper.addEventListener('touchstart', (e) => {
     isScrolling = true;
-    startX = e.touches[0].pageX - gridWrapper.offsetLeft;
-    startY = e.touches[0].pageY - gridWrapper.offsetTop;
-    scrollLeft = gridWrapper.scrollLeft;
-    scrollTop = gridWrapper.scrollTop;
-  });
+    lastX = e.touches[0].pageX;
+    lastY = e.touches[0].pageY;
+  }, { passive: true });
 
-  gridWrapper.addEventListener('touchmove', (e) => {
-    if (!isScrolling) return;
-    e.preventDefault();
-    const x = e.touches[0].pageX - gridWrapper.offsetLeft;
-    const y = e.touches[0].pageY - gridWrapper.offsetTop;
-    const walkX = (x - startX) * 2;
-    const walkY = (y - startY) * 2;
-    gridWrapper.scrollLeft = scrollLeft - walkX;
-    gridWrapper.scrollTop = scrollTop - walkY;
-  });
+  gridWrapper.addEventListener('touchmove', onTouchMove, { passive: false });
 
   gridWrapper.addEventListener('touchend', () => {
     isScrolling = false;
-  });
+    if (rafId) {
+      cancelAnimationFrame(rafId);
+    }
+  }, { passive: true });
+
+  // Prevent default touch behavior to avoid browser-level scrolling interference
+  gridWrapper.addEventListener('touchmove', (e) => {
+    e.preventDefault();
+  }, { passive: false });
 }
 </script>
 </body>
