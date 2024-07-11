@@ -14,15 +14,18 @@
     overflow-x: auto;
     padding: 10px;
   }
+  .grid-wrapper {
+    display: inline-block;
+    padding: 10px;
+    background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAEASURBVGhD7ZjBDYMwEARdSEvpIj2kpxTgd3pIFykhLVBArPAiCwvQOWAH3Uja08nec2NpD6edzjmfpmlyIVKKD92HxXG8z/N8uyZoqHmeH+M43h4G+rquebDnYbTXdW2TQqTI0oXuRqBjCK3NpQvdrYgjyBBam0sXulsRR5AhtDaXLnS3Io4gQ2htLl3obkUcQYbQ2ly60N2KOEK6mFqxdKG7FXEEGUJrc+lCdyviCDKE1ubShe5WxBFkCK3NpQvdrYgjpIupFUsXulsRR5AhtDaXLnS3Io4gQ2htLl3obkUcQYbQ2ly60N2KOEK6mFqxdKG7FXEEGUJrc+lCdyviCOliasXSpQTOvQA7iOhQwxt9/AAAAABJRU5ErkJggg==');
+    background-size: 100px 100px;
+    border: 3px solid #e74c3c;
+    border-radius: 5px;
+  }
   .grid {
     display: grid;
     grid-template-columns: repeat(50, 20px);
     gap: 1px;
-    background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAEASURBVGhD7ZjBDYMwEARdSEvpIj2kpxTgd3pIFykhLVBArPAiCwvQOWAH3Uja08nec2NpD6edzjmfpmlyIVKKD92HxXG8z/N8uyZoqHmeH+M43h4G+rquebDnYbTXdW2TQqTI0oXuRqBjCK3NpQvdrYgjyBBam0sXulsRR5AhtDaXLnS3Io4gQ2htLl3obkUcQYbQ2ly60N2KOEK6mFqxdKG7FXEEGUJrc+lCdyviCDKE1ubShe5WxBFkCK3NpQvdrYgjpIupFUsXulsRR5AhtDaXLnS3Io4gQ2htLl3obkUcQYbQ2ly60N2KOEK6mFqxdKG7FXEEGUJrc+lCdyviCOliasXSpQTOvQA7iOhQwxt9/AAAAABJRU5ErkJggg==');
-    background-size: 100px 100px;
-    padding: 10px;
-    border: 3px solid #e74c3c;
-    border-radius: 5px;
   }
   .cell {
     width: 20px;
@@ -84,7 +87,9 @@
 <body>
 <h1>PixelConquest: Global Domination</h1>
 <div class="container">
-  <div class="grid" id="pixelGrid"></div>
+  <div class="grid-wrapper">
+    <div class="grid" id="pixelGrid"></div>
+  </div>
 </div>
 <div id="status" class="pulse">Identifying your strategic position...</div>
 
@@ -147,7 +152,7 @@ function getUserLocation() {
 }
 
 function playConquerSound() {
-  const audio = new Audio('data:audio/wav;base64,UklGRnQGAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YU8GAACBhYqFbF1BODAzPEZOT0hANjQ3PUBBPzo2NDQ0Mzg7PT5EOjEpJSs3QkhGPzovLDM8RUlJR0c+Oj5EQ/z/AAEHDQ0KBPj7/AwZIiUcDfXw9v8OGBwZDwbl2NLZ6/oGDQj24dTP2On1//bm18zO3O3//vnr3dbU1NHQz9LY4Oj2BRIeLyIL7NjGzN3yDSUxJg7msJKNpMrn//zjxayknrjT+DJ3qsnj+OrUuKSHhI2m3P5MY3WGnrS6r6KOgHqCm8z/NGV2eHt9gH1nKggVQXa2/1VTTC0iIywlABRGdcoUVVAzCPDcxJFNWIjYFjIcNEVHSDMHBRtDc8IvT0UqA+PErYBPcLH7CggRXZSd//vbu5+VyhxVVFJKIA8PEkNps/teTTcyEv/XXTR9pQMHLzg8NhgLHj2ArP5WTzgtCN+c0+gGJCb+7PPVLGCEqba1rYHrLuAXAAQC/fT0Ii9YZWnk3cyypS/NEAosGxoVCxQpN01XT0IyGQkPERYVESwgVWV3fHx3bHn/XVBQUEpCGAcpX3m9/U1EPjcvHAgkU3nK/UFMUUxAKRMWHCYvNkM4Lx8QF3GPwf9NRDYrIg8tWn/KQHyFhoiMlKK0w8vIwcG5pZm4z9/o7fD09vn6+Pf32tXQycbT4vf/AwcGA/bu7evs6ufr7uzu8fX19vn6+vz9+vv8+/n39/f19Pv/AP7+/fv6+vv8/P3+/v7+/v7+/v39/f39/P3+/v38+/r6/f8A/f37+vr9/wAAARV9t+//TlNQQy4WJkFwsvY8SE5NRj0hISwxHufl6PTZUXGXsMfT1dXNvaqjn5ygrbfAycnL0NfX1tfT0uHq9AQTHTg9My4oGCoqCh9AeoTI/3RxbW1nXlZha32FgH5zdnN5foKBfHx1b3ylyuHs8/Pw4M23qKGgoazu9wkVEAwBAAHv5OHayMjR2+v4AwS1mYuNlrLK4/H6/fj17+Pe2tnZ2dnb3uPn6+rq6e3y9/wB/vv6+fj4+Pn6+vz+//8AAQD+/f39/v4AAQEB/v38/f3+/v39/f39/f3+/v7+/v7+/v7+/v7+/v7+/v7+/v8AAAABAQEBAQEAAAABAQHn3NLQzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3N');
+  const audio = new Audio('data:audio/wav;base64,UklGRnQGAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YU8GAACBhYqFbF1BODAzPEZOT0hANjQ3PUBBPzo2NDQ0Mzg7PT5EOjEpJSs3QkhGPzovLDM8RUlJR0c+Oj5EQ/z/AAEHDQ0KBPj7/AwZIiUcDfXw9v8OGBwZDwbl2NLZ6/oGDQj24dTP2On1//bm18zO3O3//vnr3dbU1NHQz9LY4Oj2BRIeLyIL7NjGzN3yDSUxJg7msJKNpMrn//zjxayknrjT+DJ3qsnj+OrUuKSHhI2m3P5MY3WGnrS6r6KOgHqCm8z/NGV2eHt9gH1nKggVQXa2/1VTTC0iIywlABRGdcoUVVAzCPDcxJFNWIjYFjIcNEVHSDMHBRtDc8IvT0UqA+PErYBPcLH7CggRXZSd//vbu5+VyhxVVFJKIA8PEkNps/teTTcyEv/XXTR9pQMHLzg8NhgLHj2ArP5WTzgtCN+c0+gGJCb+7PPVLGCEqba1rYHrLuAXAAQC/fT0Ii9YZWnk3cyypS/NEAosGxoVCxQpN01XT0IyGQkPERYVESwgVWV3fHx3bHn/XVBQUEpCGAcpX3m9/U1EPjcvHAgkU3nK/UFMUUxAKRMWHCYvNkM4Lx8QF3GPwf9NRDYrIg8tWn/KQHyFhoiMlKK0w8vIwcG5pZm4z9/o7fD09vn6+Pf32tXQycbT4vf/AwcGA/bu7evs6ufr7uzu8fX19vn6+vz9+vv8+/n39/f19Pv/AP7+/fv6+vv8/P3+/v7+/v7+/v39/f39/P3+/v38+/r6/f8A/f37+vr9/wAAARV9t+//TlNQQy4WJkFwsvY8SE5NRj0hISwxHufl6PTZUXGXsMfT1dXNvaqjn5ygrbfAycnL0NfX1tfT0uHq9AQTHTg9My4oGCoqCh9AeoTI/3RxbW1nXlZha32FgH5zdnN5foKBfHx1b3ylyuHs8/Pw4M23qKGgoazu9wkVEAwBAAHv5OHayMjR2+v4AwS1mYuNlrLK4/H6/fj17+Pe2tnZ2dnb3uPn6+rq6e3y9/wB/vv6+fj4+Pn6+vz+//8AAQD+/f39/v4AAQEB/v38/f3+/v39/f39/f3+/v7+/v7+/v7+/v7+/v7+/v7+/v8AAAABAQEBAQEAAAABAQHn3NLQzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3');
   audio.play();
 }
 
