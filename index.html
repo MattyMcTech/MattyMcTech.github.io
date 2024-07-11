@@ -10,19 +10,23 @@
             margin: 0;
             padding: 0;
             height: 100%;
-            font-family: Arial, sans-serif;
+            overflow: hidden;
         }
         .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
         }
-        #pixelGrid {
+        .grid-wrapper {
+            flex-grow: 1;
+            overflow: hidden;
+        }
+        .grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(20px, 1fr));
+            grid-template-columns: repeat(50, 1fr);
             gap: 1px;
         }
-        .pixel {
+        .cell {
             aspect-ratio: 1;
             border: 1px solid #ccc;
         }
@@ -30,7 +34,6 @@
             text-align: center;
             padding: 10px;
             background-color: #f0f0f0;
-            margin-top: 20px;
         }
         .pulse {
             animation: pulse 2s infinite;
@@ -40,89 +43,114 @@
             50% { opacity: 0.5; }
             100% { opacity: 1; }
         }
-
-        /* Mobile Styles */
+        
+        /* Mobile-specific styles */
         @media (max-width: 768px) {
-            body, html {
-                overflow: hidden;
-            }
-            .container {
-                height: 100vh;
-                display: flex;
-                flex-direction: column;
-                padding: 10px;
-            }
-            #pixelGrid {
-                flex-grow: 1;
-                overflow-y: auto;
+            .grid-wrapper {
+                overflow: auto;
                 -webkit-overflow-scrolling: touch;
-                grid-template-columns: repeat(auto-fill, minmax(30px, 1fr));
             }
-            #status {
-                position: fixed;
-                bottom: 0;
-                left: 0;
-                right: 0;
-                margin-top: 0;
-                background-color: rgba(240, 240, 240, 0.9);
+            .grid {
+                width: 200%;
+                height: 200%;
             }
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>PixelConquest: Global Domination</h1>
-        <div id="pixelGrid"></div>
-        <div id="status" class="pulse">
-            Identifying your strategic position...
+        <div class="grid-wrapper">
+            <div id="pixelGrid" class="grid"></div>
         </div>
+        <div id="status" class="pulse">Identifying your strategic position...</div>
     </div>
 
     <script>
         const gun = Gun();
         const pixels = gun.get('pixels');
-
-        const gridSize = 50;
+        
         const grid = document.getElementById('pixelGrid');
         const status = document.getElementById('status');
-
+        
+        const gridSize = 50;
+        let userColor = localStorage.getItem('userColor') || generateRandomColor();
+        localStorage.setItem('userColor', userColor);
+        
+        function generateRandomColor() {
+            return '#' + Math.floor(Math.random()*16777215).toString(16);
+        }
+        
         function createGrid() {
             for (let i = 0; i < gridSize * gridSize; i++) {
-                const pixel = document.createElement('div');
-                pixel.className = 'pixel';
-                pixel.id = `pixel-${i}`;
-                pixel.addEventListener('click', () => togglePixel(i));
-                grid.appendChild(pixel);
+                const cell = document.createElement('div');
+                cell.className = 'cell';
+                cell.setAttribute('data-index', i);
+                grid.appendChild(cell);
+                
+                pixels.get(i).on((color) => {
+                    cell.style.backgroundColor = color || 'transparent';
+                });
+                
+                cell.addEventListener('click', () => {
+                    pixels.get(i).put(userColor);
+                });
             }
         }
-
-        function togglePixel(index) {
-            pixels.get(index).once((data) => {
-                const newState = data ? null : 'occupied';
-                pixels.get(index).put(newState);
+        
+        function updateStatus() {
+            const totalCells = gridSize * gridSize;
+            const colorCounts = {};
+            
+            pixels.map().once((color, index) => {
+                if (color) {
+                    colorCounts[color] = (colorCounts[color] || 0) + 1;
+                }
+                
+                if (index === totalCells - 1) {
+                    const sortedColors = Object.entries(colorCounts).sort((a, b) => b[1] - a[1]);
+                    const leadingColor = sortedColors[0];
+                    
+                    if (leadingColor) {
+                        const percentage = ((leadingColor[1] / totalCells) * 100).toFixed(2);
+                        status.textContent = `Leading color controls ${percentage}% of the grid!`;
+                    } else {
+                        status.textContent = 'The battle for control has begun!';
+                    }
+                    
+                    status.classList.remove('pulse');
+                }
             });
         }
-
-        function updatePixel(index, state) {
-            const pixel = document.getElementById(`pixel-${index}`);
-            if (state) {
-                pixel.style.backgroundColor = 'blue'; // Replace with country flag logic
-            } else {
-                pixel.style.backgroundColor = '';
-            }
-        }
-
+        
         createGrid();
-
-        pixels.map().on((data, index) => {
-            updatePixel(index, data);
+        updateStatus();
+        
+        // Mobile touch controls
+        let isDragging = false;
+        let lastX, lastY;
+        
+        grid.addEventListener('touchstart', (e) => {
+            isDragging = true;
+            lastX = e.touches[0].clientX;
+            lastY = e.touches[0].clientY;
         });
-
-        // Update status message
-        setTimeout(() => {
-            status.textContent = 'Ready for conquest!';
-            status.classList.remove('pulse');
-        }, 3000);
+        
+        grid.addEventListener('touchmove', (e) => {
+            if (!isDragging) return;
+            
+            const deltaX = e.touches[0].clientX - lastX;
+            const deltaY = e.touches[0].clientY - lastY;
+            
+            grid.parentElement.scrollLeft -= deltaX;
+            grid.parentElement.scrollTop -= deltaY;
+            
+            lastX = e.touches[0].clientX;
+            lastY = e.touches[0].clientY;
+        });
+        
+        grid.addEventListener('touchend', () => {
+            isDragging = false;
+        });
     </script>
 </body>
 </html>
