@@ -183,8 +183,10 @@
         cell.appendChild(tooltip);
         grid.appendChild(cell);
 
-        input.addEventListener('change', function() {
-          if (this.checked) {
+        label.addEventListener('click', function(e) {
+          e.preventDefault(); // Prevent default checkbox behavior
+          const isChecked = input.checked;
+          if (!isChecked) {
             label.innerHTML = `<div class="flag" style="background-image: url('https://flagcdn.com/w20/${userCountry.toLowerCase()}.png')"></div>`;
             tooltip.textContent = countryNames[userCountry] || userCountry;
             gun.get('pixels').get(i).put({country: userCountry, conquered: true});
@@ -193,6 +195,7 @@
             tooltip.textContent = '';
             gun.get('pixels').get(i).put({country: null, conquered: false});
           }
+          input.checked = !isChecked; // Toggle the checkbox state
         });
 
         // Load existing data
@@ -241,11 +244,22 @@
     // Touch-based panning for mobile
     let isDragging = false;
     let startX, startY, translateX = 0, translateY = 0;
+    let lastTap = 0;
 
     function handleTouchStart(e) {
-      isDragging = true;
-      startX = e.touches[0].clientX - translateX;
-      startY = e.touches[0].clientY - translateY;
+      if (e.touches.length === 1) {
+        const now = new Date().getTime();
+        const timesince = now - lastTap;
+        if ((timesince < 300) && (timesince > 0)) {
+          // Double tap - do nothing to allow default behavior (zoom)
+          return;
+        }
+        lastTap = now;
+
+        isDragging = true;
+        startX = e.touches[0].clientX - translateX;
+        startY = e.touches[0].clientY - translateY;
+      }
     }
 
     function handleTouchMove(e) {
@@ -258,13 +272,21 @@
       grid.style.transform = `translate(${x}px, ${y}px)`;
     }
 
-    function handleTouchEnd() {
+    function handleTouchEnd(e) {
       isDragging = false;
+      if (e.changedTouches.length === 1 && e.changedTouches[0].target.tagName === 'LABEL') {
+        const event = new MouseEvent('click', {
+          view: window,
+          bubbles: true,
+          cancelable: true
+        });
+        e.changedTouches[0].target.dispatchEvent(event);
+      }
     }
 
-    if (window.innerWidth <= 768) {
-      grid.addEventListener('touchstart', handleTouchStart);
-      grid.addEventListener('touchmove', handleTouchMove);
+    if ('ontouchstart' in window) {
+      grid.addEventListener('touchstart', handleTouchStart, { passive: false });
+      grid.addEventListener('touchmove', handleTouchMove, { passive: false });
       grid.addEventListener('touchend', handleTouchEnd);
     }
 
