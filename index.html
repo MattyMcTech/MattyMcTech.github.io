@@ -5,7 +5,117 @@
     <title>PixelConquest: Global Domination</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <style>
-        /* ... (keep the existing styles) ... */
+        body {
+            font-family: 'Military Stencil', Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #2c3e50;
+            color: #ecf0f1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 100%;
+            overflow-x: auto;
+            padding: 10px;
+            display: flex;
+            justify-content: center;
+        }
+        .grid-wrapper {
+            display: inline-block;
+            padding: 10px;
+            background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAEASURBVGhD7ZjBDYMwEARdSEvpIj2kpxTgd3pIFykhLVBArPAiCwvQOWAH3Uja08nec2NpD6edzjmfpmlyIVKKD92HxXG8z/N8uyZoqHmeH+M43h4G+rquebDnYbTXdW2TQqTI0oXuRqBjCK3NpQvdrYgjyBBam0sXulsRR5AhtDaXLnS3Io4gQ2htLl3obkUcQYbQ2ly60N2KOEK6mFqxdKG7FXEEGUJrc+lCdyviCDKE1ubShe5WxBFkCK3NpQvdrYgjpIupFUsXulsRR5AhtDaXLnS3Io4gQ2htLl3obkUcQYbQ2ly60N2KOEK6mFqxdKG7FXEEGUJrc+lCdyviCOliasXSpQTOvQA7iOhQwxt9/AAAAABJRU5ErkJggg==');
+            background-size: 100px 100px;
+            border: 3px solid #e74c3c;
+            border-radius: 5px;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(50, 24px);
+            gap: 1px;
+        }
+        .cell {
+            width: 24px;
+            height: 24px;
+            background-color: rgba(236, 240, 241, 0.1);
+            border: 1px solid #34495e;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+        .cell:hover {
+            transform: scale(1.1);
+            z-index: 1;
+        }
+        .cell input {
+            display: none;
+        }
+        .cell label {
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .flag {
+            width: 100%;
+            height: 100%;
+            background-size: cover;
+            background-position: center;
+            box-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
+        }
+        h1 {
+            text-align: center;
+            color: #e74c3c;
+            margin: 20px 0;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+        }
+        #status {
+            text-align: center;
+            margin-top: 20px;
+            font-weight: bold;
+            color: #f39c12;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+        }
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        .pulse {
+            animation: pulse 2s infinite;
+        }
+        .tooltip {
+            visibility: hidden;
+            background-color: rgba(0, 0, 0, 0.8);
+            color: #fff;
+            text-align: center;
+            border-radius: 6px;
+            padding: 5px;
+            position: absolute;
+            z-index: 1;
+            bottom: 125%;
+            left: 50%;
+            margin-left: -60px;
+            opacity: 0;
+            transition: opacity 0.3s, visibility 0.3s;
+            white-space: nowrap;
+        }
+        .cell:hover .tooltip {
+            visibility: visible;
+            opacity: 1;
+            transition-delay: 1s;
+        }
+        .cell:not(:hover) .tooltip {
+            transition-delay: 0s;
+        }
         
         /* Mobile-specific styles */
         @media (max-width: 768px) {
@@ -19,36 +129,19 @@
                 padding: 0;
                 border: none;
                 background-image: none;
-                overflow: auto;
+                overflow: scroll;
                 width: 100%;
                 height: 100%;
+                -webkit-overflow-scrolling: touch;
             }
             .grid {
-                grid-template-columns: repeat(50, 20vw);
+                grid-template-columns: repeat(50, 40px);
                 gap: 0;
-                width: 1000vw;
-                height: 1000vw;
             }
             .cell {
-                width: 20vw;
-                height: 20vw;
+                width: 40px;
+                height: 40px;
                 border: 1px solid #34495e;
-            }
-            #mobileControls {
-                display: flex;
-                justify-content: space-around;
-                width: 100%;
-                position: fixed;
-                bottom: 20px;
-            }
-            #mobileControls button {
-                background-color: #e74c3c;
-                color: #ecf0f1;
-                border: none;
-                padding: 10px 20px;
-                font-size: 16px;
-                border-radius: 5px;
-                cursor: pointer;
             }
         }
     </style>
@@ -61,10 +154,6 @@
         </div>
     </div>
     <div id="status" class="pulse">Identifying your strategic position...</div>
-    <div id="mobileControls" style="display: none;">
-        <button id="zoomIn">Zoom In</button>
-        <button id="zoomOut">Zoom Out</button>
-    </div>
 
     <script src="https://cdn.jsdelivr.net/npm/gun/gun.js"></script>
     <script>
@@ -73,7 +162,6 @@
         const statusEl = document.getElementById('status');
         let userCountry = '';
         let isMobile = window.innerWidth <= 768;
-        let currentZoom = 1;
 
         const countryNames = {
             'US': 'United States',
@@ -168,68 +256,11 @@
             }
         }
 
-        function setupMobileControls() {
-            const mobileControls = document.getElementById('mobileControls');
-            const zoomInBtn = document.getElementById('zoomIn');
-            const zoomOutBtn = document.getElementById('zoomOut');
-
-            if (isMobile) {
-                mobileControls.style.display = 'flex';
-                
-                zoomInBtn.addEventListener('click', () => {
-                    currentZoom = Math.min(currentZoom + 0.1, 2);
-                    updateGridZoom();
-                });
-
-                zoomOutBtn.addEventListener('click', () => {
-                    currentZoom = Math.max(currentZoom - 0.1, 0.5);
-                    updateGridZoom();
-                });
-
-                setupTouchEvents();
-            }
-        }
-
-        function updateGridZoom() {
-            grid.style.transform = `scale(${currentZoom})`;
-        }
-
-        function setupTouchEvents() {
-            let isDragging = false;
-            let startX, startY, scrollLeft, scrollTop;
-            const gridWrapper = document.querySelector('.grid-wrapper');
-
-            gridWrapper.addEventListener('touchstart', (e) => {
-                isDragging = true;
-                startX = e.touches[0].pageX - gridWrapper.offsetLeft;
-                startY = e.touches[0].pageY - gridWrapper.offsetTop;
-                scrollLeft = gridWrapper.scrollLeft;
-                scrollTop = gridWrapper.scrollTop;
-            });
-
-            gridWrapper.addEventListener('touchend', () => {
-                isDragging = false;
-            });
-
-            gridWrapper.addEventListener('touchmove', (e) => {
-                if (!isDragging) return;
-                e.preventDefault();
-                const x = e.touches[0].pageX - gridWrapper.offsetLeft;
-                const y = e.touches[0].pageY - gridWrapper.offsetTop;
-                const walkX = (x - startX) * 2;
-                const walkY = (y - startY) * 2;
-                gridWrapper.scrollLeft = scrollLeft - walkX;
-                gridWrapper.scrollTop = scrollTop - walkY;
-            });
-        }
-
         createGrid();
         getUserLocation();
-        setupMobileControls();
 
         window.addEventListener('resize', () => {
             isMobile = window.innerWidth <= 768;
-            setupMobileControls();
         });
     </script>
 </body>
