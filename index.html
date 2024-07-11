@@ -131,6 +131,7 @@
       }
       .grid {
         transform-origin: 0 0;
+        transform: scale(0.4);
       }
     }
   </style>
@@ -258,7 +259,7 @@
       const y = e.touches[0].clientY - startY;
       translateX = x;
       translateY = y;
-      grid.style.transform = `translate(${x}px, ${y}px)`;
+      grid.style.transform = `translate(${x}px, ${y}px) scale(0.4)`;
     }
 
     function handleTouchEnd(e) {
