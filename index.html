@@ -40,6 +40,8 @@ const countryNames = {
   // Add more country codes and names as needed
 };
 
+const pixelData = gun.get('pixelConquestData');
+
 function createGrid() {
   for (let i = 0; i < 2500; i++) {
     const cell = document.createElement('div');
@@ -58,42 +60,50 @@ function createGrid() {
 
     input.addEventListener('change', function() {
       console.log(`Cell ${i} changed. Checked: ${this.checked}`);
-      if (this.checked) {
-        label.innerHTML = `<div class="flag" style="background-image: url('https://flagcdn.com/w20/${userCountry.toLowerCase()}.png')"></div>`;
-        tooltip.textContent = countryNames[userCountry] || userCountry;
-        gun.get('pixels').get(i).put({country: userCountry, conquered: true}, ack => {
-          if(ack.err) {
-            console.error(`Error updating cell ${i}:`, ack.err);
-          } else {
-            console.log(`Cell ${i} updated successfully`);
-          }
-        });
-      } else {
-        label.innerHTML = '';
-        tooltip.textContent = '';
-        gun.get('pixels').get(i).put({country: null, conquered: false}, ack => {
-          if(ack.err) {
-            console.error(`Error clearing cell ${i}:`, ack.err);
-          } else {
-            console.log(`Cell ${i} cleared successfully`);
-          }
-        });
-      }
+      updateCell(i, this.checked);
     });
 
-    // Load existing data
-    gun.get('pixels').get(i).on(function(data) {
+    // Listen for changes on each cell
+    pixelData.get(i).on(function(data) {
       console.log(`Received update for cell ${i}:`, data);
-      if (data && data.conquered) {
-        input.checked = true;
-        label.innerHTML = `<div class="flag" style="background-image: url('https://flagcdn.com/w20/${data.country.toLowerCase()}.png')"></div>`;
-        tooltip.textContent = countryNames[data.country] || data.country;
+      updateCellUI(i, data);
+    });
+  }
+}
+
+function updateCell(cellIndex, isChecked) {
+  if (isChecked) {
+    pixelData.get(cellIndex).put({country: userCountry, conquered: true}, ack => {
+      if(ack.err) {
+        console.error(`Error updating cell ${cellIndex}:`, ack.err);
       } else {
-        input.checked = false;
-        label.innerHTML = '';
-        tooltip.textContent = '';
+        console.log(`Cell ${cellIndex} updated successfully`);
       }
     });
+  } else {
+    pixelData.get(cellIndex).put({country: null, conquered: false}, ack => {
+      if(ack.err) {
+        console.error(`Error clearing cell ${cellIndex}:`, ack.err);
+      } else {
+        console.log(`Cell ${cellIndex} cleared successfully`);
+      }
+    });
+  }
+}
+
+function updateCellUI(cellIndex, data) {
+  const input = document.getElementById(`cell-${cellIndex}`);
+  const label = input.nextElementSibling;
+  const tooltip = label.nextElementSibling;
+
+  if (data && data.conquered) {
+    input.checked = true;
+    label.innerHTML = `<div class="flag" style="background-image: url('https://flagcdn.com/w20/${data.country.toLowerCase()}.png')"></div>`;
+    tooltip.textContent = countryNames[data.country] || data.country;
+  } else {
+    input.checked = false;
+    label.innerHTML = '';
+    tooltip.textContent = '';
   }
 }
 
