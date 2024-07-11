@@ -1,35 +1,61 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gun.js Sync Test</title>
+<base href="https://pixelconquest.world/">
+<title>PixelConquest: Simplified Sync</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  /* ... (previous styles remain unchanged) ... */
+</style>
 </head>
 <body>
-    <h1>Gun.js Sync Test</h1>
-    <input type="text" id="messageInput" placeholder="Enter a message">
-    <button onclick="sendMessage()">Send</button>
-    <div id="messages"></div>
+<div class="game-container">
+  <h1>PixelConquest: Simplified Sync</h1>
+  <div class="grid-container">
+    <div class="grid-wrapper">
+      <div class="grid" id="pixelGrid"></div>
+    </div>
+  </div>
+  <div id="status">Test Version</div>
+</div>
 
-    <script src="https://cdn.jsdelivr.net/npm/gun/gun.js"></script>
-    <script>
-    const gun = Gun(['https://gun-manhattan.herokuapp.com/gun']);
-    const messagesDiv = document.getElementById('messages');
-    const messageInput = document.getElementById('messageInput');
+<script src="https://cdn.jsdelivr.net/npm/gun/gun.js"></script>
+<script>
+const gun = Gun(['https://gun-manhattan.herokuapp.com/gun']);
+const grid = document.getElementById('pixelGrid');
+const pixelData = gun.get('pixelConquestSimple');
 
-    function sendMessage() {
-        const message = messageInput.value;
-        gun.get('syncTest').put({lastMessage: message});
-        messageInput.value = '';
-    }
+function createGrid() {
+  for (let i = 0; i < 100; i++) {  // Reduced to 10x10 grid for simplicity
+    const cell = document.createElement('div');
+    cell.className = 'cell';
+    cell.id = `cell-${i}`;
+    cell.onclick = () => toggleCell(i);
+    grid.appendChild(cell);
 
-    gun.get('syncTest').on(function(data) {
-        if (data && data.lastMessage) {
-            const p = document.createElement('p');
-            p.textContent = `Received: ${data.lastMessage}`;
-            messagesDiv.prepend(p);
-        }
+    pixelData.get(i).on(function(data) {
+      updateCellUI(i, data);
     });
-    </script>
+  }
+}
+
+function toggleCell(cellIndex) {
+  pixelData.get(cellIndex).once(function(data) {
+    const newState = !(data && data.active);
+    pixelData.get(cellIndex).put({active: newState});
+  });
+}
+
+function updateCellUI(cellIndex, data) {
+  const cell = document.getElementById(`cell-${cellIndex}`);
+  if (data && data.active) {
+    cell.style.backgroundColor = 'red';
+  } else {
+    cell.style.backgroundColor = '';
+  }
+}
+
+createGrid();
+</script>
 </body>
 </html>
