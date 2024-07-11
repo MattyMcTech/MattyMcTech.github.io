@@ -1,156 +1,331 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PixelConquest: Global Domination</title>
-    <script src="https://cdn.jsdelivr.net/npm/gun/gun.js"></script>
-    <style>
-        body, html {
-            margin: 0;
-            padding: 0;
-            height: 100%;
-            overflow: hidden;
-        }
-        .container {
-            display: flex;
-            flex-direction: column;
-            height: 100vh;
-        }
-        .grid-wrapper {
-            flex-grow: 1;
-            overflow: hidden;
-        }
-        .grid {
-            display: grid;
-            grid-template-columns: repeat(50, 1fr);
-            gap: 1px;
-        }
-        .cell {
-            aspect-ratio: 1;
-            border: 1px solid #ccc;
-        }
-        #status {
-            text-align: center;
-            padding: 10px;
-            background-color: #f0f0f0;
-        }
-        .pulse {
-            animation: pulse 2s infinite;
-        }
-        @keyframes pulse {
-            0% { opacity: 1; }
-            50% { opacity: 0.5; }
-            100% { opacity: 1; }
-        }
-        
-        /* Mobile-specific styles */
-        @media (max-width: 768px) {
-            .grid-wrapper {
-                overflow: auto;
-                -webkit-overflow-scrolling: touch;
-            }
-            .grid {
-                width: 200%;
-                height: 200%;
-            }
-        }
-    </style>
+<base href="https://pixelconquest.world/">
+<title>PixelConquest: Global Domination</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  body {
+    font-family: 'Military Stencil', Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #2c3e50;
+    color: #ecf0f1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-height: 100vh;
+  }
+  .container {
+    max-width: 100%;
+    overflow-x: auto;
+    padding: 10px;
+    display: flex;
+    justify-content: center;
+  }
+  .grid-wrapper {
+    display: inline-block;
+    padding: 10px;
+    background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAEASURBVGhD7ZjBDYMwEARdSEvpIj2kpxTgd3pIFykhLVBArPAiCwvQOWAH3Eja08nec2NpD6edzjmfpmlyIVKKD92HxXG8z/N8uyZoqHmeH+M43h4G+rquebDnYbTXdW2TQqTI0oXuRqBjCK3NpQvdrYgjyBBam0sXulsRR5AhtDaXLnS3Io4gQ2htLl3obkUcQYbQ2ly60N2KOEK6mFqxdKG7FXEEGUJrc+lCdyviCDKE1ubShe5WxBFkCK3NpQvdrYgjpIupFUsXulsRR5AhtDaXLnS3Io4gQ2htLl3obkUcQYbQ2ly60N2KOEK6mFqxdKG7FXEEGUJrc+lCdyviCOliasXSpQTOvQA7iOhQwxt9/AAAAABJRU5ErkJggg==');
+    background-size: 100px 100px;
+    border: 3px solid #e74c3c;
+    border-radius: 5px;
+  }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(50, 24px);
+    gap: 1px;
+  }
+  .cell {
+    width: 24px;
+    height: 24px;
+    background-color: rgba(236, 240, 241, 0.1);
+    border: 1px solid #34495e;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+    position: relative;
+  }
+  .cell:hover {
+    transform: scale(1.1);
+    z-index: 1;
+  }
+  .cell input {
+    display: none;
+  }
+  .cell label {
+    width: 100%;
+    height: 100%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .flag {
+    width: 100%;
+    height: 100%;
+    background-size: cover;
+    background-position: center;
+    box-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
+  }
+  h1 {
+    text-align: center;
+    color: #e74c3c;
+    margin: 20px 0;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+  }
+  #status {
+    text-align: center;
+    margin-top: 20px;
+    font-weight: bold;
+    color: #f39c12;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+  }
+  @keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+    100% { transform: scale(1); }
+  }
+  .pulse {
+    animation: pulse 2s infinite;
+  }
+  .tooltip {
+    visibility: hidden;
+    background-color: rgba(0, 0, 0, 0.8);
+    color: #fff;
+    text-align: center;
+    border-radius: 6px;
+    padding: 5px;
+    position: absolute;
+    z-index: 1;
+    bottom: 125%;
+    left: 50%;
+    margin-left: -60px;
+    opacity: 0;
+    transition: opacity 0.3s, visibility 0.3s;
+    white-space: nowrap;
+  }
+  .cell:hover .tooltip {
+    visibility: visible;
+    opacity: 1;
+    transition-delay: 1s;
+  }
+  .cell:not(:hover) .tooltip {
+    transition-delay: 0s;
+  }
+
+  /* Mobile Styles */
+  @media (max-width: 768px) {
+    .container {
+      padding: 0;
+      overflow: hidden;
+    }
+    .grid-wrapper {
+      padding: 0;
+      border: none;
+      border-radius: 0;
+    }
+    .grid {
+      grid-template-columns: repeat(50, 20vw);
+      grid-template-rows: repeat(50, 20vw);
+      gap: 0;
+    }
+    .cell {
+      width: 20vw;
+      height: 20vw;
+    }
+    .mobile-controls {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 10px;
+      z-index: 1000;
+    }
+    .mobile-controls button {
+      padding: 10px 20px;
+      font-size: 16px;
+      background-color: rgba(231, 76, 60, 0.8);
+      color: #fff;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+  }
+</style>
 </head>
 <body>
-    <div class="container">
-        <div class="grid-wrapper">
-            <div id="pixelGrid" class="grid"></div>
-        </div>
-        <div id="status" class="pulse">Identifying your strategic position...</div>
-    </div>
+<h1>PixelConquest: Global Domination</h1>
+<div class="container">
+  <div class="grid-wrapper">
+    <div class="grid" id="pixelGrid"></div>
+  </div>
+</div>
+<div id="status" class="pulse">Identifying your strategic position...</div>
+<div class="mobile-controls">
+  <button id="zoomIn">+</button>
+  <button id="zoomOut">-</button>
+</div>
 
-    <script>
-        const gun = Gun();
-        const pixels = gun.get('pixels');
-        
-        const grid = document.getElementById('pixelGrid');
-        const status = document.getElementById('status');
-        
-        const gridSize = 50;
-        let userColor = localStorage.getItem('userColor') || generateRandomColor();
-        localStorage.setItem('userColor', userColor);
-        
-        function generateRandomColor() {
-            return '#' + Math.floor(Math.random()*16777215).toString(16);
-        }
-        
-        function createGrid() {
-            for (let i = 0; i < gridSize * gridSize; i++) {
-                const cell = document.createElement('div');
-                cell.className = 'cell';
-                cell.setAttribute('data-index', i);
-                grid.appendChild(cell);
-                
-                pixels.get(i).on((color) => {
-                    cell.style.backgroundColor = color || 'transparent';
-                });
-                
-                cell.addEventListener('click', () => {
-                    pixels.get(i).put(userColor);
-                });
-            }
-        }
-        
-        function updateStatus() {
-            const totalCells = gridSize * gridSize;
-            const colorCounts = {};
-            
-            pixels.map().once((color, index) => {
-                if (color) {
-                    colorCounts[color] = (colorCounts[color] || 0) + 1;
-                }
-                
-                if (index === totalCells - 1) {
-                    const sortedColors = Object.entries(colorCounts).sort((a, b) => b[1] - a[1]);
-                    const leadingColor = sortedColors[0];
-                    
-                    if (leadingColor) {
-                        const percentage = ((leadingColor[1] / totalCells) * 100).toFixed(2);
-                        status.textContent = `Leading color controls ${percentage}% of the grid!`;
-                    } else {
-                        status.textContent = 'The battle for control has begun!';
-                    }
-                    
-                    status.classList.remove('pulse');
-                }
-            });
-        }
-        
-        createGrid();
-        updateStatus();
-        
-        // Mobile touch controls
-        let isDragging = false;
-        let lastX, lastY;
-        
-        grid.addEventListener('touchstart', (e) => {
-            isDragging = true;
-            lastX = e.touches[0].clientX;
-            lastY = e.touches[0].clientY;
+<script src="https://cdn.jsdelivr.net/npm/gun/gun.js"></script>
+<script>
+const gun = Gun(['https://gun-manhattan.herokuapp.com/gun']);
+const grid = document.getElementById('pixelGrid');
+const statusEl = document.getElementById('status');
+let userCountry = '';
+
+const countryNames = {
+  'US': 'United States',
+  'GB': 'United Kingdom',
+  'FR': 'France',
+  'DE': 'Germany',
+  'IT': 'Italy',
+  'ES': 'Spain',
+  'CA': 'Canada',
+  'AU': 'Australia',
+  'JP': 'Japan',
+  'KR': 'South Korea',
+  // Add more country codes and names as needed
+};
+
+function createGrid() {
+  for (let i = 0; i < 2500; i++) {
+    const cell = document.createElement('div');
+    cell.className = 'cell';
+    const input = document.createElement('input');
+    input.type = 'checkbox';
+    input.id = `cell-${i}`;
+    const label = document.createElement('label');
+    label.htmlFor = `cell-${i}`;
+    const tooltip = document.createElement('span');
+    tooltip.className = 'tooltip';
+    cell.appendChild(input);
+    cell.appendChild(label);
+    cell.appendChild(tooltip);
+    grid.appendChild(cell);
+
+    input.addEventListener('change', function() {
+      if (this.checked) {
+        label.innerHTML = `<div class="flag" style="background-image: url('https://flagcdn.com/w20/${userCountry.toLowerCase()}.png')"></div>`;
+        tooltip.textContent = countryNames[userCountry] || userCountry;
+        gun.get('pixels').get(i).put({country: userCountry, conquered: true});
+      } else {
+        label.innerHTML = '';
+        tooltip.textContent = '';
+        gun.get('pixels').get(i).put({country: null, conquered: false});
+      }
+    });
+
+    // Load existing data
+    gun.get('pixels').get(i).on(function(data) {
+      if (data && data.conquered) {
+        input.checked = true;
+        label.innerHTML = `<div class="flag" style="background-image: url('https://flagcdn.com/w20/${data.country.toLowerCase()}.png')"></div>`;
+        tooltip.textContent = countryNames[data.country] || data.country;
+      } else {
+        input.checked = false;
+        label.innerHTML = '';
+        tooltip.textContent = '';
+      }
+    });
+  }
+}
+
+function getUserLocation() {
+  if ("geolocation" in navigator) {
+    navigator.geolocation.getCurrentPosition(function(position) {
+      const latitude = position.coords.latitude;
+      const longitude = position.coords.longitude;
+      fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=en`)
+        .then(response => response.json())
+        .then(data => {
+          userCountry = data.countryCode;
+          statusEl.textContent = `Commander from ${data.countryName}! Your mission: Conquer the pixel world!`;
+          statusEl.classList.remove('pulse');
+        })
+        .catch(error => {
+          console.error("Error fetching country data:", error);
+          statusEl.textContent = "Intel compromised. Proceed with caution, anonymous commander!";
+          statusEl.classList.remove('pulse');
         });
-        
-        grid.addEventListener('touchmove', (e) => {
-            if (!isDragging) return;
-            
-            const deltaX = e.touches[0].clientX - lastX;
-            const deltaY = e.touches[0].clientY - lastY;
-            
-            grid.parentElement.scrollLeft -= deltaX;
-            grid.parentElement.scrollTop -= deltaY;
-            
-            lastX = e.touches[0].clientX;
-            lastY = e.touches[0].clientY;
-        });
-        
-        grid.addEventListener('touchend', () => {
-            isDragging = false;
-        });
-    </script>
+    }, function(error) {
+      console.error("Error getting user location:", error);
+      statusEl.textContent = "Location classified. Operate as an anonymous commander!";
+      statusEl.classList.remove('pulse');
+    });
+  } else {
+    statusEl.textContent = "Geolocation unavailable. Commence anonymous operations!";
+    statusEl.classList.remove('pulse');
+  }
+}
+
+// Mobile-specific code
+let scale = 1;
+const zoomStep = 0.1;
+
+function updateGridScale() {
+  grid.style.transform = `scale(${scale})`;
+}
+
+document.getElementById('zoomIn').addEventListener('click', () => {
+  scale += zoomStep;
+  updateGridScale();
+});
+
+document.getElementById('zoomOut').addEventListener('click', () => {
+  scale = Math.max(0.1, scale - zoomStep);
+  updateGridScale();
+});
+
+let isDragging = false;
+let startX, startY, scrollLeft, scrollTop;
+
+grid.addEventListener('mousedown', startDragging);
+grid.addEventListener('touchstart', startDragging);
+
+grid.addEventListener('mousemove', drag);
+grid.addEventListener('touchmove', drag);
+
+grid.addEventListener('mouseup', stopDragging);
+grid.addEventListener('mouseleave', stopDragging);
+grid.addEventListener('touchend', stopDragging);
+
+function startDragging(e) {
+  isDragging = true;
+  startX = e.type === 'touchstart' ? e.touches[0].pageX - grid.offsetLeft : e.pageX - grid.offsetLeft;
+  startY = e.type === 'touchstart' ? e.touches[0].pageY - grid.offsetTop : e.pageY - grid.offsetTop;
+  scrollLeft = grid.scrollLeft;
+  scrollTop = grid.scrollTop;
+}
+
+function drag(e) {
+  if (!isDragging) return;
+  e.preventDefault();
+  const x = e.type === 'touchmove' ? e.touches[0].pageX - grid.offsetLeft : e.pageX - grid.offsetLeft;
+  const y = e.type === 'touchmove' ? e.touches[0].pageY - grid.offsetTop : e.pageY - grid.offsetTop;
+  const walkX = (x - startX) * 1.5;
+  const walkY = (y - startY) * 1.5;
+  grid.scrollLeft = scrollLeft - walkX;
+  grid.scrollTop = scrollTop - walkY;
+}
+
+function stopDragging() {
+  isDragging = false;
+}
+
+createGrid();
+getUserLocation();
+
+// Check if it's a mobile device
+if (/Mobi|Android/i.test(navigator.userAgent)) {
+  document.querySelector('.mobile-controls').style.display = 'flex';
+} else {
+  document.querySelector('.mobile-controls').style.display = 'none';
+}
+</script>
 </body>
 </html>
