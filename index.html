@@ -4,6 +4,7 @@
   <base href="https://pixelconquest.world/">
   <title>PixelConquest: Global Domination</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <script src="https://cdn.jsdelivr.net/npm/@use-gesture/vanilla@10.2.24/index.min.js"></script>
   <style>
     body {
       font-family: 'Military Stencil', Arial, sans-serif;
@@ -35,6 +36,7 @@
       display: grid;
       grid-template-columns: repeat(50, 24px);
       gap: 1px;
+      transform-origin: 0 0;
     }
     .cell {
       width: 24px;
@@ -128,9 +130,6 @@
         overflow: hidden;
         width: 100%;
         height: 100%;
-      }
-      .grid {
-        transform-origin: 0 0;
       }
     }
   </style>
@@ -241,53 +240,41 @@
       }
     }
 
-    // Touch-based panning for mobile
-    let isDragging = false;
-    let startX, startY, translateX = 0, translateY = 0;
-    let lastTap = 0;
-
-    function handleTouchStart(e) {
-      if (e.touches.length === 1) {
-        const now = new Date().getTime();
-        const timesince = now - lastTap;
-        if ((timesince < 300) && (timesince > 0)) {
-          // Double tap - do nothing to allow default behavior (zoom)
-          return;
-        }
-        lastTap = now;
-
-        isDragging = true;
-        startX = e.touches[0].clientX - translateX;
-        startY = e.touches[0].clientY - translateY;
-      }
-    }
-
-    function handleTouchMove(e) {
-      if (!isDragging) return;
-      e.preventDefault();
-      const x = e.touches[0].clientX - startX;
-      const y = e.touches[0].clientY - startY;
-      translateX = x;
-      translateY = y;
-      grid.style.transform = `translate(${x}px, ${y}px)`;
-    }
-
-    function handleTouchEnd(e) {
-      isDragging = false;
-      if (e.changedTouches.length === 1 && e.changedTouches[0].target.tagName === 'LABEL') {
-        const event = new MouseEvent('click', {
-          view: window,
-          bubbles: true,
-          cancelable: true
-        });
-        e.changedTouches[0].target.dispatchEvent(event);
-      }
-    }
-
+    // Pan and zoom functionality for mobile
     if ('ontouchstart' in window) {
-      grid.addEventListener('touchstart', handleTouchStart, { passive: false });
-      grid.addEventListener('touchmove', handleTouchMove, { passive: false });
-      grid.addEventListener('touchend', handleTouchEnd);
+      const gesture = GestureRecognizer.create({
+        element: grid,
+        onPan: ({ deltaX, deltaY, first }) => {
+          if (first) {
+            const transform = new WebKitCSSMatrix(getComputedStyle(grid).transform);
+            gesture.setOffset([transform.m41, transform.m42]);
+          }
+          const [x, y] = gesture.offset;
+          grid.style.transform = `translate(${x + deltaX}px, ${y + deltaY}px) scale(${gesture.scale})`;
+        },
+        onPinch: ({ scale, first }) => {
+          if (first) {
+            const transform = new WebKitCSSMatrix(getComputedStyle(grid).transform);
+            gesture.setOffset([transform.m41, transform.m42]);
+            gesture.scale = transform.a;
+          }
+          const [x, y] = gesture.offset;
+          const newScale = Math.min(Math.max(gesture.scale * scale, 0.5), 3);
+          grid.style.transform = `translate(${x}px, ${y}px) scale(${newScale})`;
+          gesture.scale = newScale;
+        }
+      });
+
+      grid.addEventListener('click', (e) => {
+        if (e.target.tagName === 'LABEL') {
+          const event = new MouseEvent('click', {
+            bubbles: true,
+            cancelable: true,
+            view: window
+          });
+          e.target.dispatchEvent(event);
+        }
+      });
     }
 
     createGrid();
