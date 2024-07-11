@@ -13,56 +13,67 @@
             font-family: Arial, sans-serif;
         }
         .container {
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+        .grid-wrapper {
+            flex-grow: 1;
+            overflow: hidden;
+            position: relative;
         }
         #pixelGrid {
             display: grid;
-            grid-template-columns: repeat(30, 1fr);
+            grid-template-columns: repeat(100, 1fr);
+            grid-template-rows: repeat(100, 1fr);
             gap: 1px;
             background-color: #ddd;
         }
         .pixel {
             aspect-ratio: 1;
             border: 1px solid #ccc;
-            background-color: #fff;
+            transition: background-color 0.3s;
         }
         #status {
-            margin-top: 20px;
-            font-weight: bold;
+            padding: 10px;
+            background-color: #f0f0f0;
+            text-align: center;
         }
         .pulse {
             animation: pulse 2s infinite;
         }
         @keyframes pulse {
-            0% { opacity: 1; }
-            50% { opacity: 0.5; }
-            100% { opacity: 1; }
+            0% {
+                opacity: 1;
+            }
+            50% {
+                opacity: 0.5;
+            }
+            100% {
+                opacity: 1;
+            }
         }
+        /* Mobile-specific styles */
         @media (max-width: 768px) {
-            .container {
-                padding: 0;
-            }
             #pixelGrid {
-                width: 100vw;
-                height: 100vh;
-                overflow: auto;
-                grid-template-columns: repeat(60, 20px);
-                grid-template-rows: repeat(60, 20px);
-            }
-            .pixel {
-                width: 20px;
-                height: 20px;
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 300%;
+                height: 300%;
+                transform-origin: 0 0;
             }
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>PixelConquest: Global Domination</h1>
-        <div id="pixelGrid"></div>
-        <div id="status" class="pulse">Identifying your strategic position...</div>
+        <div class="grid-wrapper">
+            <div id="pixelGrid"></div>
+        </div>
+        <div id="status" class="pulse">
+            Identifying your strategic position...
+        </div>
     </div>
 
     <script>
@@ -70,66 +81,79 @@
         const pixels = gun.get('pixels');
         const grid = document.getElementById('pixelGrid');
         const status = document.getElementById('status');
-        const colors = ['#ff0000', '#00ff00', '#0000ff', '#ffff00', '#ff00ff', '#00ffff'];
-        let userColor = '';
+        const isMobile = window.innerWidth <= 768;
+
+        let currentColor = getRandomColor();
+        let isDragging = false;
+        let lastX, lastY;
 
         function createGrid() {
-            const isMobile = window.innerWidth <= 768;
-            const gridSize = isMobile ? 60 : 30;
-            grid.innerHTML = '';
-            for (let i = 0; i < gridSize * gridSize; i++) {
+            for (let i = 0; i < 10000; i++) {
                 const pixel = document.createElement('div');
                 pixel.classList.add('pixel');
                 pixel.dataset.id = i;
                 grid.appendChild(pixel);
+
+                pixel.addEventListener('click', () => togglePixel(pixel));
+
                 pixels.get(i).on((data) => {
                     if (data) {
                         pixel.style.backgroundColor = data.color;
                     }
                 });
-                pixel.addEventListener('click', () => {
-                    pixels.get(i).put({ color: userColor });
-                });
             }
         }
 
-        function initUser() {
-            const userId = localStorage.getItem('userId') || Math.random().toString(36).substr(2, 9);
-            localStorage.setItem('userId', userId);
-            userColor = colors[userId.charCodeAt(0) % colors.length];
-            status.textContent = `Your color: ${userColor}`;
-            status.style.color = userColor;
+        function togglePixel(pixel) {
+            const id = pixel.dataset.id;
+            pixels.get(id).put({ color: currentColor });
+        }
+
+        function getRandomColor() {
+            const letters = '0123456789ABCDEF';
+            let color = '#';
+            for (let i = 0; i < 6; i++) {
+                color += letters[Math.floor(Math.random() * 16)];
+            }
+            return color;
+        }
+
+        function updateStatus(message) {
+            status.textContent = message;
             status.classList.remove('pulse');
+            void status.offsetWidth;
+            status.classList.add('pulse');
         }
 
-        window.addEventListener('load', () => {
-            createGrid();
-            initUser();
-        });
+        if (isMobile) {
+            grid.addEventListener('touchstart', (e) => {
+                isDragging = true;
+                lastX = e.touches[0].clientX;
+                lastY = e.touches[0].clientY;
+            });
 
-        window.addEventListener('resize', createGrid);
+            grid.addEventListener('touchmove', (e) => {
+                if (isDragging) {
+                    const deltaX = e.touches[0].clientX - lastX;
+                    const deltaY = e.touches[0].clientY - lastY;
+                    
+                    const currentTransform = new DOMMatrix(window.getComputedStyle(grid).transform);
+                    const newTransform = currentTransform.translate(deltaX, deltaY);
+                    
+                    grid.style.transform = newTransform.toString();
+                    
+                    lastX = e.touches[0].clientX;
+                    lastY = e.touches[0].clientY;
+                }
+            });
 
-        // Mobile touch events
-        let isDragging = false;
-        grid.addEventListener('touchstart', (e) => {
-            isDragging = true;
-            updatePixel(e.touches[0]);
-        });
-        grid.addEventListener('touchmove', (e) => {
-            if (isDragging) {
-                updatePixel(e.touches[0]);
-            }
-        });
-        grid.addEventListener('touchend', () => {
-            isDragging = false;
-        });
-
-        function updatePixel(touch) {
-            const pixel = document.elementFromPoint(touch.clientX, touch.clientY);
-            if (pixel && pixel.classList.contains('pixel')) {
-                pixels.get(pixel.dataset.id).put({ color: userColor });
-            }
+            grid.addEventListener('touchend', () => {
+                isDragging = false;
+            });
         }
+
+        createGrid();
+        updateStatus('Ready for global domination!');
     </script>
 </body>
 </html>
