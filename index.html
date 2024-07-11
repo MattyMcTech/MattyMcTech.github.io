@@ -184,10 +184,8 @@
         cell.appendChild(tooltip);
         grid.appendChild(cell);
 
-        label.addEventListener('click', function(e) {
-          e.preventDefault(); // Prevent default checkbox behavior
-          const isChecked = input.checked;
-          if (!isChecked) {
+        function updateCell(isChecked) {
+          if (isChecked) {
             label.innerHTML = `<div class="flag" style="background-image: url('https://flagcdn.com/w20/${userCountry.toLowerCase()}.png')"></div>`;
             tooltip.textContent = countryNames[userCountry] || userCountry;
             gun.get('pixels').get(i).put({country: userCountry, conquered: true});
@@ -196,7 +194,12 @@
             tooltip.textContent = '';
             gun.get('pixels').get(i).put({country: null, conquered: false});
           }
-          input.checked = !isChecked; // Toggle the checkbox state
+          input.checked = isChecked;
+        }
+
+        label.addEventListener('click', function(e) {
+          e.preventDefault(); // Prevent default checkbox behavior
+          updateCell(!input.checked);
         });
 
         // Load existing data
@@ -264,13 +267,12 @@
 
     function handleTouchEnd(e) {
       isDragging = false;
-      if (e.changedTouches.length === 1 && e.changedTouches[0].target.tagName === 'LABEL') {
-        const event = new MouseEvent('click', {
-          view: window,
-          bubbles: true,
-          cancelable: true
-        });
-        e.changedTouches[0].target.dispatchEvent(event);
+      if (e.changedTouches.length === 1) {
+        const touch = e.changedTouches[0];
+        const element = document.elementFromPoint(touch.clientX, touch.clientY);
+        if (element && element.tagName === 'LABEL') {
+          element.click();
+        }
       }
     }
 
