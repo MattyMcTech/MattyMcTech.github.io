@@ -1,153 +1,35 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<base href="https://pixelconquest.world/">
-<title>PixelConquest: Global Domination</title>
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<style>
-  /* ... (previous styles remain unchanged) ... */
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gun.js Sync Test</title>
 </head>
 <body>
-<div class="game-container">
-  <h1>PixelConquest: Global Domination</h1>
-  <div class="grid-container">
-    <div class="grid-wrapper">
-      <div class="grid" id="pixelGrid"></div>
-    </div>
-  </div>
-  <div id="status" class="pulse">Identifying your strategic position...</div>
-</div>
+    <h1>Gun.js Sync Test</h1>
+    <input type="text" id="messageInput" placeholder="Enter a message">
+    <button onclick="sendMessage()">Send</button>
+    <div id="messages"></div>
 
-<script src="https://cdn.jsdelivr.net/npm/gun/gun.js"></script>
-<script>
-const gun = Gun(['https://gun-manhattan.herokuapp.com/gun']);
-const grid = document.getElementById('pixelGrid');
-const statusEl = document.getElementById('status');
-let userCountry = '';
+    <script src="https://cdn.jsdelivr.net/npm/gun/gun.js"></script>
+    <script>
+    const gun = Gun(['https://gun-manhattan.herokuapp.com/gun']);
+    const messagesDiv = document.getElementById('messages');
+    const messageInput = document.getElementById('messageInput');
 
-const countryNames = {
-  'US': 'United States',
-  'GB': 'United Kingdom',
-  'FR': 'France',
-  'DE': 'Germany',
-  'IT': 'Italy',
-  'ES': 'Spain',
-  'CA': 'Canada',
-  'AU': 'Australia',
-  'JP': 'Japan',
-  'KR': 'South Korea',
-  // Add more country codes and names as needed
-};
+    function sendMessage() {
+        const message = messageInput.value;
+        gun.get('syncTest').put({lastMessage: message});
+        messageInput.value = '';
+    }
 
-const pixelData = gun.get('pixelConquestData');
-
-function createGrid() {
-  for (let i = 0; i < 2500; i++) {
-    const cell = document.createElement('div');
-    cell.className = 'cell';
-    const input = document.createElement('input');
-    input.type = 'checkbox';
-    input.id = `cell-${i}`;
-    const label = document.createElement('label');
-    label.htmlFor = `cell-${i}`;
-    const tooltip = document.createElement('span');
-    tooltip.className = 'tooltip';
-    cell.appendChild(input);
-    cell.appendChild(label);
-    cell.appendChild(tooltip);
-    grid.appendChild(cell);
-
-    input.addEventListener('change', function() {
-      console.log(`Cell ${i} changed. Checked: ${this.checked}`);
-      updateCell(i, this.checked);
+    gun.get('syncTest').on(function(data) {
+        if (data && data.lastMessage) {
+            const p = document.createElement('p');
+            p.textContent = `Received: ${data.lastMessage}`;
+            messagesDiv.prepend(p);
+        }
     });
-
-    // Listen for changes on each cell
-    pixelData.get(i).on(function(data) {
-      console.log(`Received update for cell ${i}:`, data);
-      updateCellUI(i, data);
-    });
-  }
-}
-
-function updateCell(cellIndex, isChecked) {
-  if (isChecked) {
-    pixelData.get(cellIndex).put({country: userCountry, conquered: true}, ack => {
-      if(ack.err) {
-        console.error(`Error updating cell ${cellIndex}:`, ack.err);
-      } else {
-        console.log(`Cell ${cellIndex} updated successfully`);
-      }
-    });
-  } else {
-    pixelData.get(cellIndex).put({country: null, conquered: false}, ack => {
-      if(ack.err) {
-        console.error(`Error clearing cell ${cellIndex}:`, ack.err);
-      } else {
-        console.log(`Cell ${cellIndex} cleared successfully`);
-      }
-    });
-  }
-}
-
-function updateCellUI(cellIndex, data) {
-  const input = document.getElementById(`cell-${cellIndex}`);
-  const label = input.nextElementSibling;
-  const tooltip = label.nextElementSibling;
-
-  if (data && data.conquered) {
-    input.checked = true;
-    label.innerHTML = `<div class="flag" style="background-image: url('https://flagcdn.com/w20/${data.country.toLowerCase()}.png')"></div>`;
-    tooltip.textContent = countryNames[data.country] || data.country;
-  } else {
-    input.checked = false;
-    label.innerHTML = '';
-    tooltip.textContent = '';
-  }
-}
-
-function getUserLocation() {
-  if ("geolocation" in navigator) {
-    navigator.geolocation.getCurrentPosition(function(position) {
-      const latitude = position.coords.latitude;
-      const longitude = position.coords.longitude;
-      fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=en`)
-        .then(response => response.json())
-        .then(data => {
-          userCountry = data.countryCode;
-          statusEl.textContent = `Commander from ${data.countryName}! Your mission: Conquer the pixel world!`;
-          statusEl.classList.remove('pulse');
-          console.log(`User location identified: ${data.countryName} (${userCountry})`);
-        })
-        .catch(error => {
-          console.error("Error fetching country data:", error);
-          statusEl.textContent = "Intel compromised. Proceed with caution, anonymous commander!";
-          statusEl.classList.remove('pulse');
-        });
-    }, function(error) {
-      console.error("Error getting user location:", error);
-      statusEl.textContent = "Location classified. Operate as an anonymous commander!";
-      statusEl.classList.remove('pulse');
-    });
-  } else {
-    console.log("Geolocation not available");
-    statusEl.textContent = "Geolocation unavailable. Commence anonymous operations!";
-    statusEl.classList.remove('pulse');
-  }
-}
-
-createGrid();
-getUserLocation();
-
-// Add a listener for Gun.js connection status
-gun.on('hi', peer => {
-  console.log('Connected to Gun peer:', peer);
-});
-
-gun.on('bye', peer => {
-  console.log('Disconnected from Gun peer:', peer);
-});
-</script>
+    </script>
 </body>
 </html>
