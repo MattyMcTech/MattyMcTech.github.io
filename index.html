@@ -1,0 +1,341 @@
+<html><head><base href="https://websim.ai/worldgrid"><title>Global Domination: Risk-style WorldGrid Game</title><meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, maximum-scale=5.0"><style>
+:root {
+  --grid-size: 60;
+  --cell-size: 10px;
+  --primary-color: #e74c3c;
+  --secondary-color: #ecf0f1;
+  --background-color: #2c3e50;
+}
+
+body {
+  font-family: 'Courier New', monospace;
+  background-color: var(--background-color);
+  color: var(--secondary-color);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 10px;
+  margin: 0;
+  background-image: url('https://websim.ai/worldgrid/world-map-bg.jpg');
+  background-size: cover;
+  background-attachment: fixed;
+  min-height: 100vh;
+}
+
+h1 {
+  color: var(--primary-color);
+  text-align: center;
+  text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+  margin-bottom: 10px;
+  font-size: 1.5em;
+}
+
+#user-country {
+  margin-bottom: 15px;
+  font-size: 1em;
+  font-weight: bold;
+  background-color: rgba(44, 62, 80, 0.7);
+  padding: 8px;
+  border-radius: 5px;
+  text-align: center;
+  width: 100%;
+  max-width: 300px;
+}
+
+#game-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+}
+
+#grid-container {
+  display: grid;
+  grid-template-columns: repeat(var(--grid-size), var(--cell-size));
+  grid-template-rows: repeat(var(--grid-size), var(--cell-size));
+  gap: 1px;
+  background-color: rgba(0, 0, 0, 0.5);
+  border: 2px solid var(--primary-color);
+  box-shadow: 0 0 20px rgba(231, 76, 60, 0.5);
+  overflow: auto;
+  max-width: 100%;
+  max-height: 80vh;
+  -webkit-overflow-scrolling: touch;
+  touch-action: manipulation;
+}
+
+.cell {
+  width: var(--cell-size);
+  height: var(--cell-size);
+  background-color: rgba(236, 240, 241, 0.1);
+  border: 1px solid #34495e;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.cell input[type="checkbox"] {
+  display: none;
+}
+
+.cell label {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.cell input[type="checkbox"]:checked + label {
+  background-size: cover;
+  background-position: center;
+  box-shadow: inset 0 0 5px rgba(255,255,255,0.5);
+}
+
+#stats {
+  margin-top: 15px;
+  text-align: center;
+  font-size: 1em;
+  background-color: rgba(44, 62, 80, 0.7);
+  padding: 8px;
+  border-radius: 5px;
+  width: 100%;
+  max-width: 300px;
+}
+
+#conquered-count {
+  color: var(--primary-color);
+  font-weight: bold;
+}
+
+/* Custom scrollbar styles */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(44, 62, 80, 0.7);
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--primary-color);
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #c0392b;
+}
+
+/* Firefox scrollbar styles */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--primary-color) rgba(44, 62, 80, 0.7);
+}
+
+@media (max-width: 768px) {
+  :root {
+    --cell-size: 6px;
+  }
+
+  body {
+    font-size: 14px;
+  }
+
+  h1 { font-size: 1.2em; }
+
+  #user-country, #stats {
+    font-size: 0.9em;
+    max-width: 90%;
+  }
+
+  #grid-container {
+    max-height: 70vh;
+  }
+}
+</style></head><body><h1>Global Domination</h1>
+<div id="user-country">Your Empire: <span id="country-name">Loading...</span></div>
+<div id="game-container">
+  <div id="grid-container"></div>
+</div>
+<div id="stats">
+  Territories conquered: <span id="conquered-count">0</span> / 3600
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/gun/gun.js"></script>
+<script>
+const gridContainer = document.getElementById('grid-container');
+const userCountrySpan = document.getElementById('country-name');
+const conqueredCount = document.getElementById('conquered-count');
+
+let userCountry = '';
+let boxesChecked = 0;
+let boxesUnchecked = 0;
+const gun = Gun(['https://gun-manhattan.herokuapp.com/gun']);
+const worldGrid = gun.get('worldgrid');
+
+function createGrid() {
+  const gridSize = 60;
+  const totalCells = gridSize * gridSize;
+  
+  for (let i = 0; i < totalCells; i++) {
+    const cell = document.createElement('div');
+    cell.classList.add('cell');
+    
+    const checkbox = document.createElement('input');
+    checkbox.type = 'checkbox';
+    checkbox.id = `cell-${i}`;
+    
+    const label = document.createElement('label');
+    label.htmlFor = `cell-${i}`;
+    
+    cell.appendChild(checkbox);
+    cell.appendChild(label);
+    gridContainer.appendChild(cell);
+
+    worldGrid.get(`cell-${i}`).on((data) => {
+      if (data) {
+        checkbox.checked = true;
+        label.style.backgroundImage = `url(https://flagcdn.com/w20/${data.country}.png)`;
+        label.style.backgroundColor = getCountryColor(data.country);
+      } else {
+        checkbox.checked = false;
+        label.style.backgroundImage = 'none';
+        label.style.backgroundColor = 'transparent';
+      }
+      updateStats();
+    });
+  }
+}
+
+function getCountryColor(country) {
+  const colors = {
+    us: 'rgba(0, 0, 255, 0.5)',    // Blue
+    gb: 'rgba(255, 0, 0, 0.5)',    // Red
+    fr: 'rgba(0, 0, 255, 0.5)',    // Blue
+    de: 'rgba(0, 0, 0, 0.5)',      // Black
+    jp: 'rgba(255, 255, 255, 0.5)' // White
+  };
+  return colors[country] || 'rgba(128, 128, 128, 0.5)'; // Grey for unknown
+}
+
+function updateStats() {
+  const checkedBoxes = document.querySelectorAll('input[type="checkbox"]:checked').length;
+  conqueredCount.textContent = checkedBoxes;
+}
+
+function getUserLocation() {
+  if ('geolocation' in navigator) {
+    navigator.geolocation.getCurrentPosition(function(position) {
+      const latitude = position.coords.latitude;
+      const longitude = position.coords.longitude;
+      
+      fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=en`)
+        .then(response => response.json())
+        .then(data => {
+          userCountry = data.countryCode.toLowerCase();
+          userCountrySpan.textContent = data.countryName;
+        })
+        .catch(error => {
+          console.error('Error fetching user country:', error);
+          fallbackToIPLocation();
+        });
+    }, function(error) {
+      console.error('Geolocation error:', error);
+      fallbackToIPLocation();
+    });
+  } else {
+    console.log('Geolocation is not supported by this browser.');
+    fallbackToIPLocation();
+  }
+}
+
+function fallbackToIPLocation() {
+  fetch('https://ipapi.co/json/')
+    .then(response => response.json())
+    .then(data => {
+      userCountry = data.country.toLowerCase();
+      userCountrySpan.textContent = data.country_name;
+    })
+    .catch(error => {
+      console.error('Error fetching user country:', error);
+      userCountry = 'unknown';
+      userCountrySpan.textContent = 'Unknown';
+    });
+}
+
+createGrid();
+getUserLocation();
+
+let lastTapTime = 0;
+const doubleTapDelay = 300; // milliseconds
+
+function handleCellInteraction(label) {
+  const currentTime = new Date().getTime();
+  const tapLength = currentTime - lastTapTime;
+  lastTapTime = currentTime;
+
+  if (tapLength < doubleTapDelay && tapLength > 0) {
+    // Double tap - zoom
+    event.preventDefault();
+    const currentScale = parseFloat(gridContainer.style.transform.replace('scale(', '').replace(')', '') || 1);
+    const newScale = currentScale < 2 ? currentScale * 1.5 : 1;
+    gridContainer.style.transform = `scale(${newScale})`;
+  } else {
+    // Single tap - toggle cell
+    toggleCell(label);
+  }
+}
+
+gridContainer.addEventListener('touchend', function(event) {
+  const touch = event.changedTouches[0];
+  const element = document.elementFromPoint(touch.clientX, touch.clientY);
+  if (element.tagName === 'LABEL') {
+    handleCellInteraction(element);
+  }
+});
+
+gridContainer.addEventListener('click', function(event) {
+  const label = event.target.closest('label');
+  if (label) {
+    handleCellInteraction(label);
+  }
+});
+
+function toggleCell(label) {
+  const checkbox = document.getElementById(label.htmlFor);
+  const wasChecked = checkbox.checked;
+  checkbox.checked = !checkbox.checked;
+  const cellId = checkbox.id;
+  if (checkbox.checked) {
+    worldGrid.get(cellId).put({ country: userCountry });
+    if (!wasChecked) boxesChecked++;
+  } else {
+    worldGrid.get(cellId).put(null);
+    if (wasChecked) boxesUnchecked++;
+  }
+  updateStats();
+}
+
+// Handle window resize
+window.addEventListener('resize', function() {
+  gridContainer.innerHTML = '';
+  createGrid();
+});
+
+// Prevent default touch behavior to allow custom handling
+gridContainer.addEventListener('touchmove', function(e) {
+  if (e.touches.length === 1) {
+    e.preventDefault();
+  }
+}, { passive: false });
+
+// Add meta tag for mobile viewport
+const meta = document.createElement('meta');
+meta.name = 'viewport';
+meta.content = 'width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0';
+document.getElementsByTagName('head')[0].appendChild(meta);
+</script></body></html>
