@@ -15,6 +15,7 @@
       flex-direction: column;
       align-items: center;
       min-height: 100vh;
+      overflow: hidden;
     }
     .container {
       max-width: 100%;
@@ -119,16 +120,21 @@
     /* Mobile-specific styles */
     @media (max-width: 768px) {
       .container {
-        overflow-y: auto;
-        max-height: 80vh;
+        overflow: hidden;
+        width: 100vw;
+        height: 60vh;
+      }
+      .grid-wrapper {
+        position: relative;
+        overflow: hidden;
+        width: 100%;
+        height: 100%;
       }
       .grid {
-        grid-template-columns: repeat(25, 1fr);
-      }
-      .cell {
-        width: auto;
-        height: auto;
-        aspect-ratio: 1;
+        position: absolute;
+        top: 0;
+        left: 0;
+        transform-origin: 0 0;
       }
     }
   </style>
@@ -164,7 +170,6 @@
     };
 
     function createGrid() {
-      const isMobile = window.innerWidth <= 768;
       const gridSize = 50 * 50; // Always create a 50x50 grid
 
       for (let i = 0; i < gridSize; i++) {
@@ -235,6 +240,36 @@
         statusEl.textContent = "Geolocation unavailable. Commence anonymous operations!";
         statusEl.classList.remove('pulse');
       }
+    }
+
+    // Touch-based panning for mobile
+    let isDragging = false;
+    let startX, startY, translateX = 0, translateY = 0;
+
+    function handleTouchStart(e) {
+      isDragging = true;
+      startX = e.touches[0].clientX - translateX;
+      startY = e.touches[0].clientY - translateY;
+    }
+
+    function handleTouchMove(e) {
+      if (!isDragging) return;
+      e.preventDefault();
+      const x = e.touches[0].clientX - startX;
+      const y = e.touches[0].clientY - startY;
+      translateX = x;
+      translateY = y;
+      grid.style.transform = `translate(${x}px, ${y}px)`;
+    }
+
+    function handleTouchEnd() {
+      isDragging = false;
+    }
+
+    if (window.innerWidth <= 768) {
+      grid.addEventListener('touchstart', handleTouchStart);
+      grid.addEventListener('touchmove', handleTouchMove);
+      grid.addEventListener('touchend', handleTouchEnd);
     }
 
     createGrid();
