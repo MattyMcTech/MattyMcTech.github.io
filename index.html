@@ -1,12 +1,13 @@
-<html><head><base href="https://pixelpeace.world/">
-<title>PixelPeace World</title>
+<html><head><base href="https://pixelconquest.world/">
+<title>PixelConquest: Global Domination</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <style>
   body {
-    font-family: Arial, sans-serif;
+    font-family: 'Military Stencil', Arial, sans-serif;
     margin: 0;
     padding: 0;
-    background-color: #f0f0f0;
+    background-color: #2c3e50;
+    color: #ecf0f1;
   }
   .container {
     max-width: 100%;
@@ -17,15 +18,25 @@
     display: grid;
     grid-template-columns: repeat(50, 20px);
     gap: 1px;
+    background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAEASURBVGhD7ZjBDYMwEARdSEvpIj2kpxTgd3pIFykhLVBArPAiCwvQOWAH3Uja08nec2NpD6edzjmfpmlyIVKKD92HxXG8z/N8uyZoqHmeH+M43h4G+rquebDnYbTXdW2TQqTI0oXuRqBjCK3NpQvdrYgjyBBam0sXulsRR5AhtDaXLnS3Io4gQ2htLl3obkUcQYbQ2ly60N2KOEK6mFqxdKG7FXEEGUJrc+lCdyviCDKE1ubShe5WxBFkCK3NpQvdrYgjpIupFUsXulsRR5AhtDaXLnS3Io4gQ2htLl3obkUcQYbQ2ly60N2KOEK6mFqxdKG7FXEEGUJrc+lCdyviCOliasXSpQTOvQA7iOhQwxt9/AAAAABJRU5ErkJggg==');
+    background-size: 100px 100px;
+    padding: 10px;
+    border: 3px solid #e74c3c;
+    border-radius: 5px;
   }
   .cell {
     width: 20px;
     height: 20px;
-    background-color: #fff;
-    border: 1px solid #ccc;
+    background-color: rgba(236, 240, 241, 0.1);
+    border: 1px solid #34495e;
     display: flex;
     align-items: center;
     justify-content: center;
+    transition: all 0.3s ease;
+  }
+  .cell:hover {
+    transform: scale(1.1);
+    z-index: 1;
   }
   .cell input {
     display: none;
@@ -43,25 +54,39 @@
     height: 100%;
     background-size: cover;
     background-position: center;
+    box-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
   }
   h1 {
     text-align: center;
-    color: #333;
+    color: #e74c3c;
     margin-bottom: 20px;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
   }
   #status {
     text-align: center;
     margin-top: 20px;
     font-weight: bold;
+    color: #f39c12;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+  }
+  @keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+    100% { transform: scale(1); }
+  }
+  .pulse {
+    animation: pulse 2s infinite;
   }
 </style>
 </head>
 <body>
-<h1>PixelPeace World</h1>
+<h1>PixelConquest: Global Domination</h1>
 <div class="container">
   <div class="grid" id="pixelGrid"></div>
 </div>
-<div id="status">Locating your position in the world...</div>
+<div id="status" class="pulse">Identifying your strategic position...</div>
 
 <script>
 const grid = document.getElementById('pixelGrid');
@@ -84,8 +109,10 @@ function createGrid() {
     input.addEventListener('change', function() {
       if (this.checked) {
         label.innerHTML = `<div class="flag" style="background-image: url('https://flagcdn.com/w20/${userCountry.toLowerCase()}.png')"></div>`;
+        playConquerSound();
       } else {
         label.innerHTML = '';
+        playRetreatSound();
       }
     });
   }
@@ -100,19 +127,33 @@ function getUserLocation() {
         .then(response => response.json())
         .then(data => {
           userCountry = data.countryCode;
-          statusEl.textContent = `Welcome, traveler from ${data.countryName}! Paint your pixels on our shared canvas.`;
+          statusEl.textContent = `Commander from ${data.countryName}! Your mission: Conquer the pixel world!`;
+          statusEl.classList.remove('pulse');
         })
         .catch(error => {
           console.error("Error fetching country data:", error);
-          statusEl.textContent = "Couldn't determine your location. You can still participate anonymously!";
+          statusEl.textContent = "Intel compromised. Proceed with caution, anonymous commander!";
+          statusEl.classList.remove('pulse');
         });
     }, function(error) {
       console.error("Error getting user location:", error);
-      statusEl.textContent = "Couldn't access your location. You can still participate anonymously!";
+      statusEl.textContent = "Location classified. Operate as an anonymous commander!";
+      statusEl.classList.remove('pulse');
     });
   } else {
-    statusEl.textContent = "Geolocation is not supported by your browser. You can still participate anonymously!";
+    statusEl.textContent = "Geolocation unavailable. Commence anonymous operations!";
+    statusEl.classList.remove('pulse');
   }
+}
+
+function playConquerSound() {
+  const audio = new Audio('data:audio/wav;base64,UklGRnQGAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YU8GAACBhYqFbF1BODAzPEZOT0hANjQ3PUBBPzo2NDQ0Mzg7PT5EOjEpJSs3QkhGPzovLDM8RUlJR0c+Oj5EQ/z/AAEHDQ0KBPj7/AwZIiUcDfXw9v8OGBwZDwbl2NLZ6/oGDQj24dTP2On1//bm18zO3O3//vnr3dbU1NHQz9LY4Oj2BRIeLyIL7NjGzN3yDSUxJg7msJKNpMrn//zjxayknrjT+DJ3qsnj+OrUuKSHhI2m3P5MY3WGnrS6r6KOgHqCm8z/NGV2eHt9gH1nKggVQXa2/1VTTC0iIywlABRGdcoUVVAzCPDcxJFNWIjYFjIcNEVHSDMHBRtDc8IvT0UqA+PErYBPcLH7CggRXZSd//vbu5+VyhxVVFJKIA8PEkNps/teTTcyEv/XXTR9pQMHLzg8NhgLHj2ArP5WTzgtCN+c0+gGJCb+7PPVLGCEqba1rYHrLuAXAAQC/fT0Ii9YZWnk3cyypS/NEAosGxoVCxQpN01XT0IyGQkPERYVESwgVWV3fHx3bHn/XVBQUEpCGAcpX3m9/U1EPjcvHAgkU3nK/UFMUUxAKRMWHCYvNkM4Lx8QF3GPwf9NRDYrIg8tWn/KQHyFhoiMlKK0w8vIwcG5pZm4z9/o7fD09vn6+Pf32tXQycbT4vf/AwcGA/bu7evs6ufr7uzu8fX19vn6+vz9+vv8+/n39/f19Pv/AP7+/fv6+vv8/P3+/v7+/v7+/v39/f39/P3+/v38+/r6/f8A/f37+vr9/wAAARV9t+//TlNQQy4WJkFwsvY8SE5NRj0hISwxHufl6PTZUXGXsMfT1dXNvaqjn5ygrbfAycnL0NfX1tfT0uHq9AQTHTg9My4oGCoqCh9AeoTI/3RxbW1nXlZha32FgH5zdnN5foKBfHx1b3ylyuHs8/Pw4M23qKGgoazu9wkVEAwBAAHv5OHayMjR2+v4AwS1mYuNlrLK4/H6/fj17+Pe2tnZ2dnb3uPn6+rq6e3y9/wB/vv6+fj4+Pn6+vz+//8AAQD+/f39/v4AAQEB/v38/f3+/v39/f39/f3+/v7+/v7+/v7+/v7+/v7+/v7+/v8AAAABAQEBAQEAAAABAQHn3NLQzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3N');
+  audio.play();
+}
+
+function playRetreatSound() {
+  const audio = new Audio('data:audio/wav;base64,UklGRnwFAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YVgFAACBhYqFbF1BODAzPEZOT0hANjQ3PUBBPzo2NDQ0Mzg7PT5EOjEpJSs3QkhGPzovLDM8RUlJR0c+Oj5EQ/z/AAEHDQ0KBPj7/AwZIiUcDfXw9v8OGBwZDwbl2NLZ6/oGDQj24dTP2On1//bm18zO3O3//vnr3dbU1NHQz9LY4Oj2BRIeLyIL7NjGzN3yDSUxJg7msJKNpMrn//zjxayknrjT+DJ3qsnj+OrUuKSHhI2m3P5MY3WGnrS6r6KOgHqCm8z/NGV2eHt9gH1nKggVQXa2/1VTTC0iIywlABRGdcoUVVAzCPDcxJFNWIjYFjIcNEVHSDMHBRtDc8IvT0UqA+PErYBPcLH7CggRXZSd//vbu5+VyhxVVFJKIA8PEkNps/teTTcyEv/XXTR9pQMHLzg8NhgLHj2ArP5WTzgtCN+c0+gGJCb+7PPVLGCEqba1rYHrLuAXAAQC/fT0Ii9YZWnk3cyypS/NEAosGxoVCxQpN01XT0IyGQkPERYVESwgVWV3fHx3bHn/XVBQUEpCGAcpX3m9/U1EPjcvHAgkU3nK/UFMUUxAKRMWHCYvNkM4Lx8QF3GPwf9NRDYrIg8tWn/KQHyFhoiMlKK0w8vIwcG5pZm4z9/o7fD09vn6+Pf32tXQycbT4vf/AwcGA/bu7evs6ufr7uzu8fX19vn6+vz9+vv8+/n39/f19Pv/AP7+/fv6+vv8/P3+/v7+/v7+/v39/f39/P3+/v38+/r6/f8A/f37+vr9/wAAARV9t+//TlNQQy4WJkFwsvY8SE5NRj0hISwxHufl6PTZUXGXsMfT1dXNvaqjn5ygrbfAycnL0NfX1tfT0uHq9AQTHTg9My4oGCoqCh9AeoTI/3RxbW1nXlZha32FgH5zdnN5foKBfHx1b3ylyuHs8/Pw4M23qKGgoazu9wkVEAwBAAHv5OHayMjR2+v4AwS1mYuNlrLK4/H6/fj17+Pe2tnZ2dnb3uPn6+rq6e3y9/wB/vv6+fj4+Pn6+vz+//8AAQD+/f39/v4AAQEB/v38/f3+/v39/f39/f3+/v7+/v7+/v7+/v7+/v7+/v7+/v8AAAABAQEBAQEAAAABAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQ==');
+  audio.play();
 }
 
 createGrid();
