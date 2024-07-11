@@ -13,64 +13,66 @@
             font-family: Arial, sans-serif;
         }
         .container {
-            display: flex;
-            flex-direction: column;
-            height: 100%;
-        }
-        .grid-wrapper {
-            flex-grow: 1;
-            overflow: hidden;
-            position: relative;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
         }
         #pixelGrid {
             display: grid;
-            grid-template-columns: repeat(100, 1fr);
-            grid-template-rows: repeat(100, 1fr);
+            grid-template-columns: repeat(auto-fill, minmax(20px, 1fr));
             gap: 1px;
-            background-color: #ddd;
         }
         .pixel {
             aspect-ratio: 1;
             border: 1px solid #ccc;
-            transition: background-color 0.3s;
         }
         #status {
+            text-align: center;
             padding: 10px;
             background-color: #f0f0f0;
-            text-align: center;
+            margin-top: 20px;
         }
         .pulse {
             animation: pulse 2s infinite;
         }
         @keyframes pulse {
-            0% {
-                opacity: 1;
-            }
-            50% {
-                opacity: 0.5;
-            }
-            100% {
-                opacity: 1;
-            }
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
         }
-        /* Mobile-specific styles */
+
+        /* Mobile Styles */
         @media (max-width: 768px) {
+            body, html {
+                overflow: hidden;
+            }
+            .container {
+                height: 100vh;
+                display: flex;
+                flex-direction: column;
+                padding: 10px;
+            }
             #pixelGrid {
-                position: absolute;
-                top: 0;
+                flex-grow: 1;
+                overflow-y: auto;
+                -webkit-overflow-scrolling: touch;
+                grid-template-columns: repeat(auto-fill, minmax(30px, 1fr));
+            }
+            #status {
+                position: fixed;
+                bottom: 0;
                 left: 0;
-                width: 300%;
-                height: 300%;
-                transform-origin: 0 0;
+                right: 0;
+                margin-top: 0;
+                background-color: rgba(240, 240, 240, 0.9);
             }
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <div class="grid-wrapper">
-            <div id="pixelGrid"></div>
-        </div>
+        <h1>PixelConquest: Global Domination</h1>
+        <div id="pixelGrid"></div>
         <div id="status" class="pulse">
             Identifying your strategic position...
         </div>
@@ -79,81 +81,48 @@
     <script>
         const gun = Gun();
         const pixels = gun.get('pixels');
+
+        const gridSize = 50;
         const grid = document.getElementById('pixelGrid');
         const status = document.getElementById('status');
-        const isMobile = window.innerWidth <= 768;
-
-        let currentColor = getRandomColor();
-        let isDragging = false;
-        let lastX, lastY;
 
         function createGrid() {
-            for (let i = 0; i < 10000; i++) {
+            for (let i = 0; i < gridSize * gridSize; i++) {
                 const pixel = document.createElement('div');
-                pixel.classList.add('pixel');
-                pixel.dataset.id = i;
+                pixel.className = 'pixel';
+                pixel.id = `pixel-${i}`;
+                pixel.addEventListener('click', () => togglePixel(i));
                 grid.appendChild(pixel);
-
-                pixel.addEventListener('click', () => togglePixel(pixel));
-
-                pixels.get(i).on((data) => {
-                    if (data) {
-                        pixel.style.backgroundColor = data.color;
-                    }
-                });
             }
         }
 
-        function togglePixel(pixel) {
-            const id = pixel.dataset.id;
-            pixels.get(id).put({ color: currentColor });
+        function togglePixel(index) {
+            pixels.get(index).once((data) => {
+                const newState = data ? null : 'occupied';
+                pixels.get(index).put(newState);
+            });
         }
 
-        function getRandomColor() {
-            const letters = '0123456789ABCDEF';
-            let color = '#';
-            for (let i = 0; i < 6; i++) {
-                color += letters[Math.floor(Math.random() * 16)];
+        function updatePixel(index, state) {
+            const pixel = document.getElementById(`pixel-${index}`);
+            if (state) {
+                pixel.style.backgroundColor = 'blue'; // Replace with country flag logic
+            } else {
+                pixel.style.backgroundColor = '';
             }
-            return color;
-        }
-
-        function updateStatus(message) {
-            status.textContent = message;
-            status.classList.remove('pulse');
-            void status.offsetWidth;
-            status.classList.add('pulse');
-        }
-
-        if (isMobile) {
-            grid.addEventListener('touchstart', (e) => {
-                isDragging = true;
-                lastX = e.touches[0].clientX;
-                lastY = e.touches[0].clientY;
-            });
-
-            grid.addEventListener('touchmove', (e) => {
-                if (isDragging) {
-                    const deltaX = e.touches[0].clientX - lastX;
-                    const deltaY = e.touches[0].clientY - lastY;
-                    
-                    const currentTransform = new DOMMatrix(window.getComputedStyle(grid).transform);
-                    const newTransform = currentTransform.translate(deltaX, deltaY);
-                    
-                    grid.style.transform = newTransform.toString();
-                    
-                    lastX = e.touches[0].clientX;
-                    lastY = e.touches[0].clientY;
-                }
-            });
-
-            grid.addEventListener('touchend', () => {
-                isDragging = false;
-            });
         }
 
         createGrid();
-        updateStatus('Ready for global domination!');
+
+        pixels.map().on((data, index) => {
+            updatePixel(index, data);
+        });
+
+        // Update status message
+        setTimeout(() => {
+            status.textContent = 'Ready for conquest!';
+            status.classList.remove('pulse');
+        }, 3000);
     </script>
 </body>
 </html>
