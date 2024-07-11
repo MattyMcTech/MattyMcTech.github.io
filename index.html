@@ -1,262 +1,67 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <base href="https://pixelconquest.world/">
-    <title>PixelConquest: Global Domination</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PixelConquest: Global Domination - Debug</title>
     <style>
         body {
-            font-family: 'Military Stencil', Arial, sans-serif;
+            font-family: Arial, sans-serif;
             margin: 0;
-            padding: 0;
-            background-color: #2c3e50;
-            color: #ecf0f1;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            min-height: 100vh;
+            padding: 20px;
+            background-color: #f0f0f0;
         }
-        .container {
-            width: 100%;
-            max-width: 1200px;
-            overflow: auto;
+        #debug {
+            background-color: #fff;
+            border: 1px solid #ddd;
             padding: 10px;
-            box-sizing: border-box;
+            margin-bottom: 20px;
         }
-        .grid-wrapper {
-            display: inline-block;
-            padding: 10px;
-            background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAEASURBVGhD7ZjBDYMwEARdSEvpIj2kpxTgd3pIFykhLVBArPAiCwvQOWAH3Uja08nec2NpD6edzjmfpmlyIVKKD92HxXG8z/N8uyZoqHmeH+M43h4G+rquebDnYbTXdW2TQqTI0oXuRqBjCK3NpQvdrYgjyBBam0sXulsRR5AhtDaXLnS3Io4gQ2htLl3obkUcQYbQ2ly60N2KOEK6mFqxdKG7FXEEGUJrc+lCdyviCDKE1ubShe5WxBFkCK3NpQvdrYgjpIupFUsXulsRR5AhtDaXLnS3Io4gQ2htLl3obkUcQYbQ2ly60N2KOEK6mFqxdKG7FXEEGUJrc+lCdyviCOliasXSpQTOvQA7iOhQwxt9/AAAAABJRU5ErkJggg==');
-            background-size: 100px 100px;
-            border: 3px solid #e74c3c;
-            border-radius: 5px;
-        }
-        .grid {
+        #pixelGrid {
             display: grid;
-            grid-template-columns: repeat(50, 24px);
+            grid-template-columns: repeat(50, 20px);
             gap: 1px;
+            background-color: #ddd;
         }
         .cell {
-            width: 24px;
-            height: 24px;
-            background-color: rgba(236, 240, 241, 0.1);
-            border: 1px solid #34495e;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.3s ease;
-            position: relative;
-        }
-        .cell:hover {
-            transform: scale(1.1);
-            z-index: 1;
-        }
-        .cell input {
-            display: none;
-        }
-        .cell label {
-            width: 100%;
-            height: 100%;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        .flag {
-            width: 100%;
-            height: 100%;
-            background-size: cover;
-            background-position: center;
-            box-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
-        }
-        h1 {
-            text-align: center;
-            color: #e74c3c;
-            margin: 20px 0;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
-        }
-        #status {
-            text-align: center;
-            margin-top: 20px;
-            font-weight: bold;
-            color: #f39c12;
-            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
-        }
-        @keyframes pulse {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.05); }
-            100% { transform: scale(1); }
-        }
-        .pulse {
-            animation: pulse 2s infinite;
-        }
-        .tooltip {
-            visibility: hidden;
-            background-color: rgba(0, 0, 0, 0.8);
-            color: #fff;
-            text-align: center;
-            border-radius: 6px;
-            padding: 5px;
-            position: absolute;
-            z-index: 1;
-            bottom: 125%;
-            left: 50%;
-            margin-left: -60px;
-            opacity: 0;
-            transition: opacity 0.3s, visibility 0.3s;
-            white-space: nowrap;
-        }
-        .cell:hover .tooltip {
-            visibility: visible;
-            opacity: 1;
-            transition-delay: 1s;
-        }
-        .cell:not(:hover) .tooltip {
-            transition-delay: 0s;
-        }
-        
-        /* Mobile-specific styles */
-        @media (max-width: 768px) {
-            .container {
-                padding: 0;
-            }
-            .grid-wrapper {
-                padding: 0;
-                border: none;
-                background-image: none;
-            }
-            .grid {
-                grid-template-columns: repeat(50, 40px);
-                gap: 0;
-            }
-            .cell {
-                width: 40px;
-                height: 40px;
-            }
+            width: 20px;
+            height: 20px;
+            background-color: #fff;
+            border: 1px solid #999;
         }
     </style>
 </head>
 <body>
-    <h1>PixelConquest: Global Domination</h1>
-    <div class="container">
-        <div class="grid-wrapper">
-            <div class="grid" id="pixelGrid"></div>
-        </div>
-    </div>
-    <div id="status" class="pulse">Identifying your strategic position...</div>
+    <h1>PixelConquest: Global Domination - Debug</h1>
+    <div id="debug"></div>
+    <div id="pixelGrid"></div>
 
-    <script src="https://cdn.jsdelivr.net/npm/gun/gun.js"></script>
     <script>
-        const gun = Gun(['https://gun-manhattan.herokuapp.com/gun']);
+        const debugEl = document.getElementById('debug');
         const grid = document.getElementById('pixelGrid');
-        const statusEl = document.getElementById('status');
-        let userCountry = '';
-        let isMobile = window.innerWidth <= 768;
 
-        const countryNames = {
-            'US': 'United States',
-            'GB': 'United Kingdom',
-            'FR': 'France',
-            'DE': 'Germany',
-            'IT': 'Italy',
-            'ES': 'Spain',
-            'CA': 'Canada',
-            'AU': 'Australia',
-            'JP': 'Japan',
-            'KR': 'South Korea',
-            // Add more country codes and names as needed
-        };
+        function debug(message) {
+            debugEl.innerHTML += `<p>${message}</p>`;
+        }
 
         function createGrid() {
+            debug('Creating grid...');
             grid.innerHTML = ''; // Clear existing content
+            let cellCount = 0;
             for (let i = 0; i < 2500; i++) {
                 const cell = document.createElement('div');
                 cell.className = 'cell';
-                const input = document.createElement('input');
-                input.type = 'checkbox';
-                input.id = `cell-${i}`;
-                const label = document.createElement('label');
-                label.htmlFor = `cell-${i}`;
-                const tooltip = document.createElement('span');
-                tooltip.className = 'tooltip';
-                cell.appendChild(input);
-                cell.appendChild(label);
-                cell.appendChild(tooltip);
+                cell.textContent = i + 1;
                 grid.appendChild(cell);
-
-                input.addEventListener('change', function() {
-                    updateCell(i, this.checked);
-                });
-
-                // Load existing data
-                gun.get('pixels').get(i).on(updateCellDisplay);
+                cellCount++;
             }
-        }
-
-        function updateCell(index, isChecked) {
-            if (isChecked) {
-                gun.get('pixels').get(index).put({country: userCountry, conquered: true});
-            } else {
-                gun.get('pixels').get(index).put({country: null, conquered: false});
-            }
-        }
-
-        function updateCellDisplay(data) {
-            const index = this._.get;
-            const cell = document.getElementById(`cell-${index}`);
-            if (!cell) return; // Skip if cell doesn't exist
-            const input = cell.querySelector('input');
-            const label = cell.querySelector('label');
-            const tooltip = cell.querySelector('.tooltip');
-
-            if (data && data.conquered) {
-                input.checked = true;
-                label.innerHTML = `<div class="flag" style="background-image: url('https://flagcdn.com/w20/${data.country.toLowerCase()}.png')"></div>`;
-                tooltip.textContent = countryNames[data.country] || data.country;
-            } else {
-                input.checked = false;
-                label.innerHTML = '';
-                tooltip.textContent = '';
-            }
-        }
-
-        function getUserLocation() {
-            if ("geolocation" in navigator) {
-                navigator.geolocation.getCurrentPosition(function(position) {
-                    const latitude = position.coords.latitude;
-                    const longitude = position.coords.longitude;
-                    fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=en`)
-                        .then(response => response.json())
-                        .then(data => {
-                            userCountry = data.countryCode;
-                            statusEl.textContent = `Commander from ${data.countryName}! Your mission: Conquer the pixel world!`;
-                            statusEl.classList.remove('pulse');
-                        })
-                        .catch(error => {
-                            console.error("Error fetching country data:", error);
-                            statusEl.textContent = "Intel compromised. Proceed with caution, anonymous commander!";
-                            statusEl.classList.remove('pulse');
-                        });
-                }, function(error) {
-                    console.error("Error getting user location:", error);
-                    statusEl.textContent = "Location classified. Operate as an anonymous commander!";
-                    statusEl.classList.remove('pulse');
-                });
-            } else {
-                statusEl.textContent = "Geolocation unavailable. Commence anonymous operations!";
-                statusEl.classList.remove('pulse');
-            }
+            debug(`Grid created with ${cellCount} cells`);
         }
 
         createGrid();
-        getUserLocation();
-
-        window.addEventListener('resize', () => {
-            isMobile = window.innerWidth <= 768;
-            createGrid(); // Recreate grid on resize to adjust for mobile/desktop view
-        });
+        debug(`Window inner dimensions: ${window.innerWidth}x${window.innerHeight}`);
+        debug(`Document dimensions: ${document.documentElement.clientWidth}x${document.documentElement.clientHeight}`);
+        debug(`Grid dimensions: ${grid.offsetWidth}x${grid.offsetHeight}`);
     </script>
 </body>
 </html>
