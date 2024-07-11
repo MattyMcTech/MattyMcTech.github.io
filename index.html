@@ -27,7 +27,7 @@
         .grid-wrapper {
             display: inline-block;
             padding: 10px;
-            background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAEASURBVGhD7ZjBDYMwEARdSEvpIj2kpxTgd3pIFykhLVBArPAiCwvQOWAH3Eja08nec2NpD6edzjmfpmlyIVKKD92HxXG8z/N8uyZoqHmeH+M43h4G+rquebDnYbTXdW2TQqTI0oXuRqBjCK3NpQvdrYgjyBBam0sXulsRR5AhtDaXLnS3Io4gQ2htLl3obkUcQYbQ2ly60N2KOEK6mFqxdKG7FXEEGUJrc+lCdyviCDKE1ubShe5WxBFkCK3NpQvdrYgjpIupFUsXulsRR5AhtDaXLnS3Io4gQ2htLl3obkUcQYbQ2ly60N2KOEK6mFqxdKG7FXEEGUJrc+lCdyviCOliasXSpQTOvQA7iOhQwxt9/AAAAABJRU5ErkJggg==');
+            background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAEASURBVGhD7ZjBDYMwEARdSEvpIj2kpxTgd3pIFykhLVBArPAiCwvQOWAH3Uja08nec2NpD6edzjmfpmlyIVKKD92HxXG8z/N8uyZoqHmeH+M43h4G+rquebDnYbTXdW2TQqTI0oXuRqBjCK3NpQvdrYgjyBBam0sXulsRR5AhtDaXLnS3Io4gQ2htLl3obkUcQYbQ2ly60N2KOEK6mFqxdKG7FXEEGUJrc+lCdyviCDKE1ubShe5WxBFkCK3NpQvdrYgjpIupFUsXulsRR5AhtDaXLnS3Io4gQ2htLl3obkUcQYbQ2ly60N2KOEK6mFqxdKG7FXEEGUJrc+lCdyviCOliasXSpQTOvQA7iOhQwxt9/AAAAABJRU5ErkJggg==');
             background-size: 100px 100px;
             border: 3px solid #e74c3c;
             border-radius: 5px;
@@ -205,12 +205,10 @@
                     if (this.checked) {
                         label.innerHTML = `<div class="flag" style="background-image: url('https://flagcdn.com/w20/${userCountry.toLowerCase()}.png')"></div>`;
                         tooltip.textContent = countryNames[userCountry] || userCountry;
-                        playConquerSound();
                         gun.get('pixels').get(i).put({country: userCountry, conquered: true});
                     } else {
                         label.innerHTML = '';
                         tooltip.textContent = '';
-                        playRetreatSound();
                         gun.get('pixels').get(i).put({country: null, conquered: false});
                     }
                 });
@@ -258,5 +256,35 @@
             }
         }
 
-        function playConquerSound() {
-            const audio = new Audio('data:audio/wav;base64,UklGRnQGAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YU8GAACBhYqFbF1BODAzPEZOT0hANjQ3PUBBPzo2NDQ0Mzg7PT5EOjEpJSs3QkhGPzovLDM8RUlJR0c+Oj5EQ/z/AAEHDQ0KBPj7/AwZIiUcDfXw9v8OGBwZDwbl2NLZ6/oGDQj24dTP2On1//bm18zO3O3//vnr3dbU1NHQz9LY4Oj2BRIeLyIL7NjGzN3yDSUxJg7msJKNpMrn//zjxayknrjT+DJ3qsnj+OrUuKSHhI2m3P5MY3WGnrS6r6KOgHqCm8z/NGV2eHt9gH1nKggVQXa2/1VTTC0iIywlABRGdcoUVVAzCPDcxJFNWIjYFjIcNEVHSDMHBRtDc8IvT0UqA+PErYBPcLH7CggRXZSd//vbu5+VyhxVVFJKIA8PEkNps/teTTcyEv/XXTR9pQMHLzg8NhgLHj2ArP5WTzgtCN+c0+gGJCb+7PPVLGCEqba1rYHrLuAXAAQC/fT0Ii9YZWnk3cyypS/NEAosGxoVCxQpN01XT0IyGQkPERYVESwgVWV3fHx3bHn/XVBQUEpCGAcpX3m9/U1EPjcvHAgkU3nK/UFMUUxAKRMWHCYvNkM4Lx8QF3GPwf9NRDYrIg8tWn/KQHyFhoiMlKK0w8vIwcG5pZm4z9/o7fD09vn6+Pf32tXQycbT4vf/AwcGA/bu7evs6ufr7uzu8fX19vn6+vz9+vv8+/n39/f19Pv/AP7+/fv6+vv8/P3+/v7+/v7+/v39/f39/P3+/v38+/r6/f8A/f37+vr9/wAAARV9t+//TlNQQy4WJkFwsvY8SE5NRj0hISwxHufl6PTZUXGXsMfT1dXNvaqjn5ygrbfAycnL0NfX1tfT0uHq9AQTHTg9My4oGCoqCh9AeoTI/3RxbW1nXlZha32FgH5zdnN5foKBfHx1b3ylyuHs8/Pw4M23qKGgoazu9wkVEAwBAAHv5OHayMjR2+v4AwS1mYuNlrLK4/H6/fj17+Pe2tnZ2dnb3uPn6+rq6e3y9/wB/vv6+fj4+Pn6+vz+//8AAQD+/f39/v4AAQEB/v38/f3+/v39/f39/f3+/v7+/v7+/v7+/v7+/v7+/v7+/v8AAAABAQEBAQEAAAABAQHn3NLQzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3N
+        createGrid();
+        getUserLocation();
+
+        // Mobile touch events for dragging
+        let isDragging = false;
+        let startX, startY, scrollLeft, scrollTop;
+
+        grid.addEventListener('touchstart', (e) => {
+            isDragging = true;
+            startX = e.touches[0].pageX - grid.offsetLeft;
+            startY = e.touches[0].pageY - grid.offsetTop;
+            scrollLeft = grid.parentElement.scrollLeft;
+            scrollTop = grid.parentElement.scrollTop;
+        });
+
+        grid.addEventListener('touchend', () => {
+            isDragging = false;
+        });
+
+        grid.addEventListener('touchmove', (e) => {
+            if (!isDragging) return;
+            e.preventDefault();
+            const x = e.touches[0].pageX - grid.offsetLeft;
+            const y = e.touches[0].pageY - grid.offsetTop;
+            const walkX = (x - startX) * 2;
+            const walkY = (y - startY) * 2;
+            grid.parentElement.scrollLeft = scrollLeft - walkX;
+            grid.parentElement.scrollTop = scrollTop - walkY;
+        });
+    </script>
+</body>
+</html>
