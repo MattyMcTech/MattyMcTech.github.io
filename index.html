@@ -1,7 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
     <base href="https://pixelconquest.world/">
     <title>PixelConquest: Global Domination</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -19,7 +18,7 @@
         }
         .container {
             max-width: 100%;
-            overflow: hidden;
+            overflow-x: auto;
             padding: 10px;
             display: flex;
             justify-content: center;
@@ -117,40 +116,41 @@
         .cell:not(:hover) .tooltip {
             transition-delay: 0s;
         }
-
+        
         /* Mobile-specific styles */
         @media (max-width: 768px) {
             .container {
                 padding: 0;
-                overflow: hidden;
-                width: 100vw;
-                height: calc(100vh - 100px); /* Adjust for header */
             }
             .grid-wrapper {
                 padding: 0;
                 border: none;
-                border-radius: 0;
-                width: 100%;
-                height: 100%;
-                overflow: hidden;
+                background-image: none;
             }
             .grid {
-                grid-template-columns: repeat(50, 40px);
-                gap: 1px;
-                width: 2000px; /* 50 columns * 40px */
-                height: 2000px; /* 50 rows * 40px */
-                transform-origin: 0 0;
-                touch-action: none;
+                grid-template-columns: repeat(50, 20vw);
+                gap: 0;
             }
             .cell {
-                width: 40px;
-                height: 40px;
+                width: 20vw;
+                height: 20vw;
+                border: 1px solid #34495e;
             }
-            .cell:hover {
-                transform: none;
+            #mobileControls {
+                display: flex;
+                justify-content: space-around;
+                width: 100%;
+                position: fixed;
+                bottom: 20px;
             }
-            .tooltip {
-                display: none;
+            #mobileControls button {
+                background-color: #e74c3c;
+                color: #ecf0f1;
+                border: none;
+                padding: 10px 20px;
+                font-size: 16px;
+                border-radius: 5px;
+                cursor: pointer;
             }
         }
     </style>
@@ -163,6 +163,10 @@
         </div>
     </div>
     <div id="status" class="pulse">Identifying your strategic position...</div>
+    <div id="mobileControls" style="display: none;">
+        <button id="zoomIn">Zoom In</button>
+        <button id="zoomOut">Zoom Out</button>
+    </div>
 
     <script src="https://cdn.jsdelivr.net/npm/gun/gun.js"></script>
     <script>
@@ -170,6 +174,8 @@
         const grid = document.getElementById('pixelGrid');
         const statusEl = document.getElementById('status');
         let userCountry = '';
+        let isMobile = window.innerWidth <= 768;
+        let currentZoom = 1;
 
         const countryNames = {
             'US': 'United States',
@@ -256,34 +262,67 @@
             }
         }
 
+        function setupMobileControls() {
+            const mobileControls = document.getElementById('mobileControls');
+            const zoomInBtn = document.getElementById('zoomIn');
+            const zoomOutBtn = document.getElementById('zoomOut');
+
+            if (isMobile) {
+                mobileControls.style.display = 'flex';
+                
+                zoomInBtn.addEventListener('click', () => {
+                    currentZoom = Math.min(currentZoom + 0.1, 2);
+                    updateGridZoom();
+                });
+
+                zoomOutBtn.addEventListener('click', () => {
+                    currentZoom = Math.max(currentZoom - 0.1, 0.5);
+                    updateGridZoom();
+                });
+
+                setupTouchEvents();
+            }
+        }
+
+        function updateGridZoom() {
+            grid.style.transform = `scale(${currentZoom})`;
+        }
+
+        function setupTouchEvents() {
+            let isDragging = false;
+            let startX, startY, scrollLeft, scrollTop;
+
+            grid.addEventListener('touchstart', (e) => {
+                isDragging = true;
+                startX = e.touches[0].pageX - grid.offsetLeft;
+                startY = e.touches[0].pageY - grid.offsetTop;
+                scrollLeft = grid.scrollLeft;
+                scrollTop = grid.scrollTop;
+            });
+
+            grid.addEventListener('touchend', () => {
+                isDragging = false;
+            });
+
+            grid.addEventListener('touchmove', (e) => {
+                if (!isDragging) return;
+                e.preventDefault();
+                const x = e.touches[0].pageX - grid.offsetLeft;
+                const y = e.touches[0].pageY - grid.offsetTop;
+                const walkX = (x - startX) * 2;
+                const walkY = (y - startY) * 2;
+                grid.scrollLeft = scrollLeft - walkX;
+                grid.scrollTop = scrollTop - walkY;
+            });
+        }
+
         createGrid();
         getUserLocation();
+        setupMobileControls();
 
-        // Mobile touch events for dragging
-        let isDragging = false;
-        let startX, startY, scrollLeft, scrollTop;
-
-        grid.addEventListener('touchstart', (e) => {
-            isDragging = true;
-            startX = e.touches[0].pageX - grid.offsetLeft;
-            startY = e.touches[0].pageY - grid.offsetTop;
-            scrollLeft = grid.parentElement.scrollLeft;
-            scrollTop = grid.parentElement.scrollTop;
-        });
-
-        grid.addEventListener('touchend', () => {
-            isDragging = false;
-        });
-
-        grid.addEventListener('touchmove', (e) => {
-            if (!isDragging) return;
-            e.preventDefault();
-            const x = e.touches[0].pageX - grid.offsetLeft;
-            const y = e.touches[0].pageY - grid.offsetTop;
-            const walkX = (x - startX) * 2;
-            const walkY = (y - startY) * 2;
-            grid.parentElement.scrollLeft = scrollLeft - walkX;
-            grid.parentElement.scrollTop = scrollTop - walkY;
+        window.addEventListener('resize', () => {
+            isMobile = window.innerWidth <= 768;
+            setupMobileControls();
         });
     </script>
 </body>
