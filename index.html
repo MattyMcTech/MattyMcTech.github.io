@@ -17,7 +17,6 @@
     display: flex;
     flex-direction: column;
     height: 100%;
-    align-items: center; /* Center children horizontally */
   }
   h1 {
     text-align: center;
@@ -31,10 +30,6 @@
     flex-grow: 1;
     overflow: auto;
     padding: 10px;
-    display: flex;
-    justify-content: center; /* Center the grid wrapper horizontally */
-    align-items: flex-start; /* Align to the top */
-    width: 100%;
   }
   .grid-wrapper {
     display: inline-block;
@@ -124,9 +119,6 @@
 
   /* Mobile Styles */
   @media (max-width: 768px) {
-    .grid-container {
-      justify-content: flex-start; /* Align to the left on mobile */
-    }
     .grid {
       grid-template-columns: repeat(50, 12px);
       grid-template-rows: repeat(50, 12px);
