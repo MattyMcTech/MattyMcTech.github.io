@@ -1,128 +1,121 @@
-<html><head><base href="https://geocheckr.world/"><title>GeoCheckr - Global Pixel Flag</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      background-color: #f0f0f0;
-      margin: 0;
-      padding: 10px;
-    }
-    h1 {
-      color: #333;
-      margin-bottom: 15px;
-      font-size: 1.5rem;
-      text-align: center;
-    }
-    #grid {
-      display: grid;
-      grid-template-columns: repeat(50, 1fr);
-      gap: 1px;
-      background-color: #ddd;
-      padding: 5px;
-      border-radius: 5px;
-      max-width: 100%;
-      box-sizing: border-box;
-    }
-    .cell {
-      aspect-ratio: 1 / 1;
-      background-color: white;
-      border: 1px solid #ccc;
-      cursor: pointer;
-    }
-    .cell:hover, .cell:active {
-      background-color: #f5f5f5;
-    }
-    #info {
-      margin-top: 15px;
-      text-align: center;
-      font-size: 0.9rem;
-    }
-    footer {
-      margin-top: 20px;
-      font-size: 0.8rem;
-      text-align: center;
-    }
-    footer ul {
-      list-style-type: none;
-      padding: 0;
-    }
-    footer li {
-      margin-bottom: 5px;
-    }
-    a {
-      color: #0066cc;
-      text-decoration: none;
-    }
-    a:hover {
-      text-decoration: underline;
-    }
-  </style>
+<html><head><base href="https://pixelpeace.world/">
+<title>PixelPeace World</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #f0f0f0;
+  }
+  .container {
+    max-width: 100%;
+    overflow-x: auto;
+    padding: 10px;
+  }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(50, 20px);
+    gap: 1px;
+  }
+  .cell {
+    width: 20px;
+    height: 20px;
+    background-color: #fff;
+    border: 1px solid #ccc;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .cell input {
+    display: none;
+  }
+  .cell label {
+    width: 100%;
+    height: 100%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .flag {
+    width: 100%;
+    height: 100%;
+    background-size: cover;
+    background-position: center;
+  }
+  h1 {
+    text-align: center;
+    color: #333;
+    margin-bottom: 20px;
+  }
+  #status {
+    text-align: center;
+    margin-top: 20px;
+    font-weight: bold;
+  }
+</style>
 </head>
 <body>
-  <h1>GeoCheckr - Global Pixel Flag</h1>
-  <div id="grid"></div>
-  <div id="info">
-    <p>Tap on a cell to place your flag!</p>
-    <p id="location"></p>
-  </div>
+<h1>PixelPeace World</h1>
+<div class="container">
+  <div class="grid" id="pixelGrid"></div>
+</div>
+<div id="status">Locating your position in the world...</div>
 
-  <script>
-    const grid = document.getElementById('grid');
-    const locationInfo = document.getElementById('location');
-    let userCountry = '';
+<script>
+const grid = document.getElementById('pixelGrid');
+const statusEl = document.getElementById('status');
+let userCountry = '';
 
-    // Create 50x50 grid
-    for (let i = 0; i < 2500; i++) {
-      const cell = document.createElement('div');
-      cell.className = 'cell';
-      cell.addEventListener('click', () => toggleFlag(cell));
-      grid.appendChild(cell);
-    }
+function createGrid() {
+  for (let i = 0; i < 2500; i++) {
+    const cell = document.createElement('div');
+    cell.className = 'cell';
+    const input = document.createElement('input');
+    input.type = 'checkbox';
+    input.id = `cell-${i}`;
+    const label = document.createElement('label');
+    label.htmlFor = `cell-${i}`;
+    cell.appendChild(input);
+    cell.appendChild(label);
+    grid.appendChild(cell);
 
-    function toggleFlag(cell) {
-      if (userCountry) {
-        cell.style.backgroundImage = `url(https://flagcdn.com/w20/${userCountry.toLowerCase()}.png)`;
-        cell.style.backgroundSize = 'cover';
+    input.addEventListener('change', function() {
+      if (this.checked) {
+        label.innerHTML = `<div class="flag" style="background-image: url('https://flagcdn.com/w20/${userCountry.toLowerCase()}.png')"></div>`;
       } else {
-        alert('Please allow location access to place your flag.');
+        label.innerHTML = '';
       }
-    }
+    });
+  }
+}
 
-    // Request user's location
-    if ("geolocation" in navigator) {
-      navigator.geolocation.getCurrentPosition(function(position) {
-        const latitude = position.coords.latitude;
-        const longitude = position.coords.longitude;
-        
-        // Use a reverse geocoding service to get the country
-        fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=en`)
-          .then(response => response.json())
-          .then(data => {
-            userCountry = data.countryCode;
-            locationInfo.textContent = `Your location: ${data.countryName}`;
-          })
-          .catch(error => {
-            console.error('Error:', error);
-            locationInfo.textContent = 'Unable to determine your location.';
-          });
-      }, function(error) {
-        console.error('Error:', error);
-        locationInfo.textContent = 'Location access denied. You can still tap, but no flag will appear.';
-      });
-    } else {
-      locationInfo.textContent = 'Geolocation is not supported by your browser.';
-    }
-  </script>
+function getUserLocation() {
+  if ("geolocation" in navigator) {
+    navigator.geolocation.getCurrentPosition(function(position) {
+      const latitude = position.coords.latitude;
+      const longitude = position.coords.longitude;
+      fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=en`)
+        .then(response => response.json())
+        .then(data => {
+          userCountry = data.countryCode;
+          statusEl.textContent = `Welcome, traveler from ${data.countryName}! Paint your pixels on our shared canvas.`;
+        })
+        .catch(error => {
+          console.error("Error fetching country data:", error);
+          statusEl.textContent = "Couldn't determine your location. You can still participate anonymously!";
+        });
+    }, function(error) {
+      console.error("Error getting user location:", error);
+      statusEl.textContent = "Couldn't access your location. You can still participate anonymously!";
+    });
+  } else {
+    statusEl.textContent = "Geolocation is not supported by your browser. You can still participate anonymously!";
+  }
+}
 
-  <footer>
-    <p>Explore more of our interconnected world:</p>
-    <ul>
-      <li><a href="https://globalpixelart.world">Global Pixel Art Collaboration</a></li>
-      <li><a href="https://flagquiz.world">International Flag Quiz Challenge</a></li>
-      <li><a href="https://geoguessr.com">GeoGuessr - Where in the World?</a></li>
-    </ul>
-  </footer>
+createGrid();
+getUserLocation();
+</script>
 </body></html>
