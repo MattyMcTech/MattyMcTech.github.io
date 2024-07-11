@@ -4,7 +4,6 @@
   <base href="https://pixelconquest.world/">
   <title>PixelConquest: Global Domination</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <script src="https://cdn.jsdelivr.net/npm/@use-gesture/vanilla@10.2.24/index.min.js"></script>
   <style>
     body {
       font-family: 'Military Stencil', Arial, sans-serif;
@@ -36,7 +35,6 @@
       display: grid;
       grid-template-columns: repeat(50, 24px);
       gap: 1px;
-      transform-origin: 0 0;
     }
     .cell {
       width: 24px;
@@ -132,7 +130,6 @@
         height: 100%;
       }
       .grid {
-        transform: scale(0.5);
         transform-origin: 0 0;
       }
     }
@@ -244,51 +241,42 @@
       }
     }
 
-    // Pan and zoom functionality for mobile
-    if ('ontouchstart' in window) {
-      let currentScale = 0.5;
-      let currentTranslateX = 0;
-      let currentTranslateY = 0;
+    // Touch-based panning for mobile
+    let isDragging = false;
+    let startX, startY, translateX = 0, translateY = 0;
 
-      const gesture = GestureRecognizer.create({
-        element: grid,
-        onPan: ({ deltaX, deltaY, first }) => {
-          if (first) {
-            // Reset the start position on a new pan
-            gesture.setOffset([currentTranslateX, currentTranslateY]);
-          }
-          const [startX, startY] = gesture.offset;
-          currentTranslateX = startX + deltaX / currentScale;
-          currentTranslateY = startY + deltaY / currentScale;
-          updateGridTransform();
-        },
-        onPinch: ({ scale, origin }) => {
-          const prevScale = currentScale;
-          currentScale = Math.min(Math.max(currentScale * scale, 0.5), 3);
-          
-          // Adjust translation to keep the pinch point stationary
-          const [originX, originY] = origin;
-          currentTranslateX += (originX / prevScale - originX / currentScale);
-          currentTranslateY += (originY / prevScale - originY / currentScale);
-          
-          updateGridTransform();
-        }
-      });
+    function handleTouchStart(e) {
+      isDragging = true;
+      startX = e.touches[0].clientX - translateX;
+      startY = e.touches[0].clientY - translateY;
+    }
 
-      function updateGridTransform() {
-        grid.style.transform = `translate(${currentTranslateX}px, ${currentTranslateY}px) scale(${currentScale})`;
+    function handleTouchMove(e) {
+      if (!isDragging) return;
+      e.preventDefault();
+      const x = e.touches[0].clientX - startX;
+      const y = e.touches[0].clientY - startY;
+      translateX = x;
+      translateY = y;
+      grid.style.transform = `translate(${x}px, ${y}px)`;
+    }
+
+    function handleTouchEnd(e) {
+      isDragging = false;
+      if (e.changedTouches.length === 1 && e.changedTouches[0].target.tagName === 'LABEL') {
+        const event = new MouseEvent('click', {
+          view: window,
+          bubbles: true,
+          cancelable: true
+        });
+        e.changedTouches[0].target.dispatchEvent(event);
       }
+    }
 
-      grid.addEventListener('click', (e) => {
-        if (e.target.tagName === 'LABEL') {
-          const event = new MouseEvent('click', {
-            bubbles: true,
-            cancelable: true,
-            view: window
-          });
-          e.target.dispatchEvent(event);
-        }
-      });
+    if ('ontouchstart' in window) {
+      grid.addEventListener('touchstart', handleTouchStart, { passive: false });
+      grid.addEventListener('touchmove', handleTouchMove, { passive: false });
+      grid.addEventListener('touchend', handleTouchEnd);
     }
 
     createGrid();
