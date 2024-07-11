@@ -3,65 +3,119 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PixelConquest: Global Domination - Debug</title>
+    <title>Territory Game</title>
     <style>
-        body {
-            font-family: Arial, sans-serif;
+        body, html {
             margin: 0;
-            padding: 20px;
-            background-color: #f0f0f0;
+            padding: 0;
+            height: 100%;
+            overflow: hidden;
         }
-        #debug {
-            background-color: #fff;
-            border: 1px solid #ddd;
-            padding: 10px;
-            margin-bottom: 20px;
+        #game-container {
+            display: flex;
+            flex-wrap: wrap;
+            width: 100%;
+            height: 100%;
         }
-        #pixelGrid {
-            display: grid;
-            grid-template-columns: repeat(50, 20px);
-            gap: 1px;
-            background-color: #ddd;
+        .territory {
+            box-sizing: border-box;
+            border: 1px solid #ccc;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
-        .cell {
-            width: 20px;
-            height: 20px;
-            background-color: #fff;
-            border: 1px solid #999;
+        #mobile-controls {
+            display: none;
+            position: fixed;
+            bottom: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+        @media (max-width: 768px) {
+            #game-container {
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 200%;
+                height: 200%;
+                transform-origin: 0 0;
+            }
+            #mobile-controls {
+                display: block;
+            }
         }
     </style>
 </head>
 <body>
-    <h1>PixelConquest: Global Domination - Debug</h1>
-    <div id="debug"></div>
-    <div id="pixelGrid"></div>
+    <div id="game-container"></div>
+    <div id="mobile-controls">
+        <button id="zoom-in">+</button>
+        <button id="zoom-out">-</button>
+    </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/gun/gun.js"></script>
     <script>
-        const debugEl = document.getElementById('debug');
-        const grid = document.getElementById('pixelGrid');
+        const gun = Gun();
+        const territories = gun.get('territories');
 
-        function debug(message) {
-            debugEl.innerHTML += `<p>${message}</p>`;
-        }
+        const gameContainer = document.getElementById('game-container');
+        const gridSize = 10;
+        let scale = 1;
+        let translateX = 0;
+        let translateY = 0;
 
         function createGrid() {
-            debug('Creating grid...');
-            grid.innerHTML = ''; // Clear existing content
-            let cellCount = 0;
-            for (let i = 0; i < 2500; i++) {
-                const cell = document.createElement('div');
-                cell.className = 'cell';
-                cell.textContent = i + 1;
-                grid.appendChild(cell);
-                cellCount++;
+            gameContainer.innerHTML = '';
+            for (let i = 0; i < gridSize * gridSize; i++) {
+                const territory = document.createElement('div');
+                territory.className = 'territory';
+                territory.style.width = `${100 / gridSize}%`;
+                territory.style.height = `${100 / gridSize}%`;
+
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.id = `territory-${i}`;
+
+                territory.appendChild(checkbox);
+                gameContainer.appendChild(territory);
+
+                territories.get(`territory-${i}`).on((data) => {
+                    checkbox.checked = data;
+                });
+
+                checkbox.addEventListener('change', (e) => {
+                    territories.get(`territory-${i}`).put(e.target.checked);
+                });
             }
-            debug(`Grid created with ${cellCount} cells`);
         }
 
+        function handleTouchMove(e) {
+            if (window.innerWidth <= 768) {
+                const touch = e.touches[0];
+                translateX -= touch.movementX / scale;
+                translateY -= touch.movementY / scale;
+                updateTransform();
+            }
+        }
+
+        function updateTransform() {
+            gameContainer.style.transform = `scale(${scale}) translate(${-translateX}px, ${-translateY}px)`;
+        }
+
+        document.getElementById('zoom-in').addEventListener('click', () => {
+            scale *= 1.1;
+            updateTransform();
+        });
+
+        document.getElementById('zoom-out').addEventListener('click', () => {
+            scale /= 1.1;
+            updateTransform();
+        });
+
+        gameContainer.addEventListener('touchmove', handleTouchMove);
+        window.addEventListener('resize', createGrid);
+
         createGrid();
-        debug(`Window inner dimensions: ${window.innerWidth}x${window.innerHeight}`);
-        debug(`Document dimensions: ${document.documentElement.clientWidth}x${document.documentElement.clientHeight}`);
-        debug(`Grid dimensions: ${grid.offsetWidth}x${grid.offsetHeight}`);
     </script>
 </body>
 </html>
