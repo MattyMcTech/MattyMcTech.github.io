@@ -67,6 +67,9 @@ body, html {
     font-family: 'Creepster', cursive;
     color: #FF6347;
     text-shadow: 0 0 5px #FF6347;
+    background-color: rgba(0, 0, 0, 0.7);
+    padding: 5px 10px;
+    border-radius: 10px;
 }
 #score { top: 10px; right: 10px; }
 #wave { top: 10px; left: 10px; }
@@ -121,10 +124,9 @@ body, html {
     pointer-events: none;
     z-index: 1001;
 }
-#mute-btn {
+#mute-btn, #pause-btn {
     position: absolute;
     bottom: 10px;
-    left: 10px;
     font-family: 'Creepster', cursive;
     font-size: 24px;
     padding: 5px 10px;
@@ -134,6 +136,28 @@ body, html {
     cursor: pointer;
     text-shadow: 0 0 5px #FFD700;
     box-shadow: 0 0 10px #8B4513;
+}
+#mute-btn { left: 10px; }
+#pause-btn { right: 10px; }
+#wave-cleared {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 72px;
+    font-family: 'Creepster', cursive;
+    text-align: center;
+    color: #FFD700;
+    text-shadow: 0 0 15px #FFD700;
+    z-index: 2001;
+    display: none;
+    background-color: rgba(0, 0, 0, 0.8);
+    padding: 20px;
+    border-radius: 20px;
+}
+#wave-cleared p {
+    margin: 10px 0;
+    font-size: 48px;
 }
 </style></head><body>
 <div id="game-container">
@@ -150,7 +174,12 @@ body, html {
         <h2>Wave Cleared, Pardner!</h2>
         <button id="next-wave-btn">Next Wave</button>
     </div>
+    <div id="wave-cleared">
+        Wave Cleared, Pardner!
+        <p>Score: <span id="wave-score">0</span></p>
+    </div>
     <button id="mute-btn">Mute Sound</button>
+    <button id="pause-btn">Pause</button>
 </div>
 
 <script>
@@ -165,6 +194,9 @@ const nextWaveBtn = document.getElementById('next-wave-btn');
 const restartBtn = document.getElementById('restart-btn');
 const player = document.getElementById('player');
 const muteBtn = document.getElementById('mute-btn');
+const pauseBtn = document.getElementById('pause-btn');
+const waveCleared = document.getElementById('wave-cleared');
+const waveScore = document.getElementById('wave-score');
 
 const splatSound = new Audio('https://raw.githubusercontent.com/MattyMcTech/WordWarZ/main/splat.mp3');
 splatSound.volume = 0.5;
@@ -182,11 +214,23 @@ let currentTargetWord = null;
 let isGameActive = false;
 let gameInterval;
 let isMuted = false;
+let isPaused = false;
+let lettersHitThisWave = 0;
 
 muteBtn.addEventListener('click', () => {
     isMuted = !isMuted;
     muteBtn.textContent = isMuted ? 'Unmute Sound' : 'Mute Sound';
     splatSound.muted = isMuted;
+});
+
+pauseBtn.addEventListener('click', () => {
+    isPaused = !isPaused;
+    pauseBtn.textContent = isPaused ? 'Resume' : 'Pause';
+    if (isPaused) {
+        clearInterval(gameInterval);
+    } else {
+        gameInterval = setInterval(moveWords, 33);
+    }
 });
 
 async function getRandomWord(minLength, maxLength) {
@@ -282,14 +326,18 @@ function isOverlapping(x, y) {
 }
 
 function spawnWordWithDelay() {
-    if (wordsSpawned < waveWordCount && isGameActive) {
+    if (wordsSpawned < waveWordCount && isGameActive && !isPaused) {
         spawnWord();
-        const delay = Math.min(1000, baseSpawnRate + Math.random() * 500);
-        setTimeout(spawnWordWithDelay, delay);
+        if (wordsSpawned < waveWordCount) {
+            const delay = Math.min(1000, baseSpawnRate + Math.random() * 500);
+            setTimeout(spawnWordWithDelay, delay);
+        }
     }
 }
 
 function moveWords() {
+    if (isPaused) return;
+
     const centerX = window.innerWidth / 2;
     const centerY = window.innerHeight / 2;
 
@@ -312,7 +360,7 @@ function moveWords() {
 }
 
 function updateTypedWord(key) {
-    if (!isGameActive) return;
+    if (!isGameActive || isPaused) return;
 
     if (!currentTargetWord) {
         const visibleWords = getVisibleWords();
@@ -326,6 +374,7 @@ function updateTypedWord(key) {
         currentTargetWord.hitIndex++;
         shootBullet(currentTargetWord);
         currentTargetWord.bulletsInFlight++;
+        lettersHitThisWave++;
         
         if (currentTargetWord.hitIndex === currentTargetWord.word.length) {
             currentTypedWord = '';
@@ -365,11 +414,31 @@ function dazeWord(wordObj) {
 }
 
 function checkWaveCompletion() {
-    if (wordsDefeated >= waveWordCount && wordsSpawned >= waveWordCount) {
+    if (wordsDefeated >= waveWordCount) {
         clearInterval(gameInterval);
         isGameActive = false;
-        waveComplete.style.display = 'flex';
+        showWaveClearedPopup();
+    } else if (words.length === 0 && wordsSpawned < waveWordCount) {
+        spawnWordWithDelay();
     }
+}
+
+function showWaveClearedPopup() {
+    waveScore.textContent = lettersHitThisWave;
+    waveCleared.style.display = 'block';
+    setTimeout(() => {
+        waveCleared.style.display = 'none';
+        startNextWave();
+    }, 3000);
+}
+
+function startNextWave() {
+    currentWave++;
+    waveWordCount += 2;
+    wordSpeed += 0.1;
+    baseSpawnRate = Math.max(500, baseSpawnRate - 100);
+    lettersHitThisWave = 0;
+    startWave();
 }
 
 function isElementInViewport(el) {
@@ -450,7 +519,7 @@ function playBloodSplatter(x, y) {
 }
 
 document.addEventListener('keydown', (event) => {
-    if (!isGameActive) return;
+    if (!isGameActive || isPaused) return;
 
     if (event.key === 'Backspace') {
         if (currentTypedWord.length > 0) {
@@ -493,14 +562,6 @@ function endGame() {
     gameOver.style.display = 'flex';
 }
 
-nextWaveBtn.addEventListener('click', () => {
-    currentWave++;
-    waveWordCount += 2;
-    wordSpeed += 0.1;
-    baseSpawnRate = Math.max(500, baseSpawnRate - 100);
-    startWave();
-});
-
 restartBtn.addEventListener('click', () => {
     zombiesShot = 0;
     scoreValue.textContent = zombiesShot;
@@ -508,6 +569,7 @@ restartBtn.addEventListener('click', () => {
     waveWordCount = 5;
     wordSpeed = 1.0;
     baseSpawnRate = 1500;
+    lettersHitThisWave = 0;
     startWave();
 });
 
@@ -518,6 +580,7 @@ function initGame() {
     waveWordCount = 5;
     wordSpeed = 1.0;
     baseSpawnRate = 1500;
+    lettersHitThisWave = 0;
     startWave();
 }
 
