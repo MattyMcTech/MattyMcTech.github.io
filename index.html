@@ -1,483 +1,532 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WordSmasher - Cowboy vs Zombies</title>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Creepster&family=Roboto:wght@700&display=swap');
+<html><head><base href="https://wordsmasher.io/"><title>WordSmasher - Cowboy vs Zombies</title><style>
+@import url('https://fonts.googleapis.com/css2?family=Creepster&family=Roboto:wght@700&display=swap');
 
-        body, html {
-            margin: 0;
-            padding: 0;
-            height: 100%;
-            font-family: 'Roboto', sans-serif;
-            background-color: #1a1a1a;
-            color: #fff;
-            overflow: hidden;
-        }
-        #game-container {
-            width: 100%;
-            height: 100%;
-            position: relative;
-            background: url('https://example.com/zombie-western-background.jpg') no-repeat center center fixed;
-            background-size: cover;
-        }
-        #player {
-            position: absolute;
-            left: 50%;
-            top: 50%;
-            transform: translate(-50%, -50%);
-            width: 80px;
-            height: 80px;
-            background: url('https://raw.githubusercontent.com/MattyMcTech/WordWarZ/main/cowboy.png') no-repeat center center;
-            background-size: contain;
-            z-index: 1000;
-        }
-        .enemy-word {
-            position: absolute;
-            font-size: 28px;
-            font-weight: bold;
-            color: #4CAF50;
-            text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000, 0 0 5px #4CAF50;
-            transition: all 0.1s;
-        }
-        .enemy-word span {
-            transition: color 0.2s;
-        }
-        .enemy-word span.hit {
-            color: #FF6347;
-            text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000, 0 0 10px #FF6347;
-        }
-        #typed-word {
-            position: absolute;
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            font-size: 36px;
-            font-family: 'Creepster', cursive;
-            color: #FFD700;
-            text-shadow: 0 0 10px #FFD700;
-        }
-        #score, #wave, #words-left {
-            position: absolute;
-            font-size: 32px;
-            font-family: 'Creepster', cursive;
-            color: #FF6347;
-            text-shadow: 0 0 5px #FF6347;
-        }
-        #score { top: 10px; right: 10px; }
-        #wave { top: 10px; left: 10px; }
-        #words-left { top: 50px; left: 10px; font-size: 24px; }
-        #game-over, #wave-complete {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            font-size: 72px;
-            font-family: 'Creepster', cursive;
-            display: none;
-            text-align: center;
-            color: #FF6347;
-            text-shadow: 0 0 15px #FF6347;
-            z-index: 2000;
-        }
-        #wave-complete {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-        }
-        #wave-complete h2 {
-            margin: 0 0 20px 0;
-        }
-        #next-wave-btn, #restart-btn {
-            font-family: 'Creepster', cursive;
-            font-size: 36px;
-            padding: 10px 20px;
-            background-color: #8B4513;
-            color: #FFD700;
-            border: none;
-            cursor: pointer;
-            text-shadow: 0 0 5px #FFD700;
-            box-shadow: 0 0 10px #8B4513;
-        }
-        #debug-info {
-            position: absolute;
-            bottom: 50px;
-            left: 10px;
-            font-size: 14px;
-            color: #888;
-        }
-        .bullet {
-            position: absolute;
-            width: 20px;
-            height: 20px;
-            background: url('https://raw.githubusercontent.com/MattyMcTech/WordWarZ/main/bullet.png') no-repeat center center;
-            background-size: contain;
-            z-index: 999;
-        }
-        .blood-splatter {
-            position: absolute;
-            width: 100px;
-            height: 100px;
-            background: url('https://raw.githubusercontent.com/MattyMcTech/WordWarZ/main/bloodAni1.gif') no-repeat center center;
-            background-size: contain;
-            pointer-events: none;
-            z-index: 1001;
-        }
-    </style>
-</head>
-<body>
-    <div id="game-container">
-        <div id="player"></div>
-        <div id="typed-word"></div>
-        <div id="score">Zombies Shot: <span id="score-value">0</span></div>
-        <div id="wave">Zombie Wave: <span id="wave-value">1</span></div>
-        <div id="words-left">Zombies Left: <span id="words-left-value">5</span></div>
-        <div id="game-over">
-            YEEHAW TURNED TO BRAAAINS
-            <button id="restart-btn">Restart Game</button>
-        </div>
-        <div id="wave-complete">
-            <h2>Wave Cleared, Pardner!</h2>
-            <button id="next-wave-btn">Next Wave</button>
-        </div>
-        <div id="debug-info"></div>
+body, html {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    font-family: 'Roboto', sans-serif;
+    background-color: #1a1a1a;
+    color: #fff;
+    overflow: hidden;
+}
+#game-container {
+    width: 100%;
+    height: 100%;
+    position: relative;
+    background: url('https://example.com/zombie-western-background.jpg') no-repeat center center fixed;
+    background-size: cover;
+}
+#player {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    width: 80px;
+    height: 80px;
+    background: url('https://raw.githubusercontent.com/MattyMcTech/WordWarZ/main/cowboy.png') no-repeat center center;
+    background-size: contain;
+    z-index: 1000;
+}
+.enemy-word {
+    position: absolute;
+    font-size: 28px;
+    font-weight: bold;
+    color: #4CAF50;
+    text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000, 0 0 5px #4CAF50;
+    transition: all 0.1s;
+}
+.enemy-word span {
+    transition: color 0.2s;
+}
+.enemy-word span.hit {
+    color: #FF6347;
+    text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000, 0 0 10px #FF6347;
+}
+.enemy-word.dazed {
+    animation: daze 0.5s ease-in-out;
+}
+@keyframes daze {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-5px) rotate(-5deg); }
+    75% { transform: translateX(5px) rotate(5deg); }
+}
+#typed-word {
+    position: absolute;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 36px;
+    font-family: 'Creepster', cursive;
+    color: #FFD700;
+    text-shadow: 0 0 10px #FFD700;
+}
+#score, #wave, #words-left {
+    position: absolute;
+    font-size: 32px;
+    font-family: 'Creepster', cursive;
+    color: #FF6347;
+    text-shadow: 0 0 5px #FF6347;
+}
+#score { top: 10px; right: 10px; }
+#wave { top: 10px; left: 10px; }
+#words-left { top: 50px; left: 10px; font-size: 24px; }
+#game-over, #wave-complete {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 72px;
+    font-family: 'Creepster', cursive;
+    display: none;
+    text-align: center;
+    color: #FF6347;
+    text-shadow: 0 0 15px #FF6347;
+    z-index: 2000;
+}
+#wave-complete {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+#wave-complete h2 {
+    margin: 0 0 20px 0;
+}
+#next-wave-btn, #restart-btn {
+    font-family: 'Creepster', cursive;
+    font-size: 36px;
+    padding: 10px 20px;
+    background-color: #8B4513;
+    color: #FFD700;
+    border: none;
+    cursor: pointer;
+    text-shadow: 0 0 5px #FFD700;
+    box-shadow: 0 0 10px #8B4513;
+}
+.bullet {
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    background: url('https://raw.githubusercontent.com/MattyMcTech/WordWarZ/main/bullet.png') no-repeat center center;
+    background-size: contain;
+    z-index: 999;
+}
+.blood-splatter {
+    position: absolute;
+    width: 100px;
+    height: 100px;
+    background: url('https://raw.githubusercontent.com/MattyMcTech/WordWarZ/main/bloodAni1.gif') no-repeat center center;
+    background-size: contain;
+    pointer-events: none;
+    z-index: 1001;
+}
+#mute-btn {
+    position: absolute;
+    bottom: 10px;
+    left: 10px;
+    font-family: 'Creepster', cursive;
+    font-size: 24px;
+    padding: 5px 10px;
+    background-color: #8B4513;
+    color: #FFD700;
+    border: none;
+    cursor: pointer;
+    text-shadow: 0 0 5px #FFD700;
+    box-shadow: 0 0 10px #8B4513;
+}
+</style></head><body>
+<div id="game-container">
+    <div id="player"></div>
+    <div id="typed-word"></div>
+    <div id="score">Zombies Shot: <span id="score-value">0</span></div>
+    <div id="wave">Zombie Wave: <span id="wave-value">1</span></div>
+    <div id="words-left">Zombies Left: <span id="words-left-value">5</span></div>
+    <div id="game-over">
+        YEEHAW TURNED TO BRAAAINS
+        <button id="restart-btn">Restart Game</button>
     </div>
+    <div id="wave-complete">
+        <h2>Wave Cleared, Pardner!</h2>
+        <button id="next-wave-btn">Next Wave</button>
+    </div>
+    <button id="mute-btn">Mute Sound</button>
+</div>
 
-    <script>
-        const gameContainer = document.getElementById('game-container');
-        const typedWord = document.getElementById('typed-word');
-        const scoreValue = document.getElementById('score-value');
-        const waveValue = document.getElementById('wave-value');
-        const wordsLeftValue = document.getElementById('words-left-value');
-        const gameOver = document.getElementById('game-over');
-        const waveComplete = document.getElementById('wave-complete');
-        const nextWaveBtn = document.getElementById('next-wave-btn');
-        const restartBtn = document.getElementById('restart-btn');
-        const debugInfo = document.getElementById('debug-info');
-        const player = document.getElementById('player');
+<script>
+const gameContainer = document.getElementById('game-container');
+const typedWord = document.getElementById('typed-word');
+const scoreValue = document.getElementById('score-value');
+const waveValue = document.getElementById('wave-value');
+const wordsLeftValue = document.getElementById('words-left-value');
+const gameOver = document.getElementById('game-over');
+const waveComplete = document.getElementById('wave-complete');
+const nextWaveBtn = document.getElementById('next-wave-btn');
+const restartBtn = document.getElementById('restart-btn');
+const player = document.getElementById('player');
+const muteBtn = document.getElementById('mute-btn');
 
-        const splatSound = new Audio('https://raw.githubusercontent.com/MattyMcTech/WordWarZ/main/splat.mp3');
-        splatSound.volume = 0.5;
+const splatSound = new Audio('https://raw.githubusercontent.com/MattyMcTech/WordWarZ/main/splat.mp3');
+splatSound.volume = 0.5;
 
-        let score = 0;
-        let words = [];
-        let currentWave = 1;
-        let waveWordCount = 5;
-        let wordSpeed = 1.0;
-        let baseSpawnRate = 1500;
-        let wordsDefeated = 0;
-        let wordsSpawned = 0;
-        let currentTypedWord = '';
-        let currentTargetWord = null;
-        let isGameActive = false;
-        let gameInterval;
+let zombiesShot = 0;
+let words = [];
+let currentWave = 1;
+let waveWordCount = 5;
+let wordSpeed = 1.0;
+let baseSpawnRate = 1500;
+let wordsDefeated = 0;
+let wordsSpawned = 0;
+let currentTypedWord = '';
+let currentTargetWord = null;
+let isGameActive = false;
+let gameInterval;
+let isMuted = false;
 
-        const dictionary = [
-            "zombie", "undead", "brains", "apocalypse", "infection",
-            "horde", "outbreak", "plague", "virus", "contagion",
-            "reanimated", "ghoul", "walker", "biter", "lurcher",
-            "deadhead", "rotters", "infected", "corpse", "cadaver",
-            "shambler", "lasso", "saddle", "boots", "spurs",
-            "corral", "ranch", "rodeo", "cattle", "bronco",
-            "mustang", "stampede", "saloon", "sheriff", "outlaw",
-            "bandit", "frontier", "prairie", "tumbleweed", "cactus",
-            "mesa", "canyon", "duster", "bandana", "chaps",
-            "buckaroo", "wrangler", "maverick", "stetson", "lariat"
-        ];
+muteBtn.addEventListener('click', () => {
+    isMuted = !isMuted;
+    muteBtn.textContent = isMuted ? 'Unmute Sound' : 'Mute Sound';
+    splatSound.muted = isMuted;
+});
 
-        function shuffleArray(array) {
-            for (let i = array.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
-                [array[i], array[j]] = [array[j], array[i]];
-            }
-            return array;
+async function getRandomWord(minLength, maxLength) {
+    const length = Math.floor(Math.random() * (maxLength - minLength + 1)) + minLength;
+    try {
+        const response = await fetch(`https://random-word-api.herokuapp.com/word?length=${length}`);
+        if (!response.ok) {
+            throw new Error('Failed to fetch word');
         }
+        const data = await response.json();
+        return data[0];
+    } catch (error) {
+        console.error('Error fetching word:', error);
+        return fallbackGetRandomWord(length);
+    }
+}
 
-        function getRandomWord() {
-            return dictionary[Math.floor(Math.random() * dictionary.length)];
-        }
+function fallbackGetRandomWord(length) {
+    const characters = 'abcdefghijklmnopqrstuvwxyz';
+    let result = '';
+    for (let i = 0; i < length; i++) {
+        result += characters.charAt(Math.floor(Math.random() * characters.length));
+    }
+    return result;
+}
 
-        function getRandomEdgePosition() {
-            const edge = Math.floor(Math.random() * 4);
-            const x = Math.random() * window.innerWidth;
-            const y = Math.random() * window.innerHeight;
-            switch (edge) {
-                case 0: return { x: x, y: 0 };
-                case 1: return { x: window.innerWidth, y: y };
-                case 2: return { x: x, y: window.innerHeight };
-                case 3: return { x: 0, y: y };
-            }
-        }
+async function spawnWord() {
+    if (wordsSpawned >= waveWordCount) return;
+    
+    let minLength, maxLength;
+    if (currentWave <= 3) {
+        minLength = 3;
+        maxLength = 5;
+    } else if (currentWave <= 6) {
+        minLength = 3;
+        maxLength = 7;
+    } else {
+        minLength = 3;
+        maxLength = 10;
+    }
+    
+    const word = await getRandomWord(minLength, maxLength);
+    const wordElement = document.createElement('div');
+    wordElement.classList.add('enemy-word');
+    word.split('').forEach(letter => {
+        const span = document.createElement('span');
+        span.textContent = letter;
+        wordElement.appendChild(span);
+    });
 
-        function isOverlapping(x, y) {
-            const buffer = 50;
-            return words.some(word => {
-                const dx = word.x - x;
-                const dy = word.y - y;
-                return Math.sqrt(dx * dx + dy * dy) < buffer;
-            });
-        }
+    let position;
+    let attempts = 0;
+    do {
+        position = getRandomEdgePosition();
+        attempts++;
+    } while (isOverlapping(position.x, position.y) && attempts < 10);
 
-        function spawnWord() {
-            if (wordsSpawned >= waveWordCount) return;
+    if (attempts >= 10) {
+        console.log("Failed to find non-overlapping position");
+        return;
+    }
+
+    wordElement.style.left = `${position.x}px`;
+    wordElement.style.top = `${position.y}px`;
+    
+    const individualWordSpeed = wordSpeed * (1 + (word.length - minLength) * 0.1);
+    
+    gameContainer.appendChild(wordElement);
+    words.push({ element: wordElement, word, hitIndex: 0, x: position.x, y: position.y, speed: individualWordSpeed, bulletsInFlight: 0 });
+    wordsSpawned++;
+    updateWordsLeft();
+}
+
+function getRandomEdgePosition() {
+    const edge = Math.floor(Math.random() * 4);
+    const x = Math.random() * window.innerWidth;
+    const y = Math.random() * window.innerHeight;
+    switch (edge) {
+        case 0: return { x: x, y: 0 };
+        case 1: return { x: window.innerWidth, y: y };
+        case 2: return { x: x, y: window.innerHeight };
+        case 3: return { x: 0, y: y };
+    }
+}
+
+function isOverlapping(x, y) {
+    const buffer = 50;
+    return words.some(word => {
+        const dx = word.x - x;
+        const dy = word.y - y;
+        return Math.sqrt(dx * dx + dy * dy) < buffer;
+    });
+}
+
+function spawnWordWithDelay() {
+    if (wordsSpawned < waveWordCount && isGameActive) {
+        spawnWord();
+        const delay = Math.min(1000, baseSpawnRate + Math.random() * 500);
+        setTimeout(spawnWordWithDelay, delay);
+    }
+}
+
+function moveWords() {
+    const centerX = window.innerWidth / 2;
+    const centerY = window.innerHeight / 2;
+
+    words.forEach((wordObj) => {
+        const dx = centerX - wordObj.x;
+        const dy = centerY - wordObj.y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        
+        if (distance > 5) {
+            const ratio = wordObj.speed / distance;
+            wordObj.x += dx * ratio;
+            wordObj.y += dy * ratio;
             
-            const word = getRandomWord();
-            const wordElement = document.createElement('div');
-            wordElement.classList.add('enemy-word');
-            word.split('').forEach(letter => {
-                const span = document.createElement('span');
-                span.textContent = letter;
-                wordElement.appendChild(span);
-            });
-
-            let position;
-            let attempts = 0;
-            do {
-                position = getRandomEdgePosition();
-                attempts++;
-            } while (isOverlapping(position.x, position.y) && attempts < 10);
-
-            if (attempts >= 10) {
-                console.log("Failed to find non-overlapping position");
-                return;
-            }
-
-            wordElement.style.left = `${position.x}px`;
-            wordElement.style.top = `${position.y}px`;
-            
-            gameContainer.appendChild(wordElement);
-            words.push({ element: wordElement, word, hitIndex: 0, x: position.x, y: position.y });
-            wordsSpawned++;
-            updateWordsLeft();
+            wordObj.element.style.left = `${wordObj.x}px`;
+            wordObj.element.style.top = `${wordObj.y}px`;
+        } else {
+            endGame();
         }
+    });
+}
 
-        function spawnWordWithDelay() {
-            if (wordsSpawned < waveWordCount && isGameActive) {
-                spawnWord();
-                const delay = Math.min(1000, baseSpawnRate + Math.random() * 500);
-                setTimeout(spawnWordWithDelay, delay);
-            }
-        }
+function updateTypedWord(key) {
+    if (!isGameActive) return;
 
-        function moveWords() {
-            const centerX = window.innerWidth / 2;
-            const centerY = window.innerHeight / 2;
+    if (!currentTargetWord) {
+        const visibleWords = getVisibleWords();
+        currentTargetWord = visibleWords.find(w => w.word[0].toLowerCase() === key.toLowerCase());
+    }
 
-            words.forEach((wordObj) => {
-                const dx = centerX - wordObj.x;
-                const dy = centerY - wordObj.y;
-                const distance = Math.sqrt(dx * dx + dy * dy);
-                
-                if (distance > 5) {
-                    const ratio = wordSpeed / distance;
-                    wordObj.x += dx * ratio;
-                    wordObj.y += dy * ratio;
-                    
-                    wordObj.element.style.left = `${wordObj.x}px`;
-                    wordObj.element.style.top = `${wordObj.y}px`;
-                } else {
-                    endGame();
-                }
-            });
-        }
-
-        function updateTypedWord(key) {
-            if (!isGameActive) return;
-
-            debugInfo.textContent = `Key pressed: ${key}`;
-
-            if (!currentTargetWord) {
-                const visibleWords = getVisibleWords();
-                currentTargetWord = visibleWords.find(w => w.word[0].toLowerCase() === key.toLowerCase());
-            }
-
-            if (currentTargetWord && currentTargetWord.word[currentTargetWord.hitIndex].toLowerCase() === key.toLowerCase()) {
-                currentTargetWord.element.children[currentTargetWord.hitIndex].classList.add('hit');
-                currentTargetWord.hitIndex++;
-                currentTypedWord += key;
-                shootBullet(currentTargetWord);
-
-                if (currentTargetWord.hitIndex === currentTargetWord.word.length) {
-                    score += currentTargetWord.word.length;
-                    scoreValue.textContent = score;
-                    wordsDefeated++;
-                    
-                    const rect = currentTargetWord.element.getBoundingClientRect();
-                    playBloodSplatter(rect.left + rect.width / 2, rect.top + rect.height / 2);
-                    
-                    splatSound.currentTime = 0;
-                    splatSound.play();
-                    
-                    words = words.filter(w => w !== currentTargetWord);
-                    currentTargetWord.element.remove();
-                    currentTargetWord = null;
-                    currentTypedWord = '';
-                    updateWordsLeft();
-                    checkWaveCompletion();
-                }
-            }
-
-            typedWord.textContent = currentTypedWord;
-        }
-
-        function checkWaveCompletion() {
-            if (wordsDefeated >= waveWordCount && wordsSpawned >= waveWordCount) {
-                clearInterval(gameInterval);
-                isGameActive = false;
-                waveComplete.style.display = 'flex';
-            }
-        }
-
-        function isElementInViewport(el) {
-            const rect = el.getBoundingClientRect();
-            return (
-                rect.top >= 0 &&
-                rect.left >= 0 &&
-                rect.bottom <= (window.innerHeight || document.documentElement.clientHeight) &&
-                rect.right <= (window.innerWidth || document.documentElement.clientWidth)
-            );
-        }
-
-        function getVisibleWords() {
-            return words.filter(({ element }) => isElementInViewport(element));
-        }
-
-        function updateWordsLeft() {
-            wordsLeftValue.textContent = waveWordCount - wordsDefeated;
-        }
-
-        function shootBullet(targetWord) {
-            const bullet = document.createElement('div');
-            bullet.classList.add('bullet');
-            const playerRect = player.getBoundingClientRect();
-            const wordRect = targetWord.element.getBoundingClientRect();
-
-            const startX = playerRect.left + playerRect.width / 2;
-            const startY = playerRect.top + playerRect.height / 2;
-            const endX = wordRect.left + wordRect.width / 2;
-            const endY = wordRect.top + wordRect.height / 2;
-
-            bullet.style.left = `${startX}px`;
-            bullet.style.top = `${startY}px`;
-
-            const angle = Math.atan2(endY - startY, endX - startX) * (180 / Math.PI);
-            bullet.style.transform = `rotate(${angle + 90}deg)`;
-            gameContainer.appendChild(bullet);
-
-            const animationDuration = 200;
-            const startTime = Date.now();
-
-            function animateBullet() {
-                const elapsedTime = Date.now() - startTime;
-                const progress = Math.min(elapsedTime / animationDuration, 1);
-
-                const currentX = startX + (endX - startX) * progress;
-                const currentY = startY + (endY - startY) * progress;
-
-                bullet.style.left = `${currentX - bullet.offsetWidth / 2}px`;
-                bullet.style.top = `${currentY - bullet.offsetHeight / 2}px`;
-
-                if (progress < 1) {
-                    requestAnimationFrame(animateBullet);
-                } else {
-                    bullet.remove();
-                }
-            }
-
-            requestAnimationFrame(animateBullet);
-        }
-
-        function playBloodSplatter(x, y) {
-            const bloodSplatter = document.createElement('div');
-            bloodSplatter.classList.add('blood-splatter');
-            bloodSplatter.style.left = `${x - 50}px`;
-            bloodSplatter.style.top = `${y - 50}px`;
-            gameContainer.appendChild(bloodSplatter);
-
-            setTimeout(() => {
-                bloodSplatter.remove();
-            }, 1000);
-        }
-
-        document.addEventListener('keydown', (event) => {
-            if (!isGameActive) return;
-
-            debugInfo.textContent = `Key pressed: ${event.key}, Key code: ${event.keyCode}`;
-
-            if (event.key === 'Backspace') {
-                if (currentTypedWord.length > 0) {
-                    currentTypedWord = currentTypedWord.slice(0, -1);
-                    if (currentTargetWord) {
-                        currentTargetWord.hitIndex--;
-                        currentTargetWord.element.children[currentTargetWord.hitIndex].classList.remove('hit');
-                    }
-                    if (currentTypedWord.length === 0) {
-                        currentTargetWord = null;
-                    }
-                }
-            } else if (event.key.length === 1) {
-                updateTypedWord(event.key);
-            }
-            typedWord.textContent = currentTypedWord;
-        });
-
-        function startWave() {
-            isGameActive = true;
-            wordsDefeated = 0;
-            wordsSpawned = 0;
-            words.forEach(({ element }) => element.remove());
-            words = [];
+    if (currentTargetWord && currentTargetWord.hitIndex < currentTargetWord.word.length && 
+        currentTargetWord.word[currentTargetWord.hitIndex].toLowerCase() === key.toLowerCase()) {
+        currentTypedWord += key;
+        currentTargetWord.element.children[currentTargetWord.hitIndex].classList.add('hit');
+        currentTargetWord.hitIndex++;
+        shootBullet(currentTargetWord);
+        currentTargetWord.bulletsInFlight++;
+        
+        if (currentTargetWord.hitIndex === currentTargetWord.word.length) {
             currentTypedWord = '';
             currentTargetWord = null;
-            typedWord.textContent = '';
-            waveComplete.style.display = 'none';
-            gameOver.style.display = 'none';
-            waveValue.textContent = currentWave;
-            updateWordsLeft();
-
-            gameInterval = setInterval(moveWords, 33);
-            spawnWordWithDelay();
         }
+    }
 
-        function endGame() {
-            isGameActive = false;
-            clearInterval(gameInterval);
-            gameOver.style.display = 'flex';
+    typedWord.textContent = currentTypedWord;
+}
+
+function handleWordCompletion(targetWord) {
+    zombiesShot++;
+    scoreValue.textContent = zombiesShot;
+    wordsDefeated++;
+    
+    const rect = targetWord.element.getBoundingClientRect();
+    playBloodSplatter(rect.left + rect.width / 2, rect.top + rect.height / 2);
+    
+    if (!isMuted) {
+        splatSound.currentTime = 0;
+        splatSound.play();
+    }
+    
+    words = words.filter(w => w !== targetWord);
+    targetWord.element.remove();
+    updateWordsLeft();
+    checkWaveCompletion();
+}
+
+function dazeWord(wordObj) {
+    wordObj.element.classList.add('dazed');
+    wordObj.speed *= 0.5; // Slow down the word by 50%
+    setTimeout(() => {
+        wordObj.element.classList.remove('dazed');
+        wordObj.speed = wordSpeed * (1 + (wordObj.word.length - 3) * 0.1); // Reset to normal speed after daze effect
+    }, 1000); // Daze effect lasts for 1 second
+}
+
+function checkWaveCompletion() {
+    if (wordsDefeated >= waveWordCount && wordsSpawned >= waveWordCount) {
+        clearInterval(gameInterval);
+        isGameActive = false;
+        waveComplete.style.display = 'flex';
+    }
+}
+
+function isElementInViewport(el) {
+    const rect = el.getBoundingClientRect();
+    return (
+        rect.top >= 0 &&
+        rect.left >= 0 &&
+        rect.bottom <= (window.innerHeight || document.documentElement.clientHeight) &&
+        rect.right <= (window.innerWidth || document.documentElement.clientWidth)
+    );
+}
+
+function getVisibleWords() {
+    return words.filter(({ element }) => isElementInViewport(element));
+}
+
+function updateWordsLeft() {
+    wordsLeftValue.textContent = waveWordCount - wordsDefeated;
+}
+
+function shootBullet(targetWord) {
+    const bullet = document.createElement('div');
+    bullet.classList.add('bullet');
+    const playerRect = player.getBoundingClientRect();
+    const wordRect = targetWord.element.getBoundingClientRect();
+
+    const startX = playerRect.left + playerRect.width / 2;
+    const startY = playerRect.top + playerRect.height / 2;
+    const endX = wordRect.left + wordRect.width / 2;
+    const endY = wordRect.top + wordRect.height / 2;
+
+    bullet.style.left = `${startX}px`;
+    bullet.style.top = `${startY}px`;
+
+    const angle = Math.atan2(endY - startY, endX - startX) * (180 / Math.PI);
+    bullet.style.transform = `rotate(${angle + 90}deg)`;
+    gameContainer.appendChild(bullet);
+
+    const animationDuration = 500; // Increased duration for slower bullet
+    const startTime = Date.now();
+
+    function animateBullet() {
+        const elapsedTime = Date.now() - startTime;
+        const progress = Math.min(elapsedTime / animationDuration, 1);
+
+        const currentX = startX + (endX - startX) * progress;
+        const currentY = startY + (endY - startY) * progress;
+
+        bullet.style.left = `${currentX - bullet.offsetWidth / 2}px`;
+        bullet.style.top = `${currentY - bullet.offsetHeight / 2}px`;
+
+        if (progress < 1) {
+            requestAnimationFrame(animateBullet);
+        } else {
+            bullet.remove();
+            targetWord.bulletsInFlight--;
+            dazeWord(targetWord);
+            
+            if (targetWord.bulletsInFlight === 0 && targetWord.hitIndex === targetWord.word.length) {
+                handleWordCompletion(targetWord);
+            }
         }
+    }
 
-        nextWaveBtn.addEventListener('click', () => {
-            currentWave++;
-            waveWordCount += 2;
-            wordSpeed += 0.1;
-            baseSpawnRate = Math.max(500, baseSpawnRate - 100);
-            startWave();
-        });
+    requestAnimationFrame(animateBullet);
+}
 
-        restartBtn.addEventListener('click', () => {
-            score = 0;
-            scoreValue.textContent = score;
-            currentWave = 1;
-            waveWordCount = 5;
-            wordSpeed = 1.0;
-            baseSpawnRate = 1500;
-            startWave();
-        });
+function playBloodSplatter(x, y) {
+    const bloodSplatter = document.createElement('div');
+    bloodSplatter.classList.add('blood-splatter');
+    bloodSplatter.style.left = `${x - 50}px`;
+    bloodSplatter.style.top = `${y - 50}px`;
+    gameContainer.appendChild(bloodSplatter);
 
-        function initGame() {
-            score = 0;
-            scoreValue.textContent = score;
-            currentWave = 1;
-            waveWordCount = 5;
-            wordSpeed = 1.0;
-            baseSpawnRate = 1500;
-            startWave();
+    setTimeout(() => {
+        bloodSplatter.remove();
+    }, 1000);
+}
+
+document.addEventListener('keydown', (event) => {
+    if (!isGameActive) return;
+
+    if (event.key === 'Backspace') {
+        if (currentTypedWord.length > 0) {
+            currentTypedWord = currentTypedWord.slice(0, -1);
+            if (currentTargetWord) {
+                currentTargetWord.hitIndex--;
+                currentTargetWord.element.children[currentTargetWord.hitIndex].classList.remove('hit');
+            }
+            if (currentTypedWord.length === 0) {
+                currentTargetWord = null;
+            }
         }
+    } else if (event.key.length === 1) {
+        updateTypedWord(event.key);
+    }
+    typedWord.textContent = currentTypedWord;
+});
 
-        // Start the game
-        initGame();
-    </script>
-</body>
-</html>
+function startWave() {
+    isGameActive = true;
+    wordsDefeated = 0;
+    wordsSpawned = 0;
+    words.forEach(({ element }) => element.remove());
+    words = [];
+    currentTypedWord = '';
+    currentTargetWord = null;
+    typedWord.textContent = '';
+    waveComplete.style.display = 'none';
+    gameOver.style.display = 'none';
+    waveValue.textContent = currentWave;
+    updateWordsLeft();
+
+    gameInterval = setInterval(moveWords, 33);
+    spawnWordWithDelay();
+}
+
+function endGame() {
+    isGameActive = false;
+    clearInterval(gameInterval);
+    gameOver.style.display = 'flex';
+}
+
+nextWaveBtn.addEventListener('click', () => {
+    currentWave++;
+    waveWordCount += 2;
+    wordSpeed += 0.1;
+    baseSpawnRate = Math.max(500, baseSpawnRate - 100);
+    startWave();
+});
+
+restartBtn.addEventListener('click', () => {
+    zombiesShot = 0;
+    scoreValue.textContent = zombiesShot;
+    currentWave = 1;
+    waveWordCount = 5;
+    wordSpeed = 1.0;
+    baseSpawnRate = 1500;
+    startWave();
+});
+
+function initGame() {
+    zombiesShot = 0;
+    scoreValue.textContent = zombiesShot;
+    currentWave = 1;
+    waveWordCount = 5;
+    wordSpeed = 1.0;
+    baseSpawnRate = 1500;
+    startWave();
+}
+
+// Start the game
+initGame();
+</script>
+
+<a href="https://wordsmasher.io/leaderboard" style="color: #FFD700; text-shadow: 0 0 5px #FFD700;">Zombie Slayer Hall of Fame</a>
+<a href="https://wordsmasher.io/tutorial" style="color: #FFD700; text-shadow: 0 0 5px #FFD700;">Cowboy Survival Guide</a>
+<a href="https://wordsmasher.io/settings" style="color: #FFD700; text-shadow: 0 0 5px #FFD700;">Apocalypse Settings</a>
+
+</body></html>
