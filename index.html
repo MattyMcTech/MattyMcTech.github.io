@@ -14,7 +14,7 @@ body, html {
     width: 100%;
     height: 100%;
     position: relative;
-    background: url('https://example.com/zombie-western-background.jpg') no-repeat center center fixed;
+    background: url('https://raw.githubusercontent.com/MattyMcTech/WordWarZ/main/map.png') no-repeat center center fixed;
     background-size: cover;
 }
 #player {
@@ -35,6 +35,9 @@ body, html {
     color: #4CAF50;
     text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000, 0 0 5px #4CAF50;
     transition: all 0.1s;
+    background-color: rgba(0, 0, 0, 0.7);
+    padding: 5px 10px;
+    border-radius: 5px;
 }
 .enemy-word span {
     transition: color 0.2s;
@@ -45,6 +48,15 @@ body, html {
 }
 .enemy-word.dazed {
     animation: daze 0.5s ease-in-out;
+}
+.bullseye {
+    position: absolute;
+    bottom: -10px;
+    right: -10px;
+    width: 20px;
+    height: 20px;
+    background: radial-gradient(circle, red 0%, red 30%, white 30%, white 60%, red 60%, red 100%);
+    border-radius: 50%;
 }
 @keyframes daze {
     0%, 100% { transform: translateX(0); }
@@ -80,12 +92,12 @@ body, html {
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    font-size: 72px;
-    font-family: 'Creepster', cursive;
+    font-size: 48px;
+    font-family: 'Roboto', sans-serif;
     display: none;
     text-align: center;
-    color: #FF6347;
-    text-shadow: 0 0 15px #FF6347;
+    color: #FFFFFF;
+    text-shadow: 0 0 10px #000000;
     z-index: 2000;
 }
 #game-over {
@@ -93,12 +105,17 @@ body, html {
     padding: 40px;
     border-radius: 20px;
     box-shadow: 0 0 20px #FF6347;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
 }
 #game-over h2 {
     margin: 0 0 20px 0;
+    font-size: 64px;
+    font-weight: bold;
 }
 #final-score {
-    font-size: 48px;
+    font-size: 36px;
     margin-bottom: 20px;
 }
 #wave-complete {
@@ -111,15 +128,18 @@ body, html {
     margin: 0 0 20px 0;
 }
 #next-wave-btn, #restart-btn {
-    font-family: 'Creepster', cursive;
-    font-size: 36px;
+    font-family: 'Roboto', sans-serif;
+    font-size: 24px;
     padding: 10px 20px;
-    background-color: #8B4513;
-    color: #FFD700;
+    background-color: #4CAF50;
+    color: #FFFFFF;
     border: none;
     cursor: pointer;
-    text-shadow: 0 0 5px #FFD700;
-    box-shadow: 0 0 10px #8B4513;
+    border-radius: 5px;
+    transition: background-color 0.3s;
+}
+#next-wave-btn:hover, #restart-btn:hover {
+    background-color: #45a049;
 }
 .bullet {
     position: absolute;
@@ -141,15 +161,37 @@ body, html {
 #mute-btn, #pause-btn {
     position: absolute;
     bottom: 10px;
-    font-family: 'Creepster', cursive;
-    font-size: 24px;
+    font-family: 'Roboto', sans-serif;
+    font-size: 18px;
     padding: 5px 10px;
-    background-color: #8B4513;
-    color: #FFD700;
+    background-color: #4CAF50;
+    color: #FFFFFF;
     border: none;
     cursor: pointer;
-    text-shadow: 0 0 5px #FFD700;
-    box-shadow: 0 0 10px #8B4513;
+    border-radius: 5px;
+    transition: background-color 0.3s;
+}
+#start-game-btn {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 2000;
+    font-family: 'Roboto', sans-serif;
+    font-size: 24px;
+    padding: 10px 20px;
+    background-color: #4CAF50;
+    color: #FFFFFF;
+    border: none;
+    cursor: pointer;
+    border-radius: 5px;
+    transition: background-color 0.3s;
+}
+#mute-btn:hover, #pause-btn{
+    background-color: #45a049;
+}
+#start-game-btn:hover {
+    background-color: #45a049;
 }
 #mute-btn { left: 10px; }
 #pause-btn { right: 10px; }
@@ -158,11 +200,11 @@ body, html {
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    font-size: 72px;
-    font-family: 'Creepster', cursive;
+    font-size: 48px;
+    font-family: 'Roboto', sans-serif;
     text-align: center;
-    color: #FFD700;
-    text-shadow: 0 0 15px #FFD700;
+    color: #FFFFFF;
+    text-shadow: 0 0 10px #000000;
     z-index: 2001;
     display: none;
     background-color: rgba(0, 0, 0, 0.8);
@@ -171,7 +213,7 @@ body, html {
 }
 #wave-cleared p {
     margin: 10px 0;
-    font-size: 48px;
+    font-size: 36px;
 }
 #debug-info {
     position: absolute;
@@ -192,22 +234,24 @@ body, html {
     <div id="score">Zombies Shot: <span id="score-value">0</span></div>
     <div id="total-score">Score: <span id="total-score-value">0</span></div>
     <div id="wave">Zombie Wave: <span id="wave-value">1</span></div>
+	
     <div id="words-left">Zombies Left: <span id="words-left-value">5</span></div>
     <div id="game-over">
-        <h2>YEEHAW TURNED TO BRAAAINS</h2>
+        <h2>GAME OVER</h2>
         <div id="final-score">Final Score: <span id="final-score-value">0</span></div>
         <button id="restart-btn">Restart Game</button>
     </div>
     <div id="wave-complete">
-        <h2>Wave Cleared, Pardner!</h2>
+        <h2>Wave Cleared!</h2>
         <button id="next-wave-btn">Next Wave</button>
     </div>
     <div id="wave-cleared">
-        Wave Cleared, Pardner!
+        Wave Cleared!
         <p>Score: <span id="wave-score">0</span></p>
     </div>
     <button id="mute-btn">Mute Sound</button>
     <button id="pause-btn">Pause</button>
+	<button id="start-game-btn">Start Game</button>
     <div></div>
 </div>
 
@@ -229,9 +273,15 @@ const waveCleared = document.getElementById('wave-cleared');
 const waveScore = document.getElementById('wave-score');
 const debugInfo = document.getElementById('debug-info');
 const finalScoreValue = document.getElementById('final-score-value');
+const startGameBtn = document.getElementById('start-game-btn');
 
 const splatSound = new Audio('https://raw.githubusercontent.com/MattyMcTech/WordWarZ/main/splat.mp3');
-splatSound.volume = 0.5;
+splatSound.volume = 0.3;
+
+// Add background music
+const backgroundMusic = new Audio('https://github.com/MattyMcTech/WordWarZ/raw/main/song.mp3');
+backgroundMusic.loop = true;
+backgroundMusic.volume = 0.3;
 
 let zombiesShot = 0;
 let totalScore = 0;
@@ -249,6 +299,7 @@ let gameInterval;
 let isMuted = false;
 let isPaused = false;
 let lettersHitThisWave = 0;
+let audioContext;
 
 function updateDebugInfo() {
     debugInfo.textContent = `Words: ${words.length}, Spawned: ${wordsSpawned}, Defeated: ${wordsDefeated}, Target: ${currentTargetWord ? currentTargetWord.word : 'None'}`;
@@ -258,6 +309,13 @@ muteBtn.addEventListener('click', () => {
     isMuted = !isMuted;
     muteBtn.textContent = isMuted ? 'Unmute Sound' : 'Mute Sound';
     splatSound.muted = isMuted;
+    backgroundMusic.muted = isMuted;
+    
+    if (isMuted) {
+        backgroundMusic.pause();
+    } else if (isGameActive) {
+        playBackgroundMusic();
+    }
 });
 
 pauseBtn.addEventListener('click', () => {
@@ -265,8 +323,10 @@ pauseBtn.addEventListener('click', () => {
     pauseBtn.textContent = isPaused ? 'Resume' : 'Pause';
     if (isPaused) {
         clearInterval(gameInterval);
+        backgroundMusic.pause();
     } else {
         gameInterval = setInterval(moveWords, 33);
+        playBackgroundMusic();
     }
 });
 
@@ -318,6 +378,11 @@ async function spawnWord() {
         wordElement.appendChild(span);
     });
 
+    // Add bullseye
+    const bullseye = document.createElement('div');
+    bullseye.classList.add('bullseye');
+    wordElement.appendChild(bullseye);
+
     let position;
     let attempts = 0;
     do {
@@ -348,7 +413,7 @@ function getRandomEdgePosition() {
     const y = Math.random() * window.innerHeight;
     switch (edge) {
         case 0: return { x: x, y: 0 };
-        case 1: return { x: window.innerWidth, y: y };
+        case1: return { x: window.innerWidth, y: y };
         case 2: return { x: x, y: window.innerHeight };
         case 3: return { x: 0, y: y };
     }
@@ -381,7 +446,8 @@ function moveWords() {
 
     words.forEach((wordObj) => {
         const dx = centerX - wordObj.x;
-        const dy = centerY - wordObj.y;const distance = Math.sqrt(dx * dx + dy * dy);
+        const dy = centerY - wordObj.y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
         
         if (distance > 5) {
             const ratio = wordObj.speed / distance;
@@ -539,11 +605,12 @@ function shootBullet(targetWord) {
     bullet.classList.add('bullet');
     const playerRect = player.getBoundingClientRect();
     const wordRect = targetWord.element.getBoundingClientRect();
+    const bullseyeRect = targetWord.element.querySelector('.bullseye').getBoundingClientRect();
 
     const startX = playerRect.left + playerRect.width / 2;
     const startY = playerRect.top + playerRect.height / 2;
-    const endX = wordRect.left + wordRect.width / 2;
-    const endY = wordRect.top + wordRect.height / 2;
+    const endX = bullseyeRect.left + bullseyeRect.width / 2;
+    const endY = bullseyeRect.top + bullseyeRect.height / 2;
 
     bullet.style.left = `${startX}px`;
     bullet.style.top = `${startY}px`;
@@ -592,6 +659,19 @@ function playBloodSplatter(x, y) {
         bloodSplatter.remove();
     }, 1000);
 }
+function initAudioContext() {
+    audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    if (audioContext.state === 'suspended') {
+        audioContext.resume();
+    }
+}
+function playBackgroundMusic() {
+    if (audioContext && audioContext.state === 'running' && !isMuted) {
+        backgroundMusic.play().catch(error => {
+            console.log("Playback prevented. Please check your browser's autoplay settings.");
+        });
+    }
+}
 
 document.addEventListener('keydown', (event) => {
     if (!isGameActive || isPaused) return;
@@ -625,6 +705,7 @@ function startWave() {
     typedWord.textContent = '';
     waveComplete.style.display = 'none';
     gameOver.style.display = 'none';
+    waveCleared.style.display = 'none';
     waveValue.textContent = currentWave;
     updateWordsLeft();
 
@@ -639,19 +720,30 @@ function endGame() {
     finalScoreValue.textContent = totalScore;
     gameOver.style.display = 'flex';
     updateDebugInfo();
+    backgroundMusic.pause();
+    showStartButton();
+}
+function hideStartButton() {
+    startGameBtn.style.display = 'none';
+}
+function showStartButton() {
+    startGameBtn.style.display = 'block';
+    gameOver.style.display = 'none';
+    waveComplete.style.display = 'none';
+    waveCleared.style.display = 'none';
 }
 
 restartBtn.addEventListener('click', () => {
-    zombiesShot = 0;
-    totalScore = 0;
-    scoreValue.textContent = zombiesShot;
-    totalScoreValue.textContent = totalScore;
-    currentWave = 1;
-    waveWordCount = 5;
-    wordSpeed = 1.0;
-    baseSpawnRate = 1500;
-    lettersHitThisWave = 0;
-    startWave();
+    hideStartButton();
+    initGame();
+    playBackgroundMusic();
+});
+
+startGameBtn.addEventListener('click', () => {
+    hideStartButton();
+    initAudioContext();
+    initGame();
+    playBackgroundMusic();
 });
 
 function initGame() {
@@ -664,12 +756,18 @@ function initGame() {
     wordSpeed = 1.0;
     baseSpawnRate = 1500;
     lettersHitThisWave = 0;
+    
     startWave();
 }
+// Add this event listener to handle user interaction
+document.addEventListener('click', function initAudio() {
+    initAudioContext();
+    document.removeEventListener('click', initAudio);
+}, { once: true });
 
-initGame();</script>
+showStartButton();
+</script>
 
 <a href="https://wordsmasher.io/leaderboard" style="color: #FFD700; text-shadow: 0 0 5px #FFD700;">Zombie Slayer Hall of Fame</a>
 <a href="https://wordsmasher.io/tutorial" style="color: #FFD700; text-shadow: 0 0 5px #FFD700;">Cowboy Survival Guide</a>
-<a href="https://wordsmasher.io/settings" style="color: #FFD700; text-shadow: 0 0 5px #FFD700;">Apocalypse Settings</a>
-</body></html>
+<a href="https://wordsmasher.io/settings" style="color: #FFD700; text-shadow: 0 0 5px #FFD700;">Apocalypse Settings</a></body></html>
