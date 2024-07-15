@@ -234,7 +234,6 @@ body, html {
     <div id="score">Zombies Shot: <span id="score-value">0</span></div>
     <div id="total-score">Score: <span id="total-score-value">0</span></div>
     <div id="wave">Zombie Wave: <span id="wave-value">1</span></div>
-	
     <div id="words-left">Zombies Left: <span id="words-left-value">5</span></div>
     <div id="game-over">
         <h2>GAME OVER</h2>
@@ -251,8 +250,8 @@ body, html {
     </div>
     <button id="mute-btn">Mute Sound</button>
     <button id="pause-btn">Pause</button>
-	<button id="start-game-btn">Start Game</button>
-    <div></div>
+    <button id="start-game-btn">Start Game</button>
+    <div id="debug-info"></div>
 </div>
 
 <script>
@@ -278,10 +277,15 @@ const startGameBtn = document.getElementById('start-game-btn');
 const splatSound = new Audio('https://raw.githubusercontent.com/MattyMcTech/WordWarZ/main/splat.mp3');
 splatSound.volume = 0.3;
 
-// Add background music
 const backgroundMusic = new Audio('https://github.com/MattyMcTech/WordWarZ/raw/main/song.mp3');
 backgroundMusic.loop = true;
 backgroundMusic.volume = 0.3;
+
+const bulletHitSound = new Audio('https://github.com/MattyMcTech/WordWarZ/raw/main/bulletHit.mp3');
+bulletHitSound.volume = 0.3;
+
+const bulletShotSound = new Audio('https://github.com/MattyMcTech/WordWarZ/raw/main/bullet.mp3');
+bulletShotSound.volume = 0.3;
 
 let zombiesShot = 0;
 let totalScore = 0;
@@ -305,21 +309,21 @@ let musicStarted = false;
 function updateDebugInfo() {
     debugInfo.textContent = `Words: ${words.length}, Spawned: ${wordsSpawned}, Defeated: ${wordsDefeated}, Target: ${currentTargetWord ? currentTargetWord.word : 'None'}`;
 }
-// Add this function at the top of your script
+
 function debugLog(message) {
     console.log(`[DEBUG] ${message}`);
-    // Optionally, display debug info on the screen
     if (debugInfo) {
         debugInfo.textContent += `\n${message}`;
     }
 }
 
-// Update the muteBtn event listener
 muteBtn.addEventListener('click', () => {
     isMuted = !isMuted;
     muteBtn.textContent = isMuted ? 'Unmute Sound' : 'Mute Sound';
     splatSound.muted = isMuted;
     backgroundMusic.muted = isMuted;
+    bulletHitSound.muted = isMuted;
+    bulletShotSound.muted = isMuted;
     
     if (isMuted) {
         backgroundMusic.pause();
@@ -328,7 +332,6 @@ muteBtn.addEventListener('click', () => {
     }
 });
 
-// Update the pauseBtn event listener
 pauseBtn.addEventListener('click', () => {
     isPaused = !isPaused;
     pauseBtn.textContent = isPaused ? 'Resume' : 'Pause';
@@ -342,7 +345,7 @@ pauseBtn.addEventListener('click', () => {
         forcePlayMusic();
     }
 });
-// Add these event listeners to the backgroundMusic object
+
 backgroundMusic.addEventListener('play', () => {
     debugLog("Background music play event triggered");
 });
@@ -358,6 +361,7 @@ backgroundMusic.addEventListener('pause', () => {
 backgroundMusic.addEventListener('error', (e) => {
     debugLog(`Background music error: ${e.target.error.message}`);
 });
+
 async function getRandomWord(minLength, maxLength) {
     const length = Math.floor(Math.random() * (maxLength - minLength + 1)) + minLength;
     try {
@@ -389,7 +393,7 @@ async function spawnWord() {
     if (currentWave <= 3) {
         minLength = 3;
         maxLength = 5;
-    } else if (currentWave <= 6) {
+    }else if (currentWave <= 6){
         minLength = 3;
         maxLength = 7;
     } else {
@@ -406,7 +410,6 @@ async function spawnWord() {
         wordElement.appendChild(span);
     });
 
-    // Add bullseye
     const bullseye = document.createElement('div');
     bullseye.classList.add('bullseye');
     wordElement.appendChild(bullseye);
@@ -441,7 +444,7 @@ function getRandomEdgePosition() {
     const y = Math.random() * window.innerHeight;
     switch (edge) {
         case 0: return { x: x, y: 0 };
-        case1: return { x: window.innerWidth, y: y };
+        case 1: return { x: window.innerWidth, y: y };
         case 2: return { x: x, y: window.innerHeight };
         case 3: return { x: 0, y: y };
     }
@@ -647,6 +650,12 @@ function shootBullet(targetWord) {
     bullet.style.transform = `rotate(${angle + 90}deg)`;
     gameContainer.appendChild(bullet);
 
+    // Play bullet shot sound when the bullet is fired
+    if (!isMuted) {
+        bulletShotSound.currentTime = 0;
+        bulletShotSound.play();
+    }
+
     const animationDuration = 500;
     const startTime = Date.now();
 
@@ -666,6 +675,12 @@ function shootBullet(targetWord) {
             bullet.remove();
             targetWord.bulletsInFlight--;
             dazeWord(targetWord);
+            
+            // Play bullet hit sound when the bullet hits the word
+            if (!isMuted && targetWord.hitIndex < targetWord.word.length) {
+                bulletHitSound.currentTime = 0;
+                bulletHitSound.play();
+            }
             
             if (targetWord.bulletsInFlight === 0 && targetWord.hitIndex === targetWord.word.length) {
                 handleWordCompletion(targetWord);
@@ -687,6 +702,7 @@ function playBloodSplatter(x, y) {
         bloodSplatter.remove();
     }, 1000);
 }
+
 function initAudioContext() {
     debugLog("Initializing audio context");
     if (!audioContext) {
@@ -696,16 +712,16 @@ function initAudioContext() {
     if (audioContext.state === 'suspended') {
         audioContext.resume().then(() => {
             debugLog("Audio context resumed");
-            forcePlayMusic();  // Try to play music immediately after resuming context
+            forcePlayMusic();
         }).catch(error => {
             debugLog(`Error resuming audio context: ${error}`);
         });
     } else {
         debugLog(`Audio context state: ${audioContext.state}`);
-        forcePlayMusic();  // Try to play music if the context is already running
+        forcePlayMusic();
     }
 }
-// Update the playBackgroundMusic function
+
 function playBackgroundMusic() {
     debugLog("Attempting to play background music");
     if (!isMuted) {
@@ -761,7 +777,7 @@ function startWave() {
     spawnWordWithDelay();
     updateDebugInfo();
 }
-// Add this new function to force music playback
+
 function forcePlayMusic() {
     debugLog("Entering forcePlayMusic function");
     if (isMuted) {
@@ -777,13 +793,13 @@ function forcePlayMusic() {
         })
         .catch(error => {
             debugLog(`Music playback failed: ${error}`);
-            // If playback fails, we'll try again after a short delay
             setTimeout(forcePlayMusic, 1000);
         });
     } else {
         debugLog("Play promise is undefined, browser might not support promises for audio playback");
     }
 }
+
 function endGame() {
     isGameActive = false;
     clearInterval(gameInterval);
@@ -793,9 +809,11 @@ function endGame() {
     backgroundMusic.pause();
     showStartButton();
 }
+
 function hideStartButton() {
     startGameBtn.style.display = 'none';
 }
+
 function showStartButton() {
     startGameBtn.style.display = 'block';
     gameOver.style.display = 'none';
@@ -803,23 +821,6 @@ function showStartButton() {
     waveCleared.style.display = 'none';
 }
 
-restartBtn.addEventListener('click', () => {
-    hideStartButton();
-    initGame();
-    playBackgroundMusic();
-});
-
-// Update the startGameBtn event listener
-startGameBtn.addEventListener('click', () => {
-    debugLog("Start game button clicked");
-    hideStartButton();
-    initAudioContext();
-    initGame();
-    debugLog("Calling forcePlayMusic from start button click");
-    forcePlayMusic();
-});
-
-// Update the initGame function
 function initGame() {
     debugLog("Initializing game");
     zombiesShot = 0;
@@ -837,9 +838,25 @@ function initGame() {
     forcePlayMusic();
 }
 
+restartBtn.addEventListener('click', () => {
+    hideStartButton();
+    initGame();
+    playBackgroundMusic();
+});
+
+startGameBtn.addEventListener('click', () => {
+    debugLog("Start game button clicked");
+    hideStartButton();
+    initAudioContext();
+    initGame();
+    debugLog("Calling forcePlayMusic from start button click");
+    forcePlayMusic();
+});
+
 showStartButton();
 </script>
 
 <a href="https://wordsmasher.io/leaderboard" style="color: #FFD700; text-shadow: 0 0 5px #FFD700;">Zombie Slayer Hall of Fame</a>
 <a href="https://wordsmasher.io/tutorial" style="color: #FFD700; text-shadow: 0 0 5px #FFD700;">Cowboy Survival Guide</a>
-<a href="https://wordsmasher.io/settings" style="color: #FFD700; text-shadow: 0 0 5px #FFD700;">Apocalypse Settings</a></body></html>
+<a href="https://wordsmasher.io/settings" style="color: #FFD700; text-shadow: 0 0 5px #FFD700;">Apocalypse Settings</a>
+</body></html>
