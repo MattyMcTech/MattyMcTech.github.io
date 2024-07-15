@@ -305,6 +305,14 @@ let musicStarted = false;
 function updateDebugInfo() {
     debugInfo.textContent = `Words: ${words.length}, Spawned: ${wordsSpawned}, Defeated: ${wordsDefeated}, Target: ${currentTargetWord ? currentTargetWord.word : 'None'}`;
 }
+// Add this function at the top of your script
+function debugLog(message) {
+    console.log(`[DEBUG] ${message}`);
+    // Optionally, display debug info on the screen
+    if (debugInfo) {
+        debugInfo.textContent += `\n${message}`;
+    }
+}
 
 // Update the muteBtn event listener
 muteBtn.addEventListener('click', () => {
@@ -325,14 +333,31 @@ pauseBtn.addEventListener('click', () => {
     isPaused = !isPaused;
     pauseBtn.textContent = isPaused ? 'Resume' : 'Pause';
     if (isPaused) {
+        debugLog("Game paused, stopping music");
         clearInterval(gameInterval);
         backgroundMusic.pause();
     } else {
+        debugLog("Game resumed, restarting music");
         gameInterval = setInterval(moveWords, 33);
-        playBackgroundMusic();
+        forcePlayMusic();
     }
 });
+// Add these event listeners to the backgroundMusic object
+backgroundMusic.addEventListener('play', () => {
+    debugLog("Background music play event triggered");
+});
 
+backgroundMusic.addEventListener('playing', () => {
+    debugLog("Background music is now playing");
+});
+
+backgroundMusic.addEventListener('pause', () => {
+    debugLog("Background music paused");
+});
+
+backgroundMusic.addEventListener('error', (e) => {
+    debugLog(`Background music error: ${e.target.error.message}`);
+});
 async function getRandomWord(minLength, maxLength) {
     const length = Math.floor(Math.random() * (maxLength - minLength + 1)) + minLength;
     try {
@@ -662,27 +687,37 @@ function playBloodSplatter(x, y) {
         bloodSplatter.remove();
     }, 1000);
 }
-// Add this function to initialize audio context
 function initAudioContext() {
+    debugLog("Initializing audio context");
     if (!audioContext) {
         audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        debugLog("New audio context created");
     }
     if (audioContext.state === 'suspended') {
-        audioContext.resume();
+        audioContext.resume().then(() => {
+            debugLog("Audio context resumed");
+            forcePlayMusic();  // Try to play music immediately after resuming context
+        }).catch(error => {
+            debugLog(`Error resuming audio context: ${error}`);
+        });
+    } else {
+        debugLog(`Audio context state: ${audioContext.state}`);
+        forcePlayMusic();  // Try to play music if the context is already running
     }
 }
+// Update the playBackgroundMusic function
 function playBackgroundMusic() {
-    if (!musicStarted && !isMuted) {
+    debugLog("Attempting to play background music");
+    if (!isMuted) {
         backgroundMusic.play()
             .then(() => {
-                musicStarted = true;
-                console.log("Music started successfully");
+                debugLog("Music started successfully");
             })
             .catch(error => {
-                console.log("Error starting music:", error);
+                debugLog(`Error starting music: ${error}`);
             });
-    } else if (musicStarted && !isMuted) {
-        backgroundMusic.play();
+    } else {
+        debugLog("Music is muted, not playing");
     }
 }
 
@@ -726,7 +761,29 @@ function startWave() {
     spawnWordWithDelay();
     updateDebugInfo();
 }
-
+// Add this new function to force music playback
+function forcePlayMusic() {
+    debugLog("Entering forcePlayMusic function");
+    if (isMuted) {
+        debugLog("Music is muted, not playing");
+        return;
+    }
+    debugLog("Attempting to play background music");
+    backgroundMusic.currentTime = 0;
+    let playPromise = backgroundMusic.play();
+    if (playPromise !== undefined) {
+        playPromise.then(_ => {
+            debugLog("Music playback started successfully");
+        })
+        .catch(error => {
+            debugLog(`Music playback failed: ${error}`);
+            // If playback fails, we'll try again after a short delay
+            setTimeout(forcePlayMusic, 1000);
+        });
+    } else {
+        debugLog("Play promise is undefined, browser might not support promises for audio playback");
+    }
+}
 function endGame() {
     isGameActive = false;
     clearInterval(gameInterval);
@@ -754,14 +811,17 @@ restartBtn.addEventListener('click', () => {
 
 // Update the startGameBtn event listener
 startGameBtn.addEventListener('click', () => {
+    debugLog("Start game button clicked");
     hideStartButton();
     initAudioContext();
     initGame();
-    playBackgroundMusic();
+    debugLog("Calling forcePlayMusic from start button click");
+    forcePlayMusic();
 });
 
 // Update the initGame function
 function initGame() {
+    debugLog("Initializing game");
     zombiesShot = 0;
     totalScore = 0;
     scoreValue.textContent = zombiesShot;
@@ -773,10 +833,9 @@ function initGame() {
     lettersHitThisWave = 0;
     
     startWave();
-    playBackgroundMusic();
+    debugLog("Calling forcePlayMusic from initGame");
+    forcePlayMusic();
 }
-// Add this event listener at the end of your script
-document.addEventListener('click', initAudioContext, { once: true });
 
 showStartButton();
 </script>
