@@ -38,6 +38,11 @@ body, html {
     background-color: rgba(0, 0, 0, 0.7);
     padding: 5px 10px;
     border-radius: 5px;
+    opacity: 0;
+    transition: opacity 0.5s;
+}
+.enemy-word.visible {
+    opacity: 1;
 }
 .enemy-word span {
     transition: color 0.2s;
@@ -380,8 +385,7 @@ async function getRandomWord(minLength, maxLength) {
 function fallbackGetRandomWord(length) {
     const characters = 'abcdefghijklmnopqrstuvwxyz';
     let result = '';
-    for (let i = 0; i < length; i++) {
-        result += characters.charAt(Math.floor(Math.random() * characters.length));
+    for (let i = 0; i < length; i++) {result += characters.charAt(Math.floor(Math.random() * characters.length));
     }
     return result;
 }
@@ -390,15 +394,15 @@ async function spawnWord() {
     if (wordsSpawned >= waveWordCount) return;
     
     let minLength, maxLength;
-    if (currentWave <= 3) {
+    if (currentWave <= 5) {
         minLength = 3;
         maxLength = 5;
-    }else if (currentWave <= 6){
+    } else if (currentWave <= 10) {
         minLength = 3;
-        maxLength = 7;
+        maxLength = 6;
     } else {
         minLength = 3;
-        maxLength = 10;
+        maxLength = 7;
     }
     
     const word = await getRandomWord(minLength, maxLength);
@@ -414,56 +418,62 @@ async function spawnWord() {
     bullseye.classList.add('bullseye');
     wordElement.appendChild(bullseye);
 
-    let position;
-    let attempts = 0;
-    do {
-        position = getRandomEdgePosition();
-        attempts++;
-    } while (isOverlapping(position.x, position.y) && attempts < 10);
-
-    if (attempts >= 10) {
-        console.log("Failed to find non-overlapping position");
-        return;
-    }
-
+    const position = getRandomEdgePosition(wordElement);
     wordElement.style.left = `${position.x}px`;
     wordElement.style.top = `${position.y}px`;
     
-    const individualWordSpeed = wordSpeed * (1 + (word.length - minLength) * 0.1);
+    const individualWordSpeed = wordSpeed * (1 + (word.length - minLength) * 0.05);
     
     gameContainer.appendChild(wordElement);
-    words.push({ element: wordElement, word, hitIndex: 0, x: position.x, y: position.y, speed: individualWordSpeed, bulletsInFlight: 0 });
+    words.push({ element: wordElement, word, hitIndex: 0, x: position.x, y: position.y, speed: individualWordSpeed, bulletsInFlight: 0, isMoving: false });
     wordsSpawned++;
     updateWordsLeft();
     updateDebugInfo();
+
+    // Make the word visible after a short delay
+    setTimeout(() => {
+        wordElement.classList.add('visible');
+    }, 100);
+
+    // Start moving the word after half a second
+    setTimeout(() => {
+        words[words.length - 1].isMoving = true;
+    }, 500);
 }
 
-function getRandomEdgePosition() {
+function getRandomEdgePosition(wordElement) {
+    const containerRect = gameContainer.getBoundingClientRect();
+    const wordRect = wordElement.getBoundingClientRect();
     const edge = Math.floor(Math.random() * 4);
-    const x = Math.random() * window.innerWidth;
-    const y = Math.random() * window.innerHeight;
-    switch (edge) {
-        case 0: return { x: x, y: 0 };
-        case 1: return { x: window.innerWidth, y: y };
-        case 2: return { x: x, y: window.innerHeight };
-        case 3: return { x: 0, y: y };
-    }
-}
+    let x, y;
 
-function isOverlapping(x, y) {
-    const buffer = 50;
-    return words.some(word => {
-        const dx = word.x - x;
-        const dy = word.y - y;
-        return Math.sqrt(dx * dx + dy * dy) < buffer;
-    });
+    switch (edge) {
+        case 0: // Top edge
+            x = Math.random() * (containerRect.width - wordRect.width);
+            y = 0;
+            break;
+        case 1: // Right edge
+            x = containerRect.width - wordRect.width;
+            y = Math.random() * (containerRect.height - wordRect.height);
+            break;
+        case 2: // Bottom edge
+            x = Math.random() * (containerRect.width - wordRect.width);
+            y = containerRect.height - wordRect.height;
+            break;
+        case 3: // Left edge
+            x = 0;
+            y = Math.random() * (containerRect.height - wordRect.height);
+            break;
+    }
+
+    return { x, y };
 }
 
 function spawnWordWithDelay() {
     if (wordsSpawned < waveWordCount && isGameActive && !isPaused) {
         spawnWord();
         if (wordsSpawned < waveWordCount) {
-            const delay = Math.min(1000, baseSpawnRate + Math.random() * 500);
+            const delay = Math.min(1500, baseSpawnRate + Math.random() * 750);
             setTimeout(spawnWordWithDelay, delay);
         }
     }
@@ -476,6 +486,8 @@ function moveWords() {
     const centerY = window.innerHeight / 2;
 
     words.forEach((wordObj) => {
+        if (!wordObj.isMoving) return;
+
         const dx = centerX - wordObj.x;
         const dy = centerY - wordObj.y;
         const distance = Math.sqrt(dx * dx + dy * dy);
@@ -577,10 +589,10 @@ function handleWordCompletion(targetWord) {
 
 function dazeWord(wordObj) {
     wordObj.element.classList.add('dazed');
-    wordObj.speed *= 0.5;
+    wordObj.speed *= 0.75;
     setTimeout(() => {
         wordObj.element.classList.remove('dazed');
-        wordObj.speed = wordSpeed * (1 + (wordObj.word.length - 3) * 0.1);
+        wordObj.speed = wordSpeed * (1 + (wordObj.word.length - 3) * 0.05);
     }, 1000);
 }
 
@@ -606,9 +618,9 @@ function showWaveClearedPopup() {
 
 function startNextWave() {
     currentWave++;
-    waveWordCount += 1;
-    wordSpeed += 0.1;
-    baseSpawnRate = Math.max(500, baseSpawnRate - 100);
+    waveWordCount += Math.floor(currentWave / 3);
+    wordSpeed += 0.05;
+    baseSpawnRate = Math.max(750, baseSpawnRate - 50);
     lettersHitThisWave = 0;
     startWave();
 }
@@ -650,7 +662,6 @@ function shootBullet(targetWord) {
     bullet.style.transform = `rotate(${angle + 90}deg)`;
     gameContainer.appendChild(bullet);
 
-    // Play bullet shot sound when the bullet is fired
     if (!isMuted) {
         bulletShotSound.currentTime = 0;
         bulletShotSound.play();
@@ -676,7 +687,6 @@ function shootBullet(targetWord) {
             targetWord.bulletsInFlight--;
             dazeWord(targetWord);
             
-            // Play bullet hit sound when the bullet hits the word
             if (!isMuted && targetWord.hitIndex < targetWord.word.length) {
                 bulletHitSound.currentTime = 0;
                 bulletHitSound.play();
@@ -821,7 +831,7 @@ function showStartButton() {
     waveCleared.style.display = 'none';
 }
 
-function initGame() {
+function initGame(){
     debugLog("Initializing game");
     zombiesShot = 0;
     totalScore = 0;
