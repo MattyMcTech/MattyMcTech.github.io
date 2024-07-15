@@ -22,11 +22,12 @@ body, html {
     left: 50%;
     top: 50%;
     transform: translate(-50%, -50%);
-    width: 80px;
-    height: 80px;
+    width: 100px;
+    height: 100px;
     background: url('https://raw.githubusercontent.com/MattyMcTech/WordWarZ/main/cowboy.png') no-repeat center center;
     background-size: contain;
     z-index: 1000;
+  
 }
 .enemy-word {
     position: absolute;
@@ -284,7 +285,7 @@ splatSound.volume = 0.3;
 
 const backgroundMusic = new Audio('https://github.com/MattyMcTech/WordWarZ/raw/main/song.mp3');
 backgroundMusic.loop = true;
-backgroundMusic.volume = 0.3;
+backgroundMusic.volume = 0.1;
 
 const bulletHitSound = new Audio('https://github.com/MattyMcTech/WordWarZ/raw/main/bulletHit.mp3');
 bulletHitSound.volume = 0.3;
@@ -514,14 +515,15 @@ function spawnWordWithDelay() {
 function moveWords() {
     if (isPaused) return;
 
-    const centerX = window.innerWidth / 2;
-    const centerY = window.innerHeight / 2;
+    const playerRect = player.getBoundingClientRect();
+    const centerX = playerRect.left + playerRect.width / 2;
+    const centerY = playerRect.top + playerRect.height / 2;
 
     words.forEach((wordObj) => {
         if (!wordObj.isMoving) return;
 
-        const dx = centerX - wordObj.x;
-        const dy = centerY - wordObj.y;
+        const dx = centerX - (wordObj.x + wordObj.element.offsetWidth / 2);
+        const dy = centerY - (wordObj.y + wordObj.element.offsetHeight / 2);
         const distance = Math.sqrt(dx * dx + dy * dy);
         
         if (distance > 5) {
