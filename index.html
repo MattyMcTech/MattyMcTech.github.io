@@ -418,55 +418,87 @@ async function spawnWord() {
     bullseye.classList.add('bullseye');
     wordElement.appendChild(bullseye);
 
-    const position = getRandomEdgePosition(wordElement);
+    // Temporarily add the word to the container to measure its width
+    wordElement.style.visibility = 'hidden';
+    gameContainer.appendChild(wordElement);
+    const wordWidth = wordElement.offsetWidth;
+    const wordHeight = wordElement.offsetHeight;
+    wordElement.style.visibility = 'visible';
+
+    const containerRect = gameContainer.getBoundingClientRect();
+    const position = getRandomEdgePosition(wordWidth, wordHeight, containerRect);
     wordElement.style.left = `${position.x}px`;
     wordElement.style.top = `${position.y}px`;
     
     const individualWordSpeed = wordSpeed * (1 + (word.length - minLength) * 0.05);
     
-    gameContainer.appendChild(wordElement);
-    words.push({ element: wordElement, word, hitIndex: 0, x: position.x, y: position.y, speed: individualWordSpeed, bulletsInFlight: 0, isMoving: false });
+    words.push({ 
+        element: wordElement, 
+        word, 
+        hitIndex: 0, 
+        x: position.x, 
+        y: position.y, 
+        speed: individualWordSpeed, 
+        bulletsInFlight: 0, 
+        isMoving: false,
+        edge: position.edge
+    });
     wordsSpawned++;
     updateWordsLeft();
     updateDebugInfo();
 
-    // Make the word visible after a short delay
-    setTimeout(() => {
-        wordElement.classList.add('visible');
-    }, 100);
+    // Make the word visible immediately
+    wordElement.classList.add('visible');
 
-    // Start moving the word after half a second
+    // Adjust the word's position to be fully visible immediately
+    const wordObj = words[words.length - 1];
+    switch (position.edge) {
+        case 0: // Top edge
+            wordObj.y = 0;
+            break;
+        case 1: // Right edge
+            wordObj.x = containerRect.width - wordWidth;
+            break;
+        case 2: // Bottom edge
+            wordObj.y = containerRect.height - wordHeight;
+            break;
+        case 3: // Left edge
+            wordObj.x = 0;
+            break;
+    }
+    wordObj.element.style.left = `${wordObj.x}px`;
+    wordObj.element.style.top = `${wordObj.y}px`;
+
+    // Start moving the word after one second
     setTimeout(() => {
-        words[words.length - 1].isMoving = true;
-    }, 500);
+        wordObj.isMoving = true;
+    }, 1000);
 }
 
-function getRandomEdgePosition(wordElement) {
-    const containerRect = gameContainer.getBoundingClientRect();
-    const wordRect = wordElement.getBoundingClientRect();
+function getRandomEdgePosition(wordWidth, wordHeight, containerRect) {
     const edge = Math.floor(Math.random() * 4);
     let x, y;
 
     switch (edge) {
         case 0: // Top edge
-            x = Math.random() * (containerRect.width - wordRect.width);
-            y = 0;
+            x = Math.random() * (containerRect.width - wordWidth);
+            y = -wordHeight;
             break;
         case 1: // Right edge
-            x = containerRect.width - wordRect.width;
-            y = Math.random() * (containerRect.height - wordRect.height);
+            x = containerRect.width;
+            y = Math.random() * (containerRect.height - wordHeight);
             break;
         case 2: // Bottom edge
-            x = Math.random() * (containerRect.width - wordRect.width);
-            y = containerRect.height - wordRect.height;
+            x = Math.random() * (containerRect.width - wordWidth);
+            y = containerRect.height;
             break;
         case 3: // Left edge
-            x = 0;
-            y = Math.random() * (containerRect.height - wordRect.height);
+            x = -wordWidth;
+            y = Math.random() * (containerRect.height - wordHeight);
             break;
     }
 
-    return { x, y };
+    return { x, y, edge };
 }
 
 function spawnWordWithDelay() {
