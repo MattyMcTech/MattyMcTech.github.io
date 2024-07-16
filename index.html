@@ -314,8 +314,8 @@ const backgroundMusic = new Audio('https://github.com/MattyMcTech/WordWarZ/raw/m
 backgroundMusic.loop = true;
 backgroundMusic.volume = 0.1;
 
-const bulletHitSound = new Audio('https://github.com/MattyMcTech/WordWarZ/raw/main/bulletHit.mp3');
-bulletHitSound.volume = 0.3;
+//const bulletHitSound = new Audio('https://github.com/MattyMcTech/WordWarZ/raw/main/bulletHit.mp3');
+//bulletHitSound.volume = 0.3;
 
 const bulletShotSound = new Audio('https://github.com/MattyMcTech/WordWarZ/raw/main/bullet.mp3');
 bulletShotSound.volume = 0.3;
@@ -390,8 +390,8 @@ volumeSlider.addEventListener('input', (e) => {
     const volume = parseFloat(e.target.value);
     splatSound.volume = volume * 0.6;
     backgroundMusic.volume = volume * 0.2;
-    bulletHitSound.volume = volume * 0.6;
     bulletShotSound.volume = volume * 0.6;
+    // Remove the line that sets bulletHitSound.volume
 });
 
 backgroundMusic.addEventListener('play', () => {
@@ -742,7 +742,7 @@ function shootBullet(targetWord) {
     const animationDuration = 500;
     const startTime = Date.now();
 
-    function animateBullet() {
+   function animateBullet() {
         const elapsedTime = Date.now() - startTime;
         const progress = Math.min(elapsedTime / animationDuration, 1);
 
@@ -759,11 +759,14 @@ function shootBullet(targetWord) {
             targetWord.bulletsInFlight--;
             dazeWord(targetWord);
             
-            if (!isMuted && targetWord.hitIndex < targetWord.word.length) {
-                bulletHitSound.currentTime = 0;
+            // Always play the hit sound if not muted
+            if (!isMuted) {
+                const bulletHitSound = new Audio('https://github.com/MattyMcTech/WordWarZ/raw/main/bulletHit.mp3');
+                bulletHitSound.volume = 0.3;
                 bulletHitSound.play();
             }
             
+            // Check if the word is completed after playing the sound
             if (targetWord.bulletsInFlight === 0 && targetWord.hitIndex === targetWord.word.length) {
                 handleWordCompletion(targetWord);
             }
