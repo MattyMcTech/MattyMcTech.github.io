@@ -166,36 +166,42 @@
         function addScoreToLeaderboard() {
     if (!playerName) return;
     
-    const playerEntry = { name: playerName, score: currentScore };
-    leaderboardDB.get(playerName).put(playerEntry);
+    const playerEntry = { name: playerName, score: currentScore, timestamp: Date.now() };
+    const entryKey = `entry_${playerName}_${Date.now()}`;
+    leaderboardDB.get(entryKey).put(playerEntry);
+    console.log("Score added:", playerEntry);
 
     updateLeaderboardDisplay();
 }
 
-        function updateLeaderboardDisplay() {
+      function updateLeaderboardDisplay() {
     leaderboardList.innerHTML = '';
-    const leaderboardMap = new Map();
+    const leaderboardEntries = [];
 
     leaderboardDB.map().once((data, key) => {
         if (data && data.name && data.score) {
-            if (!leaderboardMap.has(data.name) || data.score > leaderboardMap.get(data.name).score) {
-                leaderboardMap.set(data.name, data);
+            leaderboardEntries.push(data);
+            console.log("Fetched entry:", data);
+        }
+    });
+
+    // Wait a bit to ensure all data is fetched
+    setTimeout(() => {
+        const sortedLeaderboard = leaderboardEntries
+            .sort((a, b) => b.score - a.score)
+            .slice(0, 25);
+
+        sortedLeaderboard.forEach((entry, index) => {
+            const li = document.createElement('li');
+            li.innerHTML = `<span>${index + 1}. ${entry.name}</span> <span>${entry.score.toFixed(2)}</span>`;
+            if (entry.name === playerName) {
+                li.style.fontWeight = 'bold';
             }
-        }
-    });
+            leaderboardList.appendChild(li);
+        });
 
-    const sortedLeaderboard = Array.from(leaderboardMap.values())
-        .sort((a, b) => b.score - a.score)
-        .slice(0, 25);
-
-    sortedLeaderboard.forEach((entry, index) => {
-        const li = document.createElement('li');
-        li.innerHTML = `<span>${index + 1}. ${entry.name}</span> <span>${entry.score.toFixed(2)}</span>`;
-        if (entry.name === playerName) {
-            li.style.fontWeight = 'bold';
-        }
-        leaderboardList.appendChild(li);
-    });
+        console.log("Leaderboard updated:", sortedLeaderboard);
+    }, 1000); // Wait for 1 second
 }
 
         yellButton.addEventListener('click', async () => {
@@ -287,7 +293,15 @@
                 alert('Unable to access microphone. Please make sure you have given permission and try again.');
             }
         });
-
+function initializeLeaderboard() {
+    updateLeaderboardDisplay();
+    // Set up a listener for real-time updates
+    leaderboardDB.map().on((data, key) => {
+        console.log("Database updated:", key, data);
+        updateLeaderboardDisplay();
+    });
+}
+        initializeLeaderboard();
         // Initial leaderboard display
         updateLeaderboardDisplay();
     </script>
