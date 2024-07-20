@@ -42,6 +42,10 @@
         button:active {
             transform: scale(0.95);
         }
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
         #score-display {
             font-size: 2.5em;
             margin-top: 20px;
@@ -93,36 +97,23 @@
             display: flex;
             justify-content: space-between;
         }
-        #user-info {
-            font-size: 1.5em;
+        #name-input {
+            font-size: 1.2em;
+            padding: 10px;
             margin-bottom: 20px;
-            background-color: #FF69B4;
-            color: #FFFFFF;
-            padding: 10px 20px;
-            border-radius: 25px;
-            display: none;
-        }
-        #login-button {
-            font-size: 1.5em;
-            padding: 10px 20px;
-            background-color: #7289DA;
-            color: #FFFFFF;
-            border: none;
+            border: 2px solid #FF69B4;
             border-radius: 5px;
-            cursor: pointer;
-            margin-bottom: 20px;
         }
     </style>
 </head>
 <body>
     <h1>The Penis Game</h1>
-    <div id="user-info" style="display: none;">Welcome, <span id="username"></span>!</div>
-    <button id="login-button">Login with Discord</button>
     <div id="game-description">
         Welcome to the Penis Game! The goal is simple: yell "PENIS" as loud as you can. 
         But be careful where you play - this game is not for the faint of heart or those in quiet public spaces!
     </div>
-    <button id="yell-button">YELL "PENIS"!</button>
+    <input type="text" id="name-input" placeholder="Enter your name" maxlength="20">
+    <button id="yell-button" disabled>YELL "PENIS"!</button>
     <div id="score-display">Score: 0.00</div>
     <div id="volume-meter"><div id="volume-bar"></div></div>
     <div id="recording-indicator">🔴 RECORDING</div>
@@ -135,20 +126,15 @@
         </ol>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/gun/gun.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/annyang/2.6.1/annyang.min.js"></script>
     <script>
-        const CLIENT_ID = '1264315243669229669';
-        const REDIRECT_URI = 'https://mattymctech.github.io/callback.html';
+        // Initialize Gun
+        const gun = Gun(['https://gun-manhattan.herokuapp.com/gun']);
+        const leaderboardDB = gun.get('penis-game-leaderboard');
 
         let currentScore = 0;
-        let leaderboard = [
-            { name: "LoudMouth69#1234", score: 95.5 },
-            { name: "ScreamDream#5678", score: 91.7 },
-            { name: "ShyYeller42#9012", score: 82.3 },
-            { name: "VoiceOfThunder#3456", score: 78.9 },
-            { name: "WhisperQueen#7890", score: 65.2 }
-        ];
-        let user = { username: null };
+        let playerName = '';
 
         const yellButton = document.getElementById('yell-button');
         const scoreDisplay = document.getElementById('score-display');
@@ -156,9 +142,12 @@
         const recordingIndicator = document.getElementById('recording-indicator');
         const resultDisplay = document.getElementById('result-display');
         const leaderboardList = document.getElementById('leaderboard-list');
-        const loginButton = document.getElementById('login-button');
-        const userInfo = document.getElementById('user-info');
-        const usernameSpan = document.getElementById('username');
+        const nameInput = document.getElementById('name-input');
+
+        nameInput.addEventListener('input', function() {
+            playerName = this.value.trim();
+            yellButton.disabled = playerName === '';
+        });
 
         function updateScore(newScore) {
             currentScore = newScore;
@@ -175,41 +164,46 @@
         }
 
         function addScoreToLeaderboard() {
-            if (!user.username) return;  // Don't add to leaderboard if not logged in
+            if (!playerName) return;
             
-            const playerEntry = { name: user.username, score: currentScore };
-            
-            const existingEntryIndex = leaderboard.findIndex(entry => entry.name === user.username);
-
-            if (existingEntryIndex !== -1) {
-                if (currentScore > leaderboard[existingEntryIndex].score) {
-                    leaderboard[existingEntryIndex] = playerEntry;
-                }
-            } else {
-                leaderboard.push(playerEntry);
-            }
-
-            leaderboard.sort((a, b) => b.score - a.score);
-            leaderboard = leaderboard.slice(0, 25);
+            const playerEntry = { name: playerName, score: currentScore };
+            leaderboardDB.set(playerEntry);
 
             updateLeaderboardDisplay();
         }
 
         function updateLeaderboardDisplay() {
             leaderboardList.innerHTML = '';
-            leaderboard.forEach((entry, index) => {
-                const li = document.createElement('li');
-                li.innerHTML = `<span>${index + 1}. ${entry.name}</span> <span>${entry.score.toFixed(2)}</span>`;
-                if (entry.name === user.username) {
-                    li.style.fontWeight = 'bold';
+            leaderboardDB.map().once((data, key) => {
+                if (data && data.name && data.score) {
+                    const li = document.createElement('li');
+                    li.innerHTML = `<span>${data.name}</span> <span>${data.score.toFixed(2)}</span>`;
+                    if (data.name === playerName) {
+                        li.style.fontWeight = 'bold';
+                    }
+                    leaderboardList.appendChild(li);
                 }
-                leaderboardList.appendChild(li);
+            });
+
+            // Sort the leaderboard
+            Array.from(leaderboardList.children)
+                .sort((a, b) => parseFloat(b.lastChild.textContent) - parseFloat(a.lastChild.textContent))
+                .forEach(li => leaderboardList.appendChild(li));
+
+            // Keep only top 25
+            while (leaderboardList.children.length > 25) {
+                leaderboardList.removeChild(leaderboardList.lastChild);
+            }
+
+            // Add numbers to the leaderboard
+            Array.from(leaderboardList.children).forEach((li, index) => {
+                li.innerHTML = `<span>${index + 1}. ${li.firstChild.textContent}</span> <span>${li.lastChild.textContent}</span>`;
             });
         }
 
         yellButton.addEventListener('click', async () => {
-            if (!user.username) {
-                alert("Please log in with Discord before playing!");
+            if (!playerName) {
+                alert("Please enter your name before yelling!");
                 return;
             }
 
@@ -297,67 +291,7 @@
             }
         });
 
-         loginButton.addEventListener('click', () => {
-            const authUrl = `https://discord.com/api/oauth2/authorize?client_id=${CLIENT_ID}&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&response_type=token&scope=identify`;
-            console.log('Auth URL:', authUrl); // Debugging line
-            window.location.href = authUrl;
-        });
-
-        // Check if we're coming back from OAuth
-        const fragment = new URLSearchParams(window.location.hash.slice(1));
-        const [accessToken, tokenType] = [fragment.get('access_token'), fragment.get('token_type')];
-
-        if (accessToken) {
-            fetch('https://discord.com/api/users/@me', {
-                headers: {
-                    authorization: `${tokenType} ${accessToken}`,
-                },
-            })
-                .then(result => result.json())
-                .then(response => {
-                    const { username, discriminator } = response;
-                    user.username = `${username}#${discriminator}`;
-                    usernameSpan.textContent = user.username;
-                    userInfo.style.display = 'block';
-                    loginButton.style.display = 'none';
-                    updateLeaderboardDisplay();
-                })
-                .catch(console.error);
-        }
- function handleOAuthCallback() {
-            console.log('Handling OAuth callback'); // Debugging line
-            console.log('Current URL:', window.location.href); // Debugging line
-            const fragment = new URLSearchParams(window.location.hash.slice(1));
-            const [accessToken, tokenType] = [fragment.get('access_token'), fragment.get('token_type')];
-
-            if (accessToken) {
-                console.log('Access token found:', accessToken); // Debugging line
-                fetch('https://discord.com/api/users/@me', {
-                    headers: {
-                        authorization: `${tokenType} ${accessToken}`,
-                    },
-                })
-                    .then(result => result.json())
-                    .then(response => {
-                        console.log('Discord API response:', response); // Debugging line
-                        const { username, discriminator } = response;
-                        user.username = `${username}#${discriminator}`;
-                        usernameSpan.textContent = user.username;
-                        userInfo.style.display = 'block';
-                        loginButton.style.display = 'none';
-                        updateLeaderboardDisplay();
-                        
-                        // Clear the URL hash to remove the token
-                        history.pushState("", document.title, window.location.pathname + window.location.search);
-                    })
-                    .catch(error => {
-                        console.error('Error fetching user data:', error); // Debugging line
-                    });
-            } else {
-                console.log('No access token found in URL'); // Debugging line
-            }
-        }
-		 window.addEventListener('load', handleOAuthCallback);
+        // Initial leaderboard display
         updateLeaderboardDisplay();
     </script>
 </body>
