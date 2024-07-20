@@ -298,7 +298,9 @@
         });
 
          loginButton.addEventListener('click', () => {
-            window.location.href = `https://discord.com/api/oauth2/authorize?client_id=${CLIENT_ID}&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&response_type=token&scope=identify`;
+            const authUrl = `https://discord.com/api/oauth2/authorize?client_id=${CLIENT_ID}&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&response_type=token&scope=identify`;
+            console.log('Auth URL:', authUrl); // Debugging line
+            window.location.href = authUrl;
         });
 
         // Check if we're coming back from OAuth
@@ -323,10 +325,13 @@
                 .catch(console.error);
         }
  function handleOAuthCallback() {
+            console.log('Handling OAuth callback'); // Debugging line
+            console.log('Current URL:', window.location.href); // Debugging line
             const fragment = new URLSearchParams(window.location.hash.slice(1));
             const [accessToken, tokenType] = [fragment.get('access_token'), fragment.get('token_type')];
 
             if (accessToken) {
+                console.log('Access token found:', accessToken); // Debugging line
                 fetch('https://discord.com/api/users/@me', {
                     headers: {
                         authorization: `${tokenType} ${accessToken}`,
@@ -334,6 +339,7 @@
                 })
                     .then(result => result.json())
                     .then(response => {
+                        console.log('Discord API response:', response); // Debugging line
                         const { username, discriminator } = response;
                         user.username = `${username}#${discriminator}`;
                         usernameSpan.textContent = user.username;
@@ -344,7 +350,11 @@
                         // Clear the URL hash to remove the token
                         history.pushState("", document.title, window.location.pathname + window.location.search);
                     })
-                    .catch(console.error);
+                    .catch(error => {
+                        console.error('Error fetching user data:', error); // Debugging line
+                    });
+            } else {
+                console.log('No access token found in URL'); // Debugging line
             }
         }
 		 window.addEventListener('load', handleOAuthCallback);
