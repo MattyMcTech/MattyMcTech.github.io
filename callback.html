@@ -8,11 +8,17 @@
 <body>
     <p>Redirecting to the game...</p>
     <script>
+        console.log('Callback page loaded'); // Debugging line
+        console.log('Current URL:', window.location.href); // Debugging line
+        
         // Get the hash from the URL (contains the access token)
         const hash = window.location.hash.substring(1);
+        console.log('Hash:', hash); // Debugging line
         
         // Redirect to the main page with the hash appended
-        window.location.href = '/' + (hash ? '#' + hash : '');
+        const redirectUrl = '/' + (hash ? '#' + hash : '');
+        console.log('Redirecting to:', redirectUrl); // Debugging line
+        window.location.href = redirectUrl;
     </script>
 </body>
 </html>
