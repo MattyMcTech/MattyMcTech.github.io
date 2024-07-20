@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Redirecting...</title>
+</head>
+<body>
+    <p>Redirecting to the game...</p>
+    <script>
+        // Get the hash from the URL (contains the access token)
+        const hash = window.location.hash.substring(1);
+        
+        // Redirect to the main page with the hash appended
+        window.location.href = '/' + (hash ? '#' + hash : '');
+    </script>
+</body>
+</html>
