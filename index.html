@@ -3,7 +3,6 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <base href="https://mattymctech.github.io/">
     <title>The Penis Game - Dare to Yell!</title>
     <style>
         body {
@@ -104,6 +103,14 @@
             border: 2px solid #FF69B4;
             border-radius: 5px;
         }
+        #pagination {
+            margin-top: 20px;
+        }
+        #pagination button {
+            font-size: 1em;
+            padding: 5px 10px;
+            margin: 0 5px;
+        }
     </style>
 </head>
 <body>
@@ -120,10 +127,14 @@
     <div id="result-display"></div>
     
     <div id="leaderboard">
-        <h2>Top 25 Leaderboard</h2>
+        <h2>Top Leaderboard</h2>
         <ol id="leaderboard-list">
             <!-- Leaderboard entries will be inserted here -->
         </ol>
+        <div id="pagination">
+            <button id="prevPage" onclick="prevPage()">Previous</button>
+            <button id="nextPage" onclick="nextPage()">Next</button>
+        </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/gun/gun.js"></script>
@@ -135,6 +146,9 @@
 
         let currentScore = 0;
         let playerName = '';
+        let leaderboardPage = 0;
+        const entriesPerPage = 25;
+        let leaderboardEntries = [];
 
         const yellButton = document.getElementById('yell-button');
         const scoreDisplay = document.getElementById('score-display');
@@ -164,45 +178,75 @@
         }
 
         function addScoreToLeaderboard() {
-    if (!playerName) return;
-    
-    const playerEntry = { name: playerName, score: currentScore, timestamp: Date.now() };
-    const entryKey = `entry_${playerName}_${Date.now()}`;
-    leaderboardDB.get(entryKey).put(playerEntry);
-    console.log("Score added:", playerEntry);
+            if (!playerName) return;
+            
+            const playerEntry = { name: playerName, score: currentScore, timestamp: Date.now() };
+            const entryKey = `entry_${Date.now()}`;
+            leaderboardDB.get(entryKey).put(playerEntry);
+            console.log("Score added:", playerEntry);
 
-    updateLeaderboardDisplay();
-}
-
-      function updateLeaderboardDisplay() {
-    leaderboardList.innerHTML = '';
-    const leaderboardEntries = [];
-
-    leaderboardDB.map().once((data, key) => {
-        if (data && data.name && data.score) {
-            leaderboardEntries.push(data);
-            console.log("Fetched entry:", data);
+            fetchLeaderboardEntries();
         }
-    });
 
-    // Wait a bit to ensure all data is fetched
-    setTimeout(() => {
-        const sortedLeaderboard = leaderboardEntries
-            .sort((a, b) => b.score - a.score)
-            .slice(0, 25);
+        function fetchLeaderboardEntries() {
+            leaderboardEntries = [];
+            leaderboardDB.map().once((data, key) => {
+                if (data && data.name && data.score) {
+                    leaderboardEntries.push(data);
+                }
+            }).then(() => {
+                leaderboardEntries.sort((a, b) => b.score - a.score);
+                updateLeaderboardDisplay();
+            });
+        }
 
-        sortedLeaderboard.forEach((entry, index) => {
-            const li = document.createElement('li');
-            li.innerHTML = `<span>${index + 1}. ${entry.name}</span> <span>${entry.score.toFixed(2)}</span>`;
-            if (entry.name === playerName) {
-                li.style.fontWeight = 'bold';
+        function updateLeaderboardDisplay() {
+            leaderboardList.innerHTML = '';
+            const startIndex = leaderboardPage * entriesPerPage;
+            const endIndex = startIndex + entriesPerPage;
+            const pageEntries = leaderboardEntries.slice(startIndex, endIndex);
+
+            pageEntries.forEach((entry, index) => {
+                const li = document.createElement('li');
+                li.innerHTML = `<span>${startIndex + index + 1}. ${entry.name}</span> <span>${entry.score.toFixed(2)}</span>`;
+                if (entry.name === playerName) {
+                    li.style.fontWeight = 'bold';
+                }
+                leaderboardList.appendChild(li);
+            });
+
+            updatePaginationButtons();
+        }
+
+        function updatePaginationButtons() {
+            const prevButton = document.getElementById('prevPage');
+            const nextButton = document.getElementById('nextPage');
+            
+            prevButton.disabled = leaderboardPage === 0;
+            nextButton.disabled = (leaderboardPage + 1) * entriesPerPage >= leaderboardEntries.length;
+        }
+
+        function prevPage() {
+            if (leaderboardPage > 0) {
+                leaderboardPage--;
+                updateLeaderboardDisplay();
             }
-            leaderboardList.appendChild(li);
-        });
+        }
 
-        console.log("Leaderboard updated:", sortedLeaderboard);
-    }, 1000); // Wait for 1 second
-}
+        function nextPage() {
+            if ((leaderboardPage + 1) * entriesPerPage < leaderboardEntries.length) {
+                leaderboardPage++;
+                updateLeaderboardDisplay();
+            }
+        }
+
+        function initializeLeaderboard() {
+            fetchLeaderboardEntries();
+            // Set up a listener for real-time updates
+            leaderboardDB.map().on(() => {
+                fetchLeaderboardEntries();
+            });
+        }
 
         yellButton.addEventListener('click', async () => {
             if (!playerName) {
@@ -293,17 +337,9 @@
                 alert('Unable to access microphone. Please make sure you have given permission and try again.');
             }
         });
-function initializeLeaderboard() {
-    updateLeaderboardDisplay();
-    // Set up a listener for real-time updates
-    leaderboardDB.map().on((data, key) => {
-        console.log("Database updated:", key, data);
-        updateLeaderboardDisplay();
-    });
-}
+
+        // Initialize the leaderboard when the page loads
         initializeLeaderboard();
-        // Initial leaderboard display
-        updateLeaderboardDisplay();
     </script>
 </body>
 </html>
