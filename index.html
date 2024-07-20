@@ -164,42 +164,39 @@
         }
 
         function addScoreToLeaderboard() {
-            if (!playerName) return;
-            
-            const playerEntry = { name: playerName, score: currentScore };
-            leaderboardDB.set(playerEntry);
+    if (!playerName) return;
+    
+    const playerEntry = { name: playerName, score: currentScore };
+    leaderboardDB.get(playerName).put(playerEntry);
 
-            updateLeaderboardDisplay();
-        }
+    updateLeaderboardDisplay();
+}
 
         function updateLeaderboardDisplay() {
-            leaderboardList.innerHTML = '';
-            leaderboardDB.map().once((data, key) => {
-                if (data && data.name && data.score) {
-                    const li = document.createElement('li');
-                    li.innerHTML = `<span>${data.name}</span> <span>${data.score.toFixed(2)}</span>`;
-                    if (data.name === playerName) {
-                        li.style.fontWeight = 'bold';
-                    }
-                    leaderboardList.appendChild(li);
-                }
-            });
+    leaderboardList.innerHTML = '';
+    const leaderboardMap = new Map();
 
-            // Sort the leaderboard
-            Array.from(leaderboardList.children)
-                .sort((a, b) => parseFloat(b.lastChild.textContent) - parseFloat(a.lastChild.textContent))
-                .forEach(li => leaderboardList.appendChild(li));
-
-            // Keep only top 25
-            while (leaderboardList.children.length > 25) {
-                leaderboardList.removeChild(leaderboardList.lastChild);
+    leaderboardDB.map().once((data, key) => {
+        if (data && data.name && data.score) {
+            if (!leaderboardMap.has(data.name) || data.score > leaderboardMap.get(data.name).score) {
+                leaderboardMap.set(data.name, data);
             }
-
-            // Add numbers to the leaderboard
-            Array.from(leaderboardList.children).forEach((li, index) => {
-                li.innerHTML = `<span>${index + 1}. ${li.firstChild.textContent}</span> <span>${li.lastChild.textContent}</span>`;
-            });
         }
+    });
+
+    const sortedLeaderboard = Array.from(leaderboardMap.values())
+        .sort((a, b) => b.score - a.score)
+        .slice(0, 25);
+
+    sortedLeaderboard.forEach((entry, index) => {
+        const li = document.createElement('li');
+        li.innerHTML = `<span>${index + 1}. ${entry.name}</span> <span>${entry.score.toFixed(2)}</span>`;
+        if (entry.name === playerName) {
+            li.style.fontWeight = 'bold';
+        }
+        leaderboardList.appendChild(li);
+    });
+}
 
         yellButton.addEventListener('click', async () => {
             if (!playerName) {
