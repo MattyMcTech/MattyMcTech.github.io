@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <base href="https://penisgame.net">
+    <title>The Penis Game - Dare to Yell!</title>
+    <style>
+        body {
+            font-family: 'Comic Sans MS', cursive;
+            background-color: #FFB6C1;
+            color: #FF1493;
+            text-align: center;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+        }
+        h1 {
+            font-size: 4em;
+            text-shadow: 3px 3px 0px #FF69B4;
+            margin-bottom: 20px;
+        }
+        #game-description {
+            font-size: 1.2em;
+            max-width: 600px;
+            margin-bottom: 20px;
+        }
+        button {
+            font-size: 2em;
+            padding: 15px 30px;
+            background-color: #FF69B4;
+            color: #FFFFFF;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: transform 0.1s;
+        }
+        button:active {
+            transform: scale(0.95);
+        }
+        #score-display {
+            font-size: 2.5em;
+            margin-top: 20px;
+        }
+        #volume-meter {
+            width: 300px;
+            height: 30px;
+            background-color: #FFFFFF;
+            margin-top: 20px;
+            border-radius: 15px;
+            overflow: hidden;
+        }
+        #volume-bar {
+            width: 0%;
+            height: 100%;
+            background-color: #FF69B4;
+            transition: width 0.1s;
+        }
+        #result-display {
+            font-size: 2em;
+            margin-top: 20px;
+            font-weight: bold;
+        }
+        #recording-indicator {
+            font-size: 1.5em;
+            margin-top: 20px;
+            color: #FF0000;
+            font-weight: bold;
+            visibility: hidden;
+        }
+        #leaderboard {
+            margin-top: 30px;
+            background-color: #FFFFFF;
+            padding: 20px;
+            border-radius: 10px;
+            max-width: 400px;
+        }
+        #leaderboard h2 {
+            color: #FF1493;
+        }
+        #leaderboard-list {
+            list-style-type: none;
+            padding: 0;
+            text-align: left;
+        }
+        #leaderboard-list li {
+            margin: 10px 0;
+            font-size: 1.2em;
+            display: flex;
+            justify-content: space-between;
+        }
+        #user-info {
+            font-size: 1.5em;
+            margin-bottom: 20px;
+            background-color: #FF69B4;
+            color: #FFFFFF;
+            padding: 10px 20px;
+            border-radius: 25px;
+            display: none;
+        }
+        #login-button {
+            font-size: 1.5em;
+            padding: 10px 20px;
+            background-color: #7289DA;
+            color: #FFFFFF;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>The Penis Game</h1>
+    <div id="user-info">Welcome, <span id="username"></span>!</div>
+    <button id="login-button">Login with Discord</button>
+    <div id="game-description">
+        Welcome to the Penis Game! The goal is simple: yell "PENIS" as loud as you can. 
+        But be careful where you play - this game is not for the faint of heart or those in quiet public spaces!
+    </div>
+    <button id="yell-button">YELL "PENIS"!</button>
+    <div id="score-display">Score: 0.00</div>
+    <div id="volume-meter"><div id="volume-bar"></div></div>
+    <div id="recording-indicator">🔴 RECORDING</div>
+    <div id="result-display"></div>
+    
+    <div id="leaderboard">
+        <h2>Top 25 Leaderboard</h2>
+        <ol id="leaderboard-list">
+            <!-- Leaderboard entries will be inserted here -->
+        </ol>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/annyang/2.6.1/annyang.min.js"></script>
+    <script>
+        const CLIENT_ID = '1264315243669229669';
+        const REDIRECT_URI = 'https://mattymctech.github.io/callback';
+
+        let currentScore = 0;
+        let leaderboard = [
+            { name: "LoudMouth69#1234", score: 95.5 },
+            { name: "ScreamDream#5678", score: 91.7 },
+            { name: "ShyYeller42#9012", score: 82.3 },
+            { name: "VoiceOfThunder#3456", score: 78.9 },
+            { name: "WhisperQueen#7890", score: 65.2 }
+        ];
+        let user = { username: null };
+
+        const yellButton = document.getElementById('yell-button');
+        const scoreDisplay = document.getElementById('score-display');
+        const volumeBar = document.getElementById('volume-bar');
+        const recordingIndicator = document.getElementById('recording-indicator');
+        const resultDisplay = document.getElementById('result-display');
+        const leaderboardList = document.getElementById('leaderboard-list');
+        const loginButton = document.getElementById('login-button');
+        const userInfo = document.getElementById('user-info');
+        const usernameSpan = document.getElementById('username');
+
+        function updateScore(newScore) {
+            currentScore = newScore;
+            scoreDisplay.textContent = `Score: ${currentScore.toFixed(2)}`;
+        }
+
+        function updateVolumeMeter(volume) {
+            volumeBar.style.width = `${volume * 100}%`;
+        }
+
+        function displayResult(success, message) {
+            resultDisplay.textContent = message;
+            resultDisplay.style.color = success ? '#00FF00' : '#FF0000';
+        }
+
+        function addScoreToLeaderboard() {
+            if (!user.username) return;  // Don't add to leaderboard if not logged in
+            
+            const playerEntry = { name: user.username, score: currentScore };
+            
+            const existingEntryIndex = leaderboard.findIndex(entry => entry.name === user.username);
+
+            if (existingEntryIndex !== -1) {
+                if (currentScore > leaderboard[existingEntryIndex].score) {
+                    leaderboard[existingEntryIndex] = playerEntry;
+                }
+            } else {
+                leaderboard.push(playerEntry);
+            }
+
+            leaderboard.sort((a, b) => b.score - a.score);
+            leaderboard = leaderboard.slice(0, 25);
+
+            updateLeaderboardDisplay();
+        }
+
+        function updateLeaderboardDisplay() {
+            leaderboardList.innerHTML = '';
+            leaderboard.forEach((entry, index) => {
+                const li = document.createElement('li');
+                li.innerHTML = `<span>${index + 1}. ${entry.name}</span> <span>${entry.score.toFixed(2)}</span>`;
+                if (entry.name === user.username) {
+                    li.style.fontWeight = 'bold';
+                }
+                leaderboardList.appendChild(li);
+            });
+        }
+
+        yellButton.addEventListener('click', async () => {
+            if (!user.username) {
+                alert("Please log in with Discord before playing!");
+                return;
+            }
+
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                const source = audioContext.createMediaStreamSource(stream);
+                const analyser = audioContext.createAnalyser();
+                source.connect(analyser);
+
+                analyser.fftSize = 2048;
+                const bufferLength = analyser.frequencyBinCount;
+                const dataArray = new Float32Array(bufferLength);
+
+                let startTime = audioContext.currentTime;
+                let maxDecibels = -Infinity;
+                let yellDetected = false;
+
+                recordingIndicator.style.visibility = 'visible';
+
+                function calculateScore(decibels) {
+                    const minDb = -30;
+                    const maxDb = 10;
+                    let normalizedScore = ((decibels - minDb) / (maxDb - minDb)) * 100;
+                    normalizedScore = Math.pow(normalizedScore / 100, 1.5) * 100;
+                    return Math.max(0, Math.min(100, normalizedScore));
+                }
+
+                if (annyang) {
+                    annyang.start({ autoRestart: false, continuous: false });
+                    annyang.addCallback('result', function(phrases) {
+                        const yelledWord = phrases[0].toLowerCase();
+                        if (yelledWord.includes('penis')) {
+                            const finalScore = calculateScore(maxDecibels);
+                            updateScore(finalScore);
+                            addScoreToLeaderboard();
+                            displayResult(true, `Awesome! You yelled "PENIS" with a score of ${finalScore.toFixed(2)}!`);
+                            yellDetected = true;
+                        } else {
+                            displayResult(false, `Oops! You were supposed to yell "PENIS", not "${yelledWord}".`);
+                            yellDetected = true;
+                        }
+                        cleanup();
+                    });
+                }
+
+                function checkVolume() {
+                    analyser.getFloatTimeDomainData(dataArray);
+                    let rms = 0;
+                    for (let i = 0; i < bufferLength; i++) {
+                        rms += dataArray[i] * dataArray[i];
+                    }
+                    rms = Math.sqrt(rms / bufferLength);
+                    
+                    const decibels = 20 * Math.log10(rms);
+                    maxDecibels = Math.max(maxDecibels, decibels);
+                    
+                    const normalizedVolume = (decibels + 100) / 100;
+                    updateVolumeMeter(normalizedVolume);
+
+                    if (audioContext.currentTime - startTime < 3) {
+                        requestAnimationFrame(checkVolume);
+                    } else {
+                        cleanup();
+                        if (!yellDetected) {
+                            if (maxDecibels < -20) {
+                                displayResult(false, "You didn't yell loud enough! Try again.");
+                            } else {
+                                displayResult(false, "We heard you, but couldn't recognize 'PENIS'. Try again!");
+                            }
+                        }
+                    }
+                }
+
+                function cleanup() {
+                    annyang.abort();
+                    stream.getTracks().forEach(track => track.stop());
+                    recordingIndicator.style.visibility = 'hidden';
+                }
+
+                checkVolume();
+            } catch (err) {
+                console.error('Error accessing microphone:', err);
+                alert('Unable to access microphone. Please make sure you have given permission and try again.');
+            }
+        });
+
+        loginButton.addEventListener('click', () => {
+            window.location.href = `https://discord.com/api/oauth2/authorize?client_id=${CLIENT_ID}&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&response_type=token&scope=identify`;
+        });
+
+        // Check if we're coming back from OAuth
+        const fragment = new URLSearchParams(window.location.hash.slice(1));
+        const [accessToken, tokenType] = [fragment.get('access_token'), fragment.get('token_type')];
+
+        if (accessToken) {
+            fetch('https://discord.com/api/users/@me', {
+                headers: {
+                    authorization: `${tokenType} ${accessToken}`,
+                },
+            })
+                .then(result => result.json())
+                .then(response => {
+                    const { username, discriminator } = response;
+                    user.username = `${username}#${discriminator}`;
+                    usernameSpan.textContent = user.username;
+                    userInfo.style.display = 'block';
+                    loginButton.style.display = 'none';
+                    updateLeaderboardDisplay();
+                })
+                .catch(console.error);
+        }
+
+        updateLeaderboardDisplay();
+    </script>
+</body>
+</html>
