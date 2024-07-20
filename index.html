@@ -116,7 +116,7 @@
 </head>
 <body>
     <h1>The Penis Game</h1>
-    <div id="user-info">Welcome, <span id="username"></span>!</div>
+    <div id="user-info" style="display: none;">Welcome, <span id="username"></span>!</div>
     <button id="login-button">Login with Discord</button>
     <div id="game-description">
         Welcome to the Penis Game! The goal is simple: yell "PENIS" as loud as you can. 
@@ -138,7 +138,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/annyang/2.6.1/annyang.min.js"></script>
     <script>
         const CLIENT_ID = '1264315243669229669';
-        const REDIRECT_URI = 'https://mattymctech.github.io/callback';
+        const REDIRECT_URI = 'https://mattymctech.github.io/';
 
         let currentScore = 0;
         let leaderboard = [
@@ -297,7 +297,7 @@
             }
         });
 
-        loginButton.addEventListener('click', () => {
+         loginButton.addEventListener('click', () => {
             window.location.href = `https://discord.com/api/oauth2/authorize?client_id=${CLIENT_ID}&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&response_type=token&scope=identify`;
         });
 
@@ -322,7 +322,32 @@
                 })
                 .catch(console.error);
         }
+ function handleOAuthCallback() {
+            const fragment = new URLSearchParams(window.location.hash.slice(1));
+            const [accessToken, tokenType] = [fragment.get('access_token'), fragment.get('token_type')];
 
+            if (accessToken) {
+                fetch('https://discord.com/api/users/@me', {
+                    headers: {
+                        authorization: `${tokenType} ${accessToken}`,
+                    },
+                })
+                    .then(result => result.json())
+                    .then(response => {
+                        const { username, discriminator } = response;
+                        user.username = `${username}#${discriminator}`;
+                        usernameSpan.textContent = user.username;
+                        userInfo.style.display = 'block';
+                        loginButton.style.display = 'none';
+                        updateLeaderboardDisplay();
+                        
+                        // Clear the URL hash to remove the token
+                        history.pushState("", document.title, window.location.pathname + window.location.search);
+                    })
+                    .catch(console.error);
+            }
+        }
+		 window.addEventListener('load', handleOAuthCallback);
         updateLeaderboardDisplay();
     </script>
 </body>
