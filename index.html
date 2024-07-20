@@ -148,7 +148,8 @@
         let playerName = '';
         let leaderboardPage = 0;
         const entriesPerPage = 25;
-        let leaderboardEntries = [];
+        let leaderboardEntries = new Set();
+        let updateTimeout = null;
 
         const yellButton = document.getElementById('yell-button');
         const scoreDisplay = document.getElementById('score-display');
@@ -183,28 +184,26 @@
             const playerEntry = { name: playerName, score: currentScore, timestamp: Date.now() };
             const entryKey = `entry_${Date.now()}`;
             leaderboardDB.get(entryKey).put(playerEntry);
-            console.log("Score added:", playerEntry);
-
-            fetchLeaderboardEntries();
         }
 
-        function fetchLeaderboardEntries() {
-            leaderboardEntries = [];
-            leaderboardDB.map().once((data, key) => {
-                if (data && data.name && data.score) {
-                    leaderboardEntries.push(data);
-                }
-            }).then(() => {
-                leaderboardEntries.sort((a, b) => b.score - a.score);
-                updateLeaderboardDisplay();
-            });
+        function debounce(func, wait) {
+            return function(...args) {
+                clearTimeout(updateTimeout);
+                updateTimeout = setTimeout(() => func.apply(this, args), wait);
+            };
         }
+
+        const debouncedUpdateLeaderboard = debounce(() => {
+            const sortedEntries = Array.from(leaderboardEntries).sort((a, b) => b.score - a.score).slice(0, 100);
+            leaderboardEntries = new Set(sortedEntries);
+            updateLeaderboardDisplay();
+        }, 1000);
 
         function updateLeaderboardDisplay() {
             leaderboardList.innerHTML = '';
             const startIndex = leaderboardPage * entriesPerPage;
             const endIndex = startIndex + entriesPerPage;
-            const pageEntries = leaderboardEntries.slice(startIndex, endIndex);
+            const pageEntries = Array.from(leaderboardEntries).slice(startIndex, endIndex);
 
             pageEntries.forEach((entry, index) => {
                 const li = document.createElement('li');
@@ -223,7 +222,7 @@
             const nextButton = document.getElementById('nextPage');
             
             prevButton.disabled = leaderboardPage === 0;
-            nextButton.disabled = (leaderboardPage + 1) * entriesPerPage >= leaderboardEntries.length;
+            nextButton.disabled = (leaderboardPage + 1) * entriesPerPage >= leaderboardEntries.size;
         }
 
         function prevPage() {
@@ -234,17 +233,18 @@
         }
 
         function nextPage() {
-            if ((leaderboardPage + 1) * entriesPerPage < leaderboardEntries.length) {
+            if ((leaderboardPage + 1) * entriesPerPage < leaderboardEntries.size) {
                 leaderboardPage++;
                 updateLeaderboardDisplay();
             }
         }
 
         function initializeLeaderboard() {
-            fetchLeaderboardEntries();
-            // Set up a listener for real-time updates
-            leaderboardDB.map().on(() => {
-                fetchLeaderboardEntries();
+            leaderboardDB.map().on((data, key) => {
+                if (data && data.name && data.score) {
+                    leaderboardEntries.add(data);
+                    debouncedUpdateLeaderboard();
+                }
             });
         }
 
