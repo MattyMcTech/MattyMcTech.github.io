@@ -127,7 +127,6 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/gun/gun.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/annyang/2.6.1/annyang.min.js"></script>
     <script>
         // Initialize Gun
         const gun = Gun(['https://gun-manhattan.herokuapp.com/gun']);
@@ -233,29 +232,52 @@
                 recordingIndicator.style.visibility = 'visible';
 
                 function calculateScore(decibels) {
-                    const minDb = -30;
-                    const maxDb = 10;
+                    const minDb = -50;
+                    const maxDb = 0;
                     let normalizedScore = ((decibels - minDb) / (maxDb - minDb)) * 100;
                     normalizedScore = Math.pow(normalizedScore / 100, 1.5) * 100;
                     return Math.max(0, Math.min(100, normalizedScore));
                 }
 
-                if (annyang) {
-                    annyang.start({ autoRestart: false, continuous: false });
-                    annyang.addCallback('result', function(phrases) {
-                        const yelledWord = phrases[0].toLowerCase();
-                        if (yelledWord.includes('penis')) {
+                // Try to use speech recognition
+                if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+                    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+                    const recognition = new SpeechRecognition();
+                    recognition.lang = 'en-US';
+                    recognition.interimResults = false;
+                    recognition.maxAlternatives = 1;
+
+                    recognition.start();
+
+                    recognition.onresult = function(event) {
+                        const speechResult = event.results[0][0].transcript.toLowerCase();
+                        if (speechResult.includes('penis')) {
                             const finalScore = calculateScore(maxDecibels);
                             updateScore(finalScore);
                             addScoreToLeaderboard();
                             displayResult(true, `Awesome! You yelled "PENIS" with a score of ${finalScore.toFixed(2)}!`);
                             yellDetected = true;
                         } else {
-                            displayResult(false, `Oops! You were supposed to yell "PENIS", not "${yelledWord}".`);
-                            yellDetected = true;
+                            displayResult(false, `Oops! You were supposed to yell "PENIS", not "${speechResult}".`);
                         }
                         cleanup();
-                    });
+                    };
+
+                    recognition.onerror = function(event) {
+                        console.error('Speech recognition error:', event.error);
+                        // Fall back to volume detection if there's an error
+                        checkVolume();
+                    };
+
+                    recognition.onend = function() {
+                        if (!yellDetected) {
+                            // If no result was detected, fall back to volume detection
+                            checkVolume();
+                        }
+                    };
+                } else {
+                    // If speech recognition is not available, use volume detection
+                    checkVolume();
                 }
 
                 function checkVolume() {
@@ -272,27 +294,26 @@
                     const normalizedVolume = (decibels + 100) / 100;
                     updateVolumeMeter(normalizedVolume);
 
-                    if (audioContext.currentTime - startTime < 3) {
+                    if (audioContext.currentTime - startTime < 5) {
                         requestAnimationFrame(checkVolume);
                     } else {
                         cleanup();
-                        if (!yellDetected) {
-                            if (maxDecibels < -20) {
-                                displayResult(false, "You didn't yell loud enough! Try again.");
-                            } else {
-                                displayResult(false, "We heard you, but couldn't recognize 'PENIS'. Try again!");
-                            }
+                        if (maxDecibels > -30) {
+                            const finalScore = calculateScore(maxDecibels);
+                            updateScore(finalScore);
+                            addScoreToLeaderboard();
+                            displayResult(true, `Awesome! You yelled with a score of ${finalScore.toFixed(2)}!`);
+                        } else {
+                            displayResult(false, "We didn't hear a loud enough yell. Try again!");
                         }
                     }
                 }
 
                 function cleanup() {
-                    annyang.abort();
                     stream.getTracks().forEach(track => track.stop());
                     recordingIndicator.style.visibility = 'hidden';
                 }
 
-                checkVolume();
             } catch (err) {
                 console.error('Error accessing microphone:', err);
                 alert('Unable to access microphone. Please make sure you have given permission and try again.');
