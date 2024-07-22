@@ -208,7 +208,7 @@
             });
         }
 
-        yellButton.addEventListener('click', async () => {
+         yellButton.addEventListener('click', async () => {
             if (!playerName) {
                 alert("Please enter your name before yelling!");
                 return;
@@ -256,7 +256,7 @@
                     maxVolume = Math.max(maxVolume, volume);
                     updateVolumeMeter(volume / 255);
 
-                    if (Date.now() - startTime < 5000 && !speechDetected) {
+                    if (Date.now() - startTime < 2000 && !speechDetected) {  // Changed to 2000ms (2 seconds)
                         requestAnimationFrame(checkVolume);
                     } else {
                         endRecording();
@@ -283,15 +283,17 @@
                         displayResult(true, `Awesome! You yelled "PENIS" with a score of ${score.toFixed(2)}!`);
                     } else if (recognitionResult) {
                         displayResult(false, `Oops! You said "${recognitionResult}" instead of "PENIS". Try again!`);
-                    } else if (maxVolume > 100) { // Adjust this threshold as needed
-                        addScoreToLeaderboard();
-                        displayResult(true, `We heard a loud yell! Score: ${score.toFixed(2)}. Next time, try to say "PENIS" more clearly!`);
+                    } else if (maxVolume > 50) {  // Lowered threshold for detecting a yell
+                        displayResult(false, `We heard a yell, but couldn't recognize the word. Try saying "PENIS" more clearly!`);
                     } else {
-                        displayResult(false, "We didn't hear a loud enough yell or couldn't recognize anything. Try again!");
+                        displayResult(false, "We didn't hear a loud enough yell. Try again!");
                     }
                 }
 
                 checkVolume();
+
+                // Set a timeout to end recording after 2 seconds
+                setTimeout(endRecording, 2000);
 
             } catch (err) {
                 console.error('Error accessing microphone:', err);
