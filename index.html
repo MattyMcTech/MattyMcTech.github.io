@@ -235,15 +235,18 @@
                 const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
                 const recognition = new SpeechRecognition();
                 recognition.lang = 'en-US';
-                recognition.interimResults = false;
-                recognition.maxAlternatives = 1;
+                recognition.interimResults = true;
+                recognition.continuous = true;
 
                 recognition.start();
 
                 recognition.onresult = function(event) {
-                    recognitionResult = event.results[0][0].transcript.toLowerCase();
-                    speechDetected = true;
-                    endRecording();
+                    const result = event.results[event.results.length - 1];
+                    recognitionResult = result[0].transcript.toLowerCase();
+                    if (result.isFinal) {
+                        speechDetected = true;
+                        endRecording();
+                    }
                 };
 
                 recognition.onerror = function(event) {
@@ -256,7 +259,7 @@
                     maxVolume = Math.max(maxVolume, volume);
                     updateVolumeMeter(volume / 255);
 
-                    if (Date.now() - startTime < 2000 && !speechDetected) {  // Changed to 2000ms (2 seconds)
+                    if (Date.now() - startTime < 2000 && !speechDetected) {
                         requestAnimationFrame(checkVolume);
                     } else {
                         endRecording();
@@ -283,8 +286,13 @@
                         displayResult(true, `Awesome! You yelled "PENIS" with a score of ${score.toFixed(2)}!`);
                     } else if (recognitionResult) {
                         displayResult(false, `Oops! You said "${recognitionResult}" instead of "PENIS". Try again!`);
-                    } else if (maxVolume > 50) {  // Lowered threshold for detecting a yell
-                        displayResult(false, `We heard a yell, but couldn't recognize the word. Try saying "PENIS" more clearly!`);
+                    } else if (maxVolume > 50) {
+                        if (score > 80) {
+                            addScoreToLeaderboard();
+                            displayResult(true, `We heard a loud yell! Score: ${score.toFixed(2)}. It sounded like "PENIS" to us!`);
+                        } else {
+                            displayResult(false, `We heard a yell (score: ${score.toFixed(2)}), but it wasn't loud enough. Try yelling "PENIS" louder!`);
+                        }
                     } else {
                         displayResult(false, "We didn't hear a loud enough yell. Try again!");
                     }
@@ -300,7 +308,6 @@
                 alert('Unable to access microphone. Please make sure you have given permission and try again.');
             }
         });
-
         // Initialize the leaderboard when the page loads
         initializeLeaderboard();
     </script>
