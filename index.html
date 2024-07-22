@@ -227,6 +227,7 @@
                 let startTime = Date.now();
                 let maxVolume = 0;
                 let recognitionResult = '';
+                let speechDetected = false;
 
                 recordingIndicator.style.visibility = 'visible';
 
@@ -241,6 +242,8 @@
 
                 recognition.onresult = function(event) {
                     recognitionResult = event.results[0][0].transcript.toLowerCase();
+                    speechDetected = true;
+                    endRecording();
                 };
 
                 recognition.onerror = function(event) {
@@ -253,7 +256,7 @@
                     maxVolume = Math.max(maxVolume, volume);
                     updateVolumeMeter(volume / 255);
 
-                    if (Date.now() - startTime < 5000) {
+                    if (Date.now() - startTime < 5000 && !speechDetected) {
                         requestAnimationFrame(checkVolume);
                     } else {
                         endRecording();
@@ -278,11 +281,13 @@
                     if (recognitionResult.includes('penis')) {
                         addScoreToLeaderboard();
                         displayResult(true, `Awesome! You yelled "PENIS" with a score of ${score.toFixed(2)}!`);
+                    } else if (recognitionResult) {
+                        displayResult(false, `Oops! You said "${recognitionResult}" instead of "PENIS". Try again!`);
                     } else if (maxVolume > 100) { // Adjust this threshold as needed
                         addScoreToLeaderboard();
                         displayResult(true, `We heard a loud yell! Score: ${score.toFixed(2)}. Next time, try to say "PENIS" more clearly!`);
                     } else {
-                        displayResult(false, "We didn't hear a loud enough yell or couldn't recognize 'PENIS'. Try again!");
+                        displayResult(false, "We didn't hear a loud enough yell or couldn't recognize anything. Try again!");
                     }
                 }
 
