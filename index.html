@@ -104,6 +104,19 @@
             border: 2px solid #FF69B4;
             border-radius: 5px;
         }
+        #browser-warning {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background-color: #FF4500;
+            color: white;
+            text-align: center;
+            padding: 10px;
+            font-size: 1.2em;
+            z-index: 1000;
+        }
     </style>
 </head>
 <body>
@@ -125,7 +138,9 @@
             <!-- Leaderboard entries will be inserted here -->
         </ol>
     </div>
-
+<div id="browser-warning">
+        ⚠️ For the best experience, please use Google Chrome. Some features may not work in your current browser.
+    </div>
     <script src="https://cdn.jsdelivr.net/npm/gun/gun.js"></script>
     <script>
         // Initialize Gun
@@ -144,6 +159,13 @@
         const resultDisplay = document.getElementById('result-display');
         const leaderboardList = document.getElementById('leaderboard-list');
         const nameInput = document.getElementById('name-input');
+        function isChrome() {
+            return /Chrome/.test(navigator.userAgent) && /Google Inc/.test(navigator.vendor);
+        }
+
+        if (!isChrome()) {
+            document.getElementById('browser-warning').style.display = 'block';
+        }
 
         nameInput.addEventListener('input', function() {
             playerName = this.value.trim();
