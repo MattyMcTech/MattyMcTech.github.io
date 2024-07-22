@@ -208,7 +208,7 @@
             });
         }
 
-         yellButton.addEventListener('click', async () => {
+        yellButton.addEventListener('click', async () => {
             if (!playerName) {
                 alert("Please enter your name before yelling!");
                 return;
@@ -314,6 +314,7 @@
                 alert('Unable to access microphone. Please make sure you have given permission and try again.');
             }
         });
+
         // Initialize the leaderboard when the page loads
         initializeLeaderboard();
     </script>
