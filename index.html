@@ -5,105 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>The Penis Game - Dare to Yell!</title>
     <style>
-        body {
-            font-family: 'Comic Sans MS', cursive;
-            background-color: #FFB6C1;
-            color: #FF1493;
-            text-align: center;
-            margin: 0;
-            padding: 20px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            min-height: 100vh;
-        }
-        h1 {
-            font-size: 4em;
-            text-shadow: 3px 3px 0px #FF69B4;
-            margin-bottom: 20px;
-        }
-        #game-description {
-            font-size: 1.2em;
-            max-width: 600px;
-            margin-bottom: 20px;
-        }
-        button {
-            font-size: 2em;
-            padding: 15px 30px;
-            background-color: #FF69B4;
-            color: #FFFFFF;
-            border: none;
-            border-radius: 50px;
-            cursor: pointer;
-            transition: transform 0.1s;
-        }
-        button:active {
-            transform: scale(0.95);
-        }
-        button:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-        #score-display {
-            font-size: 2.5em;
-            margin-top: 20px;
-        }
-        #volume-meter {
-            width: 300px;
-            height: 30px;
-            background-color: #FFFFFF;
-            margin-top: 20px;
-            border-radius: 15px;
-            overflow: hidden;
-        }
-        #volume-bar {
-            width: 0%;
-            height: 100%;
-            background-color: #FF69B4;
-            transition: width 0.1s;
-        }
-        #result-display {
-            font-size: 2em;
-            margin-top: 20px;
-            font-weight: bold;
-        }
-        #recording-indicator {
-            font-size: 1.5em;
-            margin-top: 20px;
-            color: #FF0000;
-            font-weight: bold;
-            visibility: hidden;
-        }
-        #leaderboard {
-            margin-top: 30px;
-            background-color: #FFFFFF;
-            padding: 20px;
-            border-radius: 10px;
-            width: 80%;
-            max-width: 800px;
-        }
-        #leaderboard h2 {
-            color: #FF1493;
-        }
-        #leaderboard-list {
-            list-style-type: none;
-            padding: 0;
-            text-align: left;
-        }
-        #leaderboard-list li {
-            margin: 10px 0;
-            font-size: 1.2em;
-            display: flex;
-            justify-content: space-between;
-        }
-        #name-input {
-            font-size: 1.2em;
-            padding: 10px;
-            margin-bottom: 20px;
-            border: 2px solid #FF69B4;
-            border-radius: 5px;
-        }
+        /* ... (keep the existing styles) ... */
     </style>
 </head>
 <body>
@@ -208,7 +110,7 @@
             });
         }
 
-        yellButton.addEventListener('click', async () => {
+         yellButton.addEventListener('click', async () => {
             if (!playerName) {
                 alert("Please enter your name before yelling!");
                 return;
@@ -217,102 +119,76 @@
             try {
                 const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
                 const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-                const source = audioContext.createMediaStreamSource(stream);
                 const analyser = audioContext.createAnalyser();
-                source.connect(analyser);
-
-                analyser.fftSize = 2048;
+                const microphone = audioContext.createMediaStreamSource(stream);
+                microphone.connect(analyser);
+                analyser.fftSize = 256;
                 const bufferLength = analyser.frequencyBinCount;
-                const dataArray = new Float32Array(bufferLength);
+                const dataArray = new Uint8Array(bufferLength);
 
-                let startTime = audioContext.currentTime;
-                let maxDecibels = -Infinity;
-                let yellDetected = false;
+                let startTime = Date.now();
+                let maxVolume = 0;
+                let recognitionResult = '';
 
                 recordingIndicator.style.visibility = 'visible';
 
-                function calculateScore(decibels) {
-                    const minDb = -50;
-                    const maxDb = 0;
-                    let normalizedScore = ((decibels - minDb) / (maxDb - minDb)) * 100;
-                    normalizedScore = Math.pow(normalizedScore / 100, 1.5) * 100;
-                    return Math.max(0, Math.min(100, normalizedScore));
-                }
+                // Set up speech recognition
+                const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+                const recognition = new SpeechRecognition();
+                recognition.lang = 'en-US';
+                recognition.interimResults = false;
+                recognition.maxAlternatives = 1;
 
-                // Try to use speech recognition
-                if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
-                    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-                    const recognition = new SpeechRecognition();
-                    recognition.lang = 'en-US';
-                    recognition.interimResults = false;
-                    recognition.maxAlternatives = 1;
+                recognition.start();
 
-                    recognition.start();
+                recognition.onresult = function(event) {
+                    recognitionResult = event.results[0][0].transcript.toLowerCase();
+                };
 
-                    recognition.onresult = function(event) {
-                        const speechResult = event.results[0][0].transcript.toLowerCase();
-                        if (speechResult.includes('penis')) {
-                            const finalScore = calculateScore(maxDecibels);
-                            updateScore(finalScore);
-                            addScoreToLeaderboard();
-                            displayResult(true, `Awesome! You yelled "PENIS" with a score of ${finalScore.toFixed(2)}!`);
-                            yellDetected = true;
-                        } else {
-                            displayResult(false, `Oops! You were supposed to yell "PENIS", not "${speechResult}".`);
-                        }
-                        cleanup();
-                    };
-
-                    recognition.onerror = function(event) {
-                        console.error('Speech recognition error:', event.error);
-                        // Fall back to volume detection if there's an error
-                        checkVolume();
-                    };
-
-                    recognition.onend = function() {
-                        if (!yellDetected) {
-                            // If no result was detected, fall back to volume detection
-                            checkVolume();
-                        }
-                    };
-                } else {
-                    // If speech recognition is not available, use volume detection
-                    checkVolume();
-                }
+                recognition.onerror = function(event) {
+                    console.error('Speech recognition error:', event.error);
+                };
 
                 function checkVolume() {
-                    analyser.getFloatTimeDomainData(dataArray);
-                    let rms = 0;
-                    for (let i = 0; i < bufferLength; i++) {
-                        rms += dataArray[i] * dataArray[i];
-                    }
-                    rms = Math.sqrt(rms / bufferLength);
-                    
-                    const decibels = 20 * Math.log10(rms);
-                    maxDecibels = Math.max(maxDecibels, decibels);
-                    
-                    const normalizedVolume = (decibels + 100) / 100;
-                    updateVolumeMeter(normalizedVolume);
+                    analyser.getByteFrequencyData(dataArray);
+                    const volume = dataArray.reduce((a, b) => a + b) / bufferLength;
+                    maxVolume = Math.max(maxVolume, volume);
+                    updateVolumeMeter(volume / 255);
 
-                    if (audioContext.currentTime - startTime < 5) {
+                    if (Date.now() - startTime < 5000) {
                         requestAnimationFrame(checkVolume);
                     } else {
-                        cleanup();
-                        if (maxDecibels > -30) {
-                            const finalScore = calculateScore(maxDecibels);
-                            updateScore(finalScore);
-                            addScoreToLeaderboard();
-                            displayResult(true, `Awesome! You yelled with a score of ${finalScore.toFixed(2)}!`);
-                        } else {
-                            displayResult(false, "We didn't hear a loud enough yell. Try again!");
-                        }
+                        endRecording();
                     }
                 }
 
-                function cleanup() {
+                function endRecording() {
+                    recognition.stop();
                     stream.getTracks().forEach(track => track.stop());
                     recordingIndicator.style.visibility = 'hidden';
+                    processResult();
                 }
+
+                function calculateScore(volume) {
+                    return Math.min(100, (volume / 255) * 100);
+                }
+
+                function processResult() {
+                    const score = calculateScore(maxVolume);
+                    updateScore(score);
+
+                    if (recognitionResult.includes('penis')) {
+                        addScoreToLeaderboard();
+                        displayResult(true, `Awesome! You yelled "PENIS" with a score of ${score.toFixed(2)}!`);
+                    } else if (maxVolume > 100) { // Adjust this threshold as needed
+                        addScoreToLeaderboard();
+                        displayResult(true, `We heard a loud yell! Score: ${score.toFixed(2)}. Next time, try to say "PENIS" more clearly!`);
+                    } else {
+                        displayResult(false, "We didn't hear a loud enough yell or couldn't recognize 'PENIS'. Try again!");
+                    }
+                }
+
+                checkVolume();
 
             } catch (err) {
                 console.error('Error accessing microphone:', err);
