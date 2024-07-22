@@ -222,7 +222,7 @@
                 microphone.connect(analyser);
                 analyser.fftSize = 256;
                 const bufferLength = analyser.frequencyBinCount;
-                const dataArray = new Uint8Array(bufferLength);
+                const dataArray = new Float32Array(bufferLength);
 
                 let startTime = Date.now();
                 let maxVolume = 0;
@@ -231,33 +231,36 @@
 
                 recordingIndicator.style.visibility = 'visible';
 
-                // Set up speech recognition
-                const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-                const recognition = new SpeechRecognition();
-                recognition.lang = 'en-US';
-                recognition.interimResults = true;
-                recognition.continuous = true;
+                // Set up speech recognition if available
+                let recognition = null;
+                if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+                    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+                    recognition = new SpeechRecognition();
+                    recognition.lang = 'en-US';
+                    recognition.interimResults = true;
+                    recognition.continuous = true;
 
-                recognition.start();
+                    recognition.onresult = function(event) {
+                        const result = event.results[event.results.length - 1];
+                        recognitionResult = result[0].transcript.toLowerCase();
+                        if (result.isFinal) {
+                            speechDetected = true;
+                            endRecording();
+                        }
+                    };
 
-                recognition.onresult = function(event) {
-                    const result = event.results[event.results.length - 1];
-                    recognitionResult = result[0].transcript.toLowerCase();
-                    if (result.isFinal) {
-                        speechDetected = true;
-                        endRecording();
-                    }
-                };
+                    recognition.onerror = function(event) {
+                        console.error('Speech recognition error:', event.error);
+                    };
 
-                recognition.onerror = function(event) {
-                    console.error('Speech recognition error:', event.error);
-                };
+                    recognition.start();
+                }
 
                 function checkVolume() {
-                    analyser.getByteFrequencyData(dataArray);
-                    const volume = dataArray.reduce((a, b) => a + b) / bufferLength;
+                    analyser.getFloatTimeDomainData(dataArray);
+                    const volume = Math.sqrt(dataArray.reduce((acc, val) => acc + val * val, 0) / bufferLength);
                     maxVolume = Math.max(maxVolume, volume);
-                    updateVolumeMeter(volume / 255);
+                    updateVolumeMeter(volume);
 
                     if (Date.now() - startTime < 2000 && !speechDetected) {
                         requestAnimationFrame(checkVolume);
@@ -267,14 +270,19 @@
                 }
 
                 function endRecording() {
-                    recognition.stop();
+                    if (recognition) {
+                        recognition.stop();
+                    }
                     stream.getTracks().forEach(track => track.stop());
                     recordingIndicator.style.visibility = 'hidden';
                     processResult();
                 }
 
                 function calculateScore(volume) {
-                    return Math.min(100, (volume / 255) * 100);
+                    const minVolume = 0.01;
+                    const maxVolume = 0.5;
+                    const normalizedVolume = (volume - minVolume) / (maxVolume - minVolume);
+                    return Math.min(100, Math.max(0, normalizedVolume * 100));
                 }
 
                 function processResult() {
@@ -286,15 +294,13 @@
                         displayResult(true, `Awesome! You yelled "PENIS" with a score of ${score.toFixed(2)}!`);
                     } else if (recognitionResult) {
                         displayResult(false, `Oops! You said "${recognitionResult}" instead of "PENIS". Try again!`);
-                    } else if (maxVolume > 50) {
-                        if (score > 80) {
-                            addScoreToLeaderboard();
-                            displayResult(true, `We heard a loud yell! Score: ${score.toFixed(2)}. It sounded like "PENIS" to us!`);
-                        } else {
-                            displayResult(false, `We heard a yell (score: ${score.toFixed(2)}), but it wasn't loud enough. Try yelling "PENIS" louder!`);
-                        }
+                    } else if (score > 80) {
+                        addScoreToLeaderboard();
+                        displayResult(true, `We heard a loud yell! Score: ${score.toFixed(2)}. It sounded like "PENIS" to us!`);
+                    } else if (score > 50) {
+                        displayResult(false, `Good try, but not quite loud enough. Score: ${score.toFixed(2)}. Yell "PENIS" louder!`);
                     } else {
-                        displayResult(false, "We didn't hear a loud enough yell. Try again!");
+                        displayResult(false, "We didn't hear a loud enough yell. Try yelling "PENIS" louder!");
                     }
                 }
 
