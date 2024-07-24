@@ -138,7 +138,7 @@
             <!-- Leaderboard entries will be inserted here -->
         </ol>
     </div>
-<div id="browser-warning">
+    <div id="browser-warning">
         ⚠️ For the best experience, please use Google Chrome. Some features may not work in your current browser.
     </div>
     <script src="https://cdn.jsdelivr.net/npm/gun/gun.js"></script>
@@ -151,6 +151,8 @@
         let playerName = '';
         let leaderboardEntries = new Set();
         let updateTimeout = null;
+        let lastSubmissionTime = 0;
+        const SUBMISSION_COOLDOWN = 3000; // 3 seconds cooldown
 
         const yellButton = document.getElementById('yell-button');
         const scoreDisplay = document.getElementById('score-display');
@@ -159,6 +161,7 @@
         const resultDisplay = document.getElementById('result-display');
         const leaderboardList = document.getElementById('leaderboard-list');
         const nameInput = document.getElementById('name-input');
+
         function isChrome() {
             return /Chrome/.test(navigator.userAgent) && /Google Inc/.test(navigator.vendor);
         }
@@ -187,36 +190,29 @@
         }
 
         function addScoreToLeaderboard() {
-    if (!playerName) {
-        console.log('No player name, not adding to leaderboard');
-        return;
-    }
-    
-    const playerEntry = { name: playerName, score: currentScore, timestamp: Date.now() };
-    const entryKey = `entry_${playerName}_${Date.now()}`;
-    
-    console.log('Attempting to add score:', playerEntry);
+            const now = Date.now();
+            if (now - lastSubmissionTime < SUBMISSION_COOLDOWN) {
+                console.log('Submission attempted too soon after last submission. Ignoring.');
+                return;
+            }
 
-    let isDuplicate = false;
+            if (!playerName) {
+                console.log('No player name, not adding to leaderboard');
+                return;
+            }
+            
+            const playerEntry = { name: playerName, score: currentScore, timestamp: now };
+            const entryKey = `entry_${playerName}_${now}`;
+            
+            console.log('Attempting to add score:', playerEntry);
 
-    // Check for duplicate entries
-    leaderboardDB.map().once((data, key) => {
-        if (data && data.name === playerName && Math.abs(data.timestamp - playerEntry.timestamp) < 5000) {
-            console.log('Duplicate entry detected:', data);
-            isDuplicate = true;
-        }
-    });
-
-    // Use setTimeout to ensure the duplicate check has time to complete
-    setTimeout(() => {
-        if (!isDuplicate) {
+            // Add the new entry
             leaderboardDB.get(entryKey).put(playerEntry);
             console.log('Score added to leaderboard:', playerEntry);
-        } else {
-            console.log('Duplicate entry, not adding to leaderboard');
+
+            // Update the last submission time
+            lastSubmissionTime = now;
         }
-    }, 100);
-}
 
         function debounce(func, wait) {
             return function(...args) {
@@ -245,20 +241,25 @@
             });
         }
 
-       
-
         function initializeLeaderboard() {
-    console.log('Initializing leaderboard...');
-    leaderboardDB.map().on((data, key) => {
-        if (data && data.name && data.score) {
-            console.log('Received leaderboard entry:', data);
-            leaderboardEntries.add(data);
-            debouncedUpdateLeaderboard();
+            console.log('Initializing leaderboard...');
+            const seenEntries = new Set();
+            leaderboardDB.map().on((data, key) => {
+                if (data && data.name && data.score) {
+                    const entryKey = `${data.name}_${data.timestamp}`;
+                    if (!seenEntries.has(entryKey)) {
+                        console.log('Received leaderboard entry:', data);
+                        leaderboardEntries.add(data);
+                        seenEntries.add(entryKey);
+                        debouncedUpdateLeaderboard();
+                    } else {
+                        console.log('Duplicate entry ignored:', data);
+                    }
+                }
+            });
         }
-    });
-}
 
-         yellButton.addEventListener('click', async () => {
+        yellButton.addEventListener('click', async () => {
             if (!playerName) {
                 alert("Please enter your name before yelling!");
                 return;
@@ -327,21 +328,21 @@
                     return Math.min(100, (volume / 255) * 100);
                 }
 
-              function processResult() {
-    const score = calculateScore(maxVolume);
-    updateScore(score);
+                function processResult() {
+                    const score = calculateScore(maxVolume);
+                    updateScore(score);
 
-    if (recognitionResult.includes('penis') || (maxVolume > 50 && score > 80)) {
-        addScoreToLeaderboard();
-        displayResult(true, `Awesome! You yelled "PENIS" with a score of ${score.toFixed(2)}!`);
-    } else if (recognitionResult) {
-        displayResult(false, `Oops! You said "${recognitionResult}" instead of "PENIS". Try again!`);
-    } else if (maxVolume > 50) {
-        displayResult(false, `We heard a yell (score: ${score.toFixed(2)}), but it wasn't loud enough. Try yelling "PENIS" louder!`);
-    } else {
-        displayResult(false, "We didn't hear a loud enough yell. Try again!");
-    }
-}
+                    if (recognitionResult.includes('penis') || (maxVolume > 50 && score > 80)) {
+                        addScoreToLeaderboard();
+                        displayResult(true, `Awesome! You yelled "PENIS" with a score of ${score.toFixed(2)}!`);
+                    } else if (recognitionResult) {
+                        displayResult(false, `Oops! You said "${recognitionResult}" instead of "PENIS". Try again!`);
+                    } else if (maxVolume > 50) {
+                        displayResult(false, `We heard a yell (score: ${score.toFixed(2)}), but it wasn't loud enough. Try yelling "PENIS" louder!`);
+                    } else {
+                        displayResult(false, "We didn't hear a loud enough yell. Try again!");
+                    }
+                }
 
                 checkVolume();
 
@@ -353,7 +354,6 @@
                 alert('Unable to access microphone. Please make sure you have given permission and try again.');
             }
         });
-
 
         // Initialize the leaderboard when the page loads
         initializeLeaderboard();
