@@ -187,29 +187,35 @@
         }
 
         function addScoreToLeaderboard() {
-    if (!playerName) return;
+    if (!playerName) {
+        console.log('No player name, not adding to leaderboard');
+        return;
+    }
     
     const playerEntry = { name: playerName, score: currentScore, timestamp: Date.now() };
     const entryKey = `entry_${playerName}_${Date.now()}`;
     
+    console.log('Attempting to add score:', playerEntry);
+
     let isDuplicate = false;
 
     // Check for duplicate entries
     leaderboardDB.map().once((data, key) => {
         if (data && data.name === playerName && Math.abs(data.timestamp - playerEntry.timestamp) < 5000) {
-            console.log('Duplicate entry detected, not adding to leaderboard');
+            console.log('Duplicate entry detected:', data);
             isDuplicate = true;
-            return;
         }
     });
 
-    // Use Gun's after method to add the entry if it's not a duplicate
-    Gun.chain.after(leaderboardDB.map(), function() {
+    // Use setTimeout to ensure the duplicate check has time to complete
+    setTimeout(() => {
         if (!isDuplicate) {
             leaderboardDB.get(entryKey).put(playerEntry);
             console.log('Score added to leaderboard:', playerEntry);
+        } else {
+            console.log('Duplicate entry, not adding to leaderboard');
         }
-    });
+    }, 100);
 }
 
         function debounce(func, wait) {
@@ -242,13 +248,15 @@
        
 
         function initializeLeaderboard() {
-            leaderboardDB.map().on((data, key) => {
-                if (data && data.name && data.score) {
-                    leaderboardEntries.add(data);
-                    debouncedUpdateLeaderboard();
-                }
-            });
+    console.log('Initializing leaderboard...');
+    leaderboardDB.map().on((data, key) => {
+        if (data && data.name && data.score) {
+            console.log('Received leaderboard entry:', data);
+            leaderboardEntries.add(data);
+            debouncedUpdateLeaderboard();
         }
+    });
+}
 
          yellButton.addEventListener('click', async () => {
             if (!playerName) {
