@@ -221,6 +221,25 @@
             });
         }
 
+        function addScoreToLeaderboard() {
+    if (!playerName) return;
+    
+    const playerEntry = { name: playerName, score: currentScore, timestamp: Date.now() };
+    const entryKey = `entry_${playerName}_${Date.now()}`;
+    
+    // Check if a similar entry already exists
+    leaderboardDB.map().once((data, key) => {
+        if (data && data.name === playerName && Math.abs(data.timestamp - playerEntry.timestamp) < 5000) {
+            console.log('Duplicate entry detected, not adding to leaderboard');
+            return;
+        }
+    }).then(() => {
+        // If we've made it here, no duplicate was found
+        leaderboardDB.get(entryKey).put(playerEntry);
+        console.log('Score added to leaderboard:', playerEntry);
+    });
+}
+
         function initializeLeaderboard() {
             leaderboardDB.map().on((data, key) => {
                 if (data && data.name && data.score) {
@@ -299,26 +318,21 @@
                     return Math.min(100, (volume / 255) * 100);
                 }
 
-                function processResult() {
-                    const score = calculateScore(maxVolume);
-                    updateScore(score);
+               function processResult() {
+    const score = calculateScore(maxVolume);
+    updateScore(score);
 
-                    if (recognitionResult.includes('penis')) {
-                        addScoreToLeaderboard();
-                        displayResult(true, `Awesome! You yelled "PENIS" with a score of ${score.toFixed(2)}!`);
-                    } else if (recognitionResult) {
-                        displayResult(false, `Oops! You said "${recognitionResult}" instead of "PENIS". Try again!`);
-                    } else if (maxVolume > 50) {
-                        if (score > 80) {
-                            addScoreToLeaderboard();
-                            displayResult(true, `We heard a loud yell! Score: ${score.toFixed(2)}. It sounded like "PENIS" to us!`);
-                        } else {
-                            displayResult(false, `We heard a yell (score: ${score.toFixed(2)}), but it wasn't loud enough. Try yelling "PENIS" louder!`);
-                        }
-                    } else {
-                        displayResult(false, "We didn't hear a loud enough yell. Try again!");
-                    }
-                }
+    if (recognitionResult.includes('penis') || (maxVolume > 50 && score > 80)) {
+        addScoreToLeaderboard();
+        displayResult(true, `Awesome! You yelled "PENIS" with a score of ${score.toFixed(2)}!`);
+    } else if (recognitionResult) {
+        displayResult(false, `Oops! You said "${recognitionResult}" instead of "PENIS". Try again!`);
+    } else if (maxVolume > 50) {
+        displayResult(false, `We heard a yell (score: ${score.toFixed(2)}), but it wasn't loud enough. Try yelling "PENIS" louder!`);
+    } else {
+        displayResult(false, "We didn't hear a loud enough yell. Try again!");
+    }
+}
 
                 checkVolume();
 
