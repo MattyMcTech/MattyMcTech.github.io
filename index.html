@@ -239,24 +239,7 @@
             });
         }
 
-        function addScoreToLeaderboard() {
-    if (!playerName) return;
-    
-    const playerEntry = { name: playerName, score: currentScore, timestamp: Date.now() };
-    const entryKey = `entry_${playerName}_${Date.now()}`;
-    
-    // Check if a similar entry already exists
-    leaderboardDB.map().once((data, key) => {
-        if (data && data.name === playerName && Math.abs(data.timestamp - playerEntry.timestamp) < 5000) {
-            console.log('Duplicate entry detected, not adding to leaderboard');
-            return;
-        }
-    }).then(() => {
-        // If we've made it here, no duplicate was found
-        leaderboardDB.get(entryKey).put(playerEntry);
-        console.log('Score added to leaderboard:', playerEntry);
-    });
-}
+       
 
         function initializeLeaderboard() {
             leaderboardDB.map().on((data, key) => {
