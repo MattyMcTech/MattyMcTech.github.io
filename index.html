@@ -187,12 +187,30 @@
         }
 
         function addScoreToLeaderboard() {
-            if (!playerName) return;
-            
-            const playerEntry = { name: playerName, score: currentScore, timestamp: Date.now() };
-            const entryKey = `entry_${Date.now()}`;
-            leaderboardDB.get(entryKey).put(playerEntry);
+    if (!playerName) return;
+    
+    const playerEntry = { name: playerName, score: currentScore, timestamp: Date.now() };
+    const entryKey = `entry_${playerName}_${Date.now()}`;
+    
+    let isDuplicate = false;
+
+    // Check for duplicate entries
+    leaderboardDB.map().once((data, key) => {
+        if (data && data.name === playerName && Math.abs(data.timestamp - playerEntry.timestamp) < 5000) {
+            console.log('Duplicate entry detected, not adding to leaderboard');
+            isDuplicate = true;
+            return;
         }
+    });
+
+    // Use Gun's after method to add the entry if it's not a duplicate
+    Gun.chain.after(leaderboardDB.map(), function() {
+        if (!isDuplicate) {
+            leaderboardDB.get(entryKey).put(playerEntry);
+            console.log('Score added to leaderboard:', playerEntry);
+        }
+    });
+}
 
         function debounce(func, wait) {
             return function(...args) {
@@ -318,7 +336,7 @@
                     return Math.min(100, (volume / 255) * 100);
                 }
 
-               function processResult() {
+              function processResult() {
     const score = calculateScore(maxVolume);
     updateScore(score);
 
