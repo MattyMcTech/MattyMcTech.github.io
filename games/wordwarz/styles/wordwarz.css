@@ -325,7 +325,9 @@ body, html {
     #player {
         width: 70px;
         height: 70px;
-        bottom: 20px; /* Adjust as needed */
+        top: auto;
+        bottom: 20px;
+        transform: translateX(-50%);
     }
 
     .enemy-word {
@@ -334,7 +336,7 @@ body, html {
 
     #typed-word {
         font-size: 26px;
-        bottom: 10px; /* Adjust as needed */
+        bottom: 100px; /* Adjust to be above the player */
     }
 
     #score, #total-score, #wave, #words-left, #accuracy {
@@ -351,6 +353,10 @@ body, html {
 
     #final-score, #final-accuracy {
         font-size: 26px;
+    }
+
+    #volume-control {
+        display: none; /* Hide volume slider on mobile */
     }
 }
 @media (max-width: 320px) {
