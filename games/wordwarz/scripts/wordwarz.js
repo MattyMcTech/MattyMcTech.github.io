@@ -21,6 +21,7 @@ document.addEventListener('DOMContentLoaded', (event) => {
     const finalAccuracyValue = document.getElementById('final-accuracy-value');
     const startGameBtn = document.getElementById('start-game-btn');
     const volumeSlider = document.getElementById('volume-slider');
+    const isMobileDevice = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0) || (navigator.msMaxTouchPoints > 0);
 
     const splatSound = new Audio('assets/sounds/splat.mp3');
     splatSound.volume = 0.3;
@@ -53,7 +54,7 @@ document.addEventListener('DOMContentLoaded', (event) => {
     let totalKeystrokes = 0;
     let correctKeystrokes = 0;
     let isFirstLoad = true;
-    let isMobileDevice = false;
+
 
     function debugLog(message) {
         console.log(`[DEBUG] ${message}`);
@@ -696,13 +697,14 @@ document.addEventListener('DOMContentLoaded', (event) => {
         window.scrollTo(0, 0);
     }
 
-    function initializeMobileInput() {
-    if (isMobileDevice()) {
+   function initializeMobileInput() {
+    if (isMobileDevice) {
         document.body.classList.add('mobile-device');
         gameContainer.addEventListener('touchstart', focusMobileInput);
         document.addEventListener('touchstart', handleMobileTouchStart);
     }
 }
+
 
     function focusMobileInput() {
         if (isMobileDevice()) {
