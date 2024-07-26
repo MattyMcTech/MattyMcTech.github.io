@@ -93,6 +93,9 @@ function initializeMobileInput() {
     mobileInput.focus();
   }
 }
+    function scrollToTop() {
+    window.scrollTo(0, 0);
+}
     function handleMobileInput(event) {
   const inputValue = event.target.value.toLowerCase();
   updateTypedWord(inputValue[inputValue.length - 1]);
@@ -678,6 +681,13 @@ function isMobileDevice() {
     gameOver.style.display = 'none';  // Ensure game over screen is hidden
     
     startWave();
+        if (isMobileDevice()) {
+        scrollToTop();
+        // Ensure the mobile input is focused
+        setTimeout(() => {
+            document.getElementById('mobile-input').focus();
+        }, 100);
+    }
     debugLog("Calling forcePlayMusic from initGame");
     forcePlayMusic();
     }
