@@ -306,6 +306,19 @@ body, html {
   cursor: pointer;
   transition: background-color 0.3s;
 }
+.key {
+  font-family: 'Roboto', sans-serif;
+  font-size: 18px;
+  padding: 10px;
+  margin: 0 2px;
+  background-color: #4CAF50;
+  color: #FFFFFF;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+  touch-action: manipulation; /* This prevents double-tap zoom */
+}
 .key:hover, .key:active {
   background-color: #45a049;
 }
