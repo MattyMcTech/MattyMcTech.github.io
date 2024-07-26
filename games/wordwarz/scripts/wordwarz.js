@@ -66,10 +66,26 @@ document.addEventListener('DOMContentLoaded', (event) => {
     return (typeof window.orientation !== "undefined") || (navigator.userAgent.indexOf('IEMobile') !== -1);
 }
 
-    function initializeMobileLayout() {
+   function initializeMobileLayout() {
     if (isMobileDevice()) {
         document.body.classList.add('mobile-device');
         
+        // Create an input field for the native keyboard
+        const mobileInput = document.createElement('input');
+        mobileInput.id = 'mobile-input';
+        mobileInput.type = 'text';
+        mobileInput.autocomplete = 'off';
+        mobileInput.autocorrect = 'off';
+        mobileInput.autocapitalize = 'off';
+        mobileInput.spellcheck = false;
+        document.body.appendChild(mobileInput);
+
+        // Handle input changes
+        mobileInput.addEventListener('input', handleMobileInput);
+
+        // Handle keyboard showing/hiding
+        window.addEventListener('resize', adjustLayoutForKeyboard);
+
         // Prevent zooming
         document.addEventListener('touchstart', function(e) {
             if (e.touches.length > 1) {
@@ -569,6 +585,15 @@ document.addEventListener('DOMContentLoaded', (event) => {
             }
         }
     }
+    function adjustLayoutForKeyboard() {
+    if (isMobileDevice()) {
+        const gameContainer = document.getElementById('game-container');
+        const windowHeight = window.innerHeight;
+        const gameHeight = windowHeight - (windowHeight * 0.4); // Assume keyboard takes up 40% of screen height
+        gameContainer.style.height = `${gameHeight}px`;
+        gameContainer.style.bottom = 'auto';
+    }
+}
 
     function initGame() {
     debugLog("Initializing game");
@@ -602,7 +627,11 @@ document.addEventListener('DOMContentLoaded', (event) => {
     
     if (isMobileDevice()) {
         initializeMobileLayout();
-        // Remove showMobileKeyboard call
+        const mobileInput = document.getElementById('mobile-input');
+        mobileInput.style.display = 'block';
+        setTimeout(() => {
+            mobileInput.focus();
+        }, 100);
     }
     
     isGameActive = true;
@@ -619,7 +648,10 @@ document.addEventListener('DOMContentLoaded', (event) => {
     function endGame() {
         isGameActive = false;
         clearInterval(gameInterval);
-        
+        if (isMobileDevice()) {
+        const mobileInput = document.getElementById('mobile-input');
+        mobileInput.style.display = 'none';
+    }
         finalScoreValue.textContent = totalScore;
         finalAccuracyValue.textContent = `${(correctKeystrokes / totalKeystrokes * 100).toFixed(2)}%`;
         
@@ -636,6 +668,8 @@ document.addEventListener('DOMContentLoaded', (event) => {
         startGameBtn.style.display = 'none';
         
         backgroundMusic.pause();
+
+        
     }
 
     function hideStartButton() {
@@ -693,6 +727,13 @@ document.addEventListener('DOMContentLoaded', (event) => {
         showVirtualKeyboard();
     }
 }
+    function handleMobileInput(event) {
+    const inputValue = event.target.value.toLowerCase();
+    if (inputValue) {
+        handleInput(inputValue[inputValue.length - 1]);
+        event.target.value = ''; // Clear the input after each character
+    }
+}
     function showVirtualKeyboard() {
     if (document.getElementById('virtual-keyboard')) return;
 
@@ -734,14 +775,12 @@ document.addEventListener('DOMContentLoaded', (event) => {
         initGame();
     });
 
-    restartBtn.addEventListener('click', () => {
+   restartBtn.addEventListener('click', () => {
         gameOver.style.display = 'none';
         initGame();
     });
 
-     if (isMobileDevice()) {
-        document.addEventListener('touchstart', handleMobileTouchStart);
-    } else {
+    if (!isMobileDevice()) {
         document.addEventListener('keydown', (event) => {
             handleInput(event.key);
         });
