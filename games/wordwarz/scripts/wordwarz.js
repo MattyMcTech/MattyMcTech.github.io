@@ -22,10 +22,9 @@ document.addEventListener('DOMContentLoaded', (event) => {
     const startGameBtn = document.getElementById('start-game-btn');
     const volumeSlider = document.getElementById('volume-slider');
     const virtualKeyboard = document.getElementById('virtual-keyboard');
-const keys = virtualKeyboard.querySelectorAll('.key');
     const mobileStatsBtn = document.getElementById('mobile-stats-btn');
-const statsModal = document.getElementById('stats-modal');
-const closeModal = statsModal.querySelector('.close');
+    const statsModal = document.getElementById('stats-modal');
+    const closeModal = statsModal.querySelector('.close');
 
     const splatSound = new Audio('assets/sounds/splat.mp3');
     splatSound.volume = 0.3;
@@ -66,68 +65,15 @@ const closeModal = statsModal.querySelector('.close');
     function updateAccuracy() {
         const accuracy = totalKeystrokes > 0 ? (correctKeystrokes / totalKeystrokes * 100).toFixed(2) : 100;
         accuracyValue.textContent = `${accuracy}%`;
+        if (isMobileDevice()) {
+            document.getElementById('modal-accuracy').textContent = `${accuracy}%`;
+        }
     }
+
     function isMobileDevice() {
-  return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-}
-    function showVirtualKeyboard() {
-    if (isMobileDevice()) {
-        virtualKeyboard.classList.remove('hidden');
-        adjustGameAreaForMobile();
+        return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) 
+            || (window.innerWidth <= 800 && window.innerHeight <= 600);
     }
-}
-   function hideVirtualKeyboard() {
-    virtualKeyboard.classList.add('hidden');
-    if (isMobileDevice()) {
-        document.documentElement.style.setProperty('--keyboard-height', '0px');
-        resizeGameContainer();
-    }
-}
-    keys.forEach(key => {
-  key.addEventListener('touchstart', (e) => {
-    e.preventDefault(); // Prevent default touch behavior
-    handleVirtualKeyPress(key.textContent);
-    key.classList.add('active');
-  });
-
-         key.addEventListener('touchend', (e) => {
-    e.preventDefault();
-    key.classList.remove('active');
-  });
-  
-  // Keep the click listener for non-touch devices
-  key.addEventListener('click', (e) => {
-    if (!e.touches) { // Only handle click if it's not a touch event
-      handleVirtualKeyPress(key.textContent);
-    }
-  });
-});
-
-    function handleVirtualKeyPress(key) {
-  if (key === '⌫') {
-    // Handle backspace
-    if (currentTypedWord.length > 0) {
-      currentTypedWord = currentTypedWord.slice(0, -1);
-      if (currentTargetWord) {
-        currentTargetWord.hitIndex--;
-        currentTargetWord.element.children[currentTargetWord.hitIndex].classList.remove('hit');
-      }
-      if (currentTypedWord.length === 0) {
-        currentTargetWord = null;
-      }
-    }
-  } else {
-    updateTypedWord(key.toLowerCase());
-  }
-  typedWord.textContent = currentTypedWord;
-}
-
-    function adjustGameContainerPadding() {
-  const keyboardHeight = virtualKeyboard.offsetHeight;
-  gameContainer.style.paddingBottom = isMobileDevice() && !virtualKeyboard.classList.contains('hidden') 
-    ? `${keyboardHeight}px` 
-    : '0';
-}
 
     muteBtn.addEventListener('click', () => {
         isMuted = !isMuted;
@@ -158,16 +104,12 @@ const closeModal = statsModal.querySelector('.close');
     });
 
     volumeSlider.addEventListener('input', (e) => {
-        if (volumeSlider) {
-    volumeSlider.addEventListener('input', (e) => {
         if (!isMobileDevice()) {
             const volume = parseFloat(e.target.value);
             splatSound.volume = volume * 0.6;
             backgroundMusic.volume = volume * 0.2;
             bulletShotSound.volume = volume * 0.6;
         }
-    });
-}
     });
 
     backgroundMusic.addEventListener('play', () => {
@@ -211,340 +153,305 @@ const closeModal = statsModal.querySelector('.close');
     }
 
     async function spawnWord() {
-    if (wordsSpawned >= waveWordCount) return;
-
-    let minLength, maxLength;
-    if (currentWave <= 5) {
-        minLength = 3;
-        maxLength = 5;
-    } else if (currentWave <= 10) {
-        minLength = 4;
-        maxLength = 6;
-    } else {
-        minLength = 5;
-        maxLength = 8;
-    }
-
-    const word = await getRandomWord(minLength, maxLength);
-    const wordElement = document.createElement('div');
-    wordElement.classList.add('enemy-word');
-    word.split('').forEach(letter => {
-        const span = document.createElement('span');
-        span.textContent = letter;
-        wordElement.appendChild(span);
-    });
-
-    const bullseye = document.createElement('div');
-    bullseye.classList.add('bullseye');
-    wordElement.appendChild(bullseye);
-
-    wordElement.style.visibility = 'hidden';
-    gameContainer.appendChild(wordElement);
-    const wordWidth = wordElement.offsetWidth;
-    const wordHeight = wordElement.offsetHeight;
-    wordElement.style.visibility = 'visible';
-
-    const containerRect = gameContainer.getBoundingClientRect();
-    const position = getRandomEdgePosition(wordWidth, wordHeight, containerRect);
-    wordElement.style.left = `${position.x}px`;
-    wordElement.style.top = `${position.y}px`;
-
-    const individualWordSpeed = wordSpeed * (1 + (word.length - minLength) * 0.05);
-
-    words.push({ 
-        element: wordElement, 
-        word, 
-        hitIndex: 0, 
-        x: position.x, 
-        y: position.y, 
-        speed: individualWordSpeed, 
-        bulletsInFlight: 0, 
-        isMoving: false,
-        edge: position.edge
-    });
-    wordsSpawned++;
-    updateWordsLeft();
-
-    wordElement.classList.add('visible');
-
-    const wordObj = words[words.length - 1];
-    if (isMobileDevice()) {
-        // For mobile, words always start at the top
-        wordObj.y = -wordHeight;
-    } else {
-        // Existing logic for desktop
-        switch (position.edge) {
-            case 0: wordObj.y = 0; break;
-            case 1: wordObj.x = containerRect.width - wordWidth; break;
-            case 2: wordObj.y = containerRect.height - wordHeight; break;
-            case 3: wordObj.x = 0; break;
+        if (wordsSpawned >= waveWordCount) return;
+    
+        let minLength, maxLength;
+        if (currentWave <= 5) {
+            minLength = 3;
+            maxLength = 5;
+        } else if (currentWave <= 10) {
+            minLength = 4;
+            maxLength = 6;
+        } else {
+            minLength = 5;
+            maxLength = 8;
         }
-    }
-    wordObj.element.style.left = `${wordObj.x}px`;
-    wordObj.element.style.top = `${wordObj.y}px`;
+        
+        const word = await getRandomWord(minLength, maxLength);
+        const wordElement = document.createElement('div');
+        wordElement.classList.add('enemy-word');
+        word.split('').forEach(letter => {
+            const span = document.createElement('span');
+            span.textContent = letter;
+            wordElement.appendChild(span);
+        });
 
-    setTimeout(() => {
-        wordObj.isMoving = true;
-    }, 750);
-}
+        const bullseye = document.createElement('div');
+        bullseye.classList.add('bullseye');
+        wordElement.appendChild(bullseye);
+
+        wordElement.style.visibility = 'hidden';
+        gameContainer.appendChild(wordElement);
+        const wordWidth = wordElement.offsetWidth;
+        const wordHeight = wordElement.offsetHeight;
+        wordElement.style.visibility = 'visible';
+
+        const containerRect = gameContainer.getBoundingClientRect();
+        const position = getRandomEdgePosition(wordWidth, wordHeight, containerRect);
+        wordElement.style.left = `${position.x}px`;
+        wordElement.style.top = `${position.y}px`;
+        
+        const individualWordSpeed = wordSpeed * (1 + (word.length - minLength) * 0.05);
+        
+        words.push({ 
+            element: wordElement, 
+            word, 
+            hitIndex: 0, 
+            x: position.x, 
+            y: position.y, 
+            speed: individualWordSpeed, 
+            bulletsInFlight: 0, 
+            isMoving: false,
+            edge: position.edge
+        });
+        wordsSpawned++;
+        updateWordsLeft();
+      
+
+        wordElement.classList.add('visible');
+
+        setTimeout(() => {
+            words[words.length - 1].isMoving = true;
+        }, 750);
+    }
 
     function getRandomEdgePosition(wordWidth, wordHeight, containerRect) {
-    if (isMobileDevice()) {
-        // For mobile, only spawn from the top
-        return {
-            x: Math.random() * (containerRect.width - wordWidth),
-            y: -wordHeight,
-            edge: 0
-        };
-    } else {
-        // Existing logic for desktop
-        const edge = Math.floor(Math.random() * 4);
-        let x, y;
+        if (isMobileDevice()) {
+            // For mobile, only spawn from the top
+            return {
+                x: Math.random() * (containerRect.width - wordWidth),
+                y: -wordHeight,
+                edge: 0
+            };
+        } else {
+            const edge = Math.floor(Math.random() * 4);
+            let x, y;
 
-        switch (edge) {
-            case 0: 
-                x = Math.random() * (containerRect.width - wordWidth);
-                y = -wordHeight;
-                break;
-            case 1: 
-                x = containerRect.width;
-                y = Math.random() * (containerRect.height - wordHeight);
-                break;
-            case 2: 
-                x = Math.random() * (containerRect.width - wordWidth);
-                y = containerRect.height;
-                break;
-            case 3: 
-                x = -wordWidth;
-                y = Math.random() * (containerRect.height - wordHeight);
-                break;
+            switch (edge) {
+                case 0: 
+                    x = Math.random() * (containerRect.width - wordWidth);
+                    y = -wordHeight;
+                    break;
+                case 1: 
+                    x = containerRect.width;
+                    y = Math.random() * (containerRect.height - wordHeight);
+                    break;
+                case 2: 
+                    x = Math.random() * (containerRect.width - wordWidth);
+                    y = containerRect.height;
+                    break;
+                case 3: 
+                    x = -wordWidth;
+                    y = Math.random() * (containerRect.height - wordHeight);
+                    break;
+            }
+
+            return { x, y, edge };
         }
-
-        return { x, y, edge };
     }
-}
-    function adjustGameAreaForMobile() {
-    if (isMobileDevice()) {
-        const keyboardHeight = virtualKeyboard.offsetHeight;
-        document.documentElement.style.setProperty('--keyboard-height', `${keyboardHeight}px`);
-        resizeGameContainer();
-    }
-}
-    function resizeGameContainer() {
-    const gameContainer = document.getElementById('game-container');
-    const keyboardHeight = virtualKeyboard.offsetHeight;
-    const windowHeight = window.innerHeight;
-    gameContainer.style.height = `${windowHeight - keyboardHeight}px`;
-}
 
     function spawnWordWithDelay() {
-         if (wordsSpawned < waveWordCount && isGameActive && !isPaused) {
-        spawnWord();
-        if (wordsSpawned < waveWordCount) {
-            const delay = Math.max(500, baseSpawnRate - currentWave * 50);
-            setTimeout(spawnWordWithDelay, delay);
+        if (wordsSpawned < waveWordCount && isGameActive && !isPaused) {
+            spawnWord();
+            if (wordsSpawned < waveWordCount) {
+                const delay = Math.max(500, baseSpawnRate - currentWave * 50);
+                setTimeout(spawnWordWithDelay, delay);
+            }
         }
     }
-    }
 
-   function moveWords() {
-    if (isPaused) return;
+    function moveWords() {
+        if (isPaused) return;
 
-    const playerRect = player.getBoundingClientRect();
-    const gameContainerRect = gameContainer.getBoundingClientRect();
+        const playerRect = player.getBoundingClientRect();
+        const centerX = playerRect.left + playerRect.width / 2;
+        const centerY = playerRect.top + playerRect.height / 2;
+        const gameContainerRect = gameContainer.getBoundingClientRect();
 
-    words.forEach((wordObj) => {
-        if (!wordObj.isMoving) return;
+        words.forEach((wordObj) => {
+            if (!wordObj.isMoving) return;
 
-        if (isMobileDevice()) {
-            // For mobile, words move straight down
-            wordObj.y += wordObj.speed;
-            wordObj.element.style.top = `${wordObj.y}px`;
-
-            const wordRect = wordObj.element.getBoundingClientRect();
-            if (wordRect.bottom > playerRect.top) {
-                endGame();
-                return;
-            }
-        } else {
-            // Existing logic for desktop
-            const dx = centerX - (wordObj.x + wordObj.element.offsetWidth / 2);
-            const dy = centerY - (wordObj.y + wordObj.element.offsetHeight / 2);
-            const distance = Math.sqrt(dx * dx + dy * dy);
-            
-            if (distance > 5) {
-                const ratio = wordObj.speed / distance;
-                wordObj.x += dx * ratio;
-                wordObj.y += dy * ratio;
-                
-                wordObj.element.style.left = `${wordObj.x}px`;
+            if (isMobileDevice()) {
+                // For mobile, words move straight down
+                wordObj.y += wordObj.speed;
                 wordObj.element.style.top = `${wordObj.y}px`;
+
+                const wordRect = wordObj.element.getBoundingClientRect();
+                if (wordRect.bottom > playerRect.top) {
+                    endGame();
+                    return;
+                }
             } else {
-                endGame();
-                return;
+                const dx = centerX - (wordObj.x + wordObj.element.offsetWidth / 2);
+                const dy = centerY - (wordObj.y + wordObj.element.offsetHeight / 2);
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                
+                if (distance > 5) {
+                    const ratio = wordObj.speed / distance;
+                    wordObj.x += dx * ratio;
+                    wordObj.y += dy * ratio;
+                    
+                    wordObj.element.style.left = `${wordObj.x}px`;
+                    wordObj.element.style.top = `${wordObj.y}px`;
+                } else {
+                    endGame();
+                    return;
+                }
             }
-        }
-    });
-}
+        });
+    }
 
     function updateTypedWord(key) {
-       if (!isGameActive || isPaused) return;
+        if (!isGameActive || isPaused) return;
 
-    totalKeystrokes++;
+        totalKeystrokes++;
 
-    if (!currentTargetWord || !words.includes(currentTargetWord)) {
-        const visibleWords = getVisibleWords();
-        const matchingWords = visibleWords.filter(w => w.word[0].toLowerCase() === key.toLowerCase());
-        
-        if (matchingWords.length > 0) {
-            const playerRect = player.getBoundingClientRect();
-            const playerCenterX = playerRect.left + playerRect.width / 2;
-            const playerCenterY = playerRect.top + playerRect.height / 2;
+        if (!currentTargetWord || !words.includes(currentTargetWord)) {
+            const visibleWords = getVisibleWords();
+            const matchingWords = visibleWords.filter(w => w.word[0].toLowerCase() === key.toLowerCase());
+            
+            if (matchingWords.length > 0) {
+                const playerRect = player.getBoundingClientRect();
+                const playerCenterX = playerRect.left + playerRect.width / 2;
+                const playerCenterY = playerRect.top + playerRect.height / 2;
 
-            currentTargetWord = matchingWords.reduce((closest, current) => {
-                const closestRect = closest.element.getBoundingClientRect();
-                const currentRect = current.element.getBoundingClientRect();
+                currentTargetWord = matchingWords.reduce((closest, current) => {
+                    const closestRect = closest.element.getBoundingClientRect();
+                    const currentRect = current.element.getBoundingClientRect();
 
-                const closestDistance = Math.sqrt(
-                    Math.pow(closestRect.left + closestRect.width / 2 - playerCenterX, 2) +
-                    Math.pow(closestRect.top + closestRect.height / 2 - playerCenterY, 2)
-                );
+                    const closestDistance = Math.sqrt(
+                        Math.pow(closestRect.left + closestRect.width / 2 - playerCenterX, 2) +
+                        Math.pow(closestRect.top + closestRect.height / 2 - playerCenterY, 2)
+                    );
 
-                const currentDistance = Math.sqrt(
-                    Math.pow(currentRect.left + currentRect.width / 2 - playerCenterX, 2) +
-                    Math.pow(currentRect.top + currentRect.height / 2 - playerCenterY, 2)
-                );
+                    const currentDistance = Math.sqrt(
+                        Math.pow(currentRect.left + currentRect.width / 2 - playerCenterX, 2) +
+                        Math.pow(currentRect.top + currentRect.height / 2 - playerCenterY, 2)
+                    );
 
-                return currentDistance < closestDistance ? current : closest;
-            });
-        } else {
-            currentTargetWord = null;
-            currentTypedWord = '';
-            typedWord.textContent = '';
-            updateAccuracy();
-            return;
+                    return currentDistance < closestDistance ? current : closest;
+                });
+            } else {
+                currentTargetWord = null;
+                currentTypedWord = '';
+                typedWord.textContent = '';
+                updateAccuracy();
+                return;
+            }
+        }
+
+        if (currentTargetWord && currentTargetWord.hitIndex < currentTargetWord.word.length && 
+            currentTargetWord.word[currentTargetWord.hitIndex].toLowerCase() === key.toLowerCase()) {
+            currentTypedWord += key;
+            currentTargetWord.element.children[currentTargetWord.hitIndex].classList.add('hit');
+            currentTargetWord.hitIndex++;
+            shootBullet(currentTargetWord);
+            currentTargetWord.bulletsInFlight++;
+            lettersHitThisWave++;
+            totalScore++;
+            correctKeystrokes++;
+            updateTotalScore();
+            
+            if (currentTargetWord.hitIndex === currentTargetWord.word.length) {
+                currentTypedWord = '';
+                currentTargetWord = null;
+            }
+        }
+
+        typedWord.textContent = currentTypedWord;
+
+        updateAccuracy();
+    }
+
+    function updateTotalScore() {
+        totalScoreValue.textContent = totalScore;
+        if (isMobileDevice()) {
+            document.getElementById('modal-total-score').textContent = totalScore;
         }
     }
-
-    if (currentTargetWord && currentTargetWord.hitIndex < currentTargetWord.word.length && 
-        currentTargetWord.word[currentTargetWord.hitIndex].toLowerCase() === key.toLowerCase()) {
-        currentTypedWord += key;
-        currentTargetWord.element.children[currentTargetWord.hitIndex].classList.add('hit');
-        currentTargetWord.hitIndex++;
-        shootBullet(currentTargetWord);
-        currentTargetWord.bulletsInFlight++;
-        lettersHitThisWave++;
-        totalScore++;
-        correctKeystrokes++;
-        updateTotalScore();
-        
-        if (currentTargetWord.hitIndex === currentTargetWord.word.length) {
-            currentTypedWord = '';
-            currentTargetWord = null;
-        }
-    }
-
-    typedWord.textContent = currentTypedWord;
-
-    updateAccuracy();
-    }
-function updateStatsModal() {
-    document.getElementById('modal-score').textContent = scoreValue.textContent;
-    document.getElementById('modal-total-score').textContent = totalScoreValue.textContent;
-    document.getElementById('modal-wave').textContent = waveValue.textContent;
-    document.getElementById('modal-words-left').textContent = wordsLeftValue.textContent;
-    document.getElementById('modal-accuracy').textContent = accuracyValue.textContent;
-}
-    function updateScore() {
-    scoreValue.textContent = zombiesShot;
-    if (isMobileDevice()) {
-        document.getElementById('modal-score').textContent = zombiesShot;
-    }
-}
-
-function updateTotalScore() {
-    totalScoreValue.textContent = totalScore;
-    if (isMobileDevice()) {
-        document.getElementById('modal-total-score').textContent = totalScore;
-    }
-}
 
     function handleWordCompletion(targetWord) {
         zombiesShot++;
-    scoreValue.textContent = zombiesShot;
-    wordsDefeated++;
-    
-    const rect = targetWord.element.getBoundingClientRect();
-    playBloodSplatter(rect.left + rect.width / 2, rect.top + rect.height / 2);
-    
-    if (!isMuted) {
-        splatSound.currentTime = 0;
-        splatSound.play();
-    }
-    
-    words = words.filter(w => w !== targetWord);
-    targetWord.element.remove();
-    updateWordsLeft();
-    checkWaveCompletion();
+        scoreValue.textContent = zombiesShot;
+        if (isMobileDevice()) {
+            document.getElementById('modal-score').textContent = zombiesShot;
+        }
+        wordsDefeated++;
+        
+        const rect = targetWord.element.getBoundingClientRect();
+        playBloodSplatter(rect.left + rect.width / 2, rect.top + rect.height / 2);
+        
+        if (!isMuted) {
+            splatSound.currentTime = 0;
+            splatSound.play();
+        }
+        
+        words = words.filter(w => w !== targetWord);
+        targetWord.element.remove();
+        updateWordsLeft();
+        checkWaveCompletion();
     }
 
     function dazeWord(wordObj) {
         wordObj.element.classList.add('dazed');
-    wordObj.speed *= 0.75;
-    setTimeout(() => {
-        wordObj.element.classList.remove('dazed');
+        wordObj.speed *= 0.75;
+        setTimeout(() => {
+            wordObj.element.classList.remove('dazed');
         wordObj.speed = wordSpeed * (1 + (wordObj.word.length - 3) * 0.05);
     }, 1000);
-    }
+}
 
-    function checkWaveCompletion() {
-         if (wordsDefeated >= waveWordCount) {
+function checkWaveCompletion() {
+    if (wordsDefeated >= waveWordCount) {
         clearInterval(gameInterval);
         isGameActive = false;
         showWaveClearedPopup();
     } else if (words.length === 0 && wordsSpawned < waveWordCount) {
         spawnWordWithDelay();
     }
-    }
+}
 
-    function showWaveClearedPopup() {
-         waveScore.textContent = lettersHitThisWave;
+function showWaveClearedPopup() {
+    waveScore.textContent = lettersHitThisWave;
     waveCleared.style.display = 'block';
     setTimeout(() => {
         waveCleared.style.display = 'none';
         startNextWave();
     }, 3000);
-    }
+}
 
-    function startNextWave() {
-        currentWave++;
-    waveWordCount ++;
+function startNextWave() {
+    currentWave++;
+    waveWordCount++;
     wordSpeed += 0.2;
     baseSpawnRate = Math.max(500, baseSpawnRate - 25);
     lettersHitThisWave = 0;
     startWave();
-    }
+}
 
-    function isElementInViewport(el) {
-        const rect = el.getBoundingClientRect();
+function isElementInViewport(el) {
+    const rect = el.getBoundingClientRect();
     return (
         rect.top >= 0 &&
         rect.left >= 0 &&
         rect.bottom <= (window.innerHeight || document.documentElement.clientHeight) &&
         rect.right <= (window.innerWidth || document.documentElement.clientWidth)
     );
-    }
+}
 
-    function getVisibleWords() {
-        return words.filter(({ element }) => isElementInViewport(element));
-    }
+function getVisibleWords() {
+    return words.filter(({ element }) => isElementInViewport(element));
+}
 
-    function updateWordsLeft() {
-        wordsLeftValue.textContent = waveWordCount - wordsDefeated;
+function updateWordsLeft() {
+    wordsLeftValue.textContent = waveWordCount - wordsDefeated;
+    if (isMobileDevice()) {
+        document.getElementById('modal-words-left').textContent = waveWordCount - wordsDefeated;
     }
+}
 
-    function shootBullet(targetWord) {
-        const bullet = document.createElement('div');
+function shootBullet(targetWord) {
+    const bullet = document.createElement('div');
     bullet.classList.add('bullet');
     const playerRect = player.getBoundingClientRect();
     const wordRect = targetWord.element.getBoundingClientRect();
@@ -570,7 +477,7 @@ function updateTotalScore() {
     const animationDuration = 500;
     const startTime = Date.now();
 
-   function animateBullet() {
+    function animateBullet() {
         const elapsedTime = Date.now() - startTime;
         const progress = Math.min(elapsedTime / animationDuration, 1);
 
@@ -602,10 +509,10 @@ function updateTotalScore() {
     }
 
     requestAnimationFrame(animateBullet);
-    }
+}
 
-    function playBloodSplatter(x, y) {
-        const bloodSplatter = document.createElement('div');
+function playBloodSplatter(x, y) {
+    const bloodSplatter = document.createElement('div');
     bloodSplatter.classList.add('blood-splatter');
     bloodSplatter.style.left = `${x - 50}px`;
     bloodSplatter.style.top = `${y - 50}px`;
@@ -614,10 +521,10 @@ function updateTotalScore() {
     setTimeout(() => {
         bloodSplatter.remove();
     }, 1000);
-    }
+}
 
-    function initAudioContext() {
-        debugLog("Initializing audio context");
+function initAudioContext() {
+    debugLog("Initializing audio context");
     if (!audioContext) {
         audioContext = new (window.AudioContext || window.webkitAudioContext)();
         debugLog("New audio context created");
@@ -633,10 +540,10 @@ function updateTotalScore() {
         debugLog(`Audio context state: ${audioContext.state}`);
         forcePlayMusic();
     }
-    }
+}
 
-    function playBackgroundMusic() {
-          debugLog("Attempting to play background music");
+function playBackgroundMusic() {
+    debugLog("Attempting to play background music");
     if (!isMuted) {
         backgroundMusic.play()
             .then(() => {
@@ -648,10 +555,10 @@ function updateTotalScore() {
     } else {
         debugLog("Music is muted, not playing");
     }
-    }
+}
 
-    document.addEventListener('keydown', (event) => {
-         if (!isGameActive || isPaused) return;
+document.addEventListener('keydown', (event) => {
+    if (!isGameActive || isPaused) return;
 
     if (event.key === 'Backspace') {
         if (currentTypedWord.length > 0) {
@@ -668,10 +575,10 @@ function updateTotalScore() {
         updateTypedWord(event.key);
     }
     typedWord.textContent = currentTypedWord;
-    });
+});
 
-    function startWave() {
-         isGameActive = true;
+function startWave() {
+    isGameActive = true;
     wordsDefeated = 0;
     wordsSpawned = 0;
     words.forEach(({ element }) => element.remove());
@@ -683,15 +590,19 @@ function updateTotalScore() {
     gameOver.style.display = 'none';
     waveCleared.style.display = 'none';
     waveValue.textContent = currentWave;
+    if (isMobileDevice()) {
+        document.getElementById('modal-wave').textContent = currentWave;
+    }
     updateWordsLeft();
 
+    adjustGameDifficultyForMobile();
+    
     gameInterval = setInterval(moveWords, 33);
     spawnWordWithDelay();
-    showVirtualKeyboard();
-    }
+}
 
-    function forcePlayMusic() {
-        debugLog("Entering forcePlayMusic function");
+function forcePlayMusic() {
+    debugLog("Entering forcePlayMusic function");
     if (isMuted) {
         debugLog("Music is muted, not playing");
         return;
@@ -710,10 +621,10 @@ function updateTotalScore() {
     } else {
         debugLog("Play promise is undefined, browser might not support promises for audio playback");
     }
-    }
+}
 
-    function endGame() {
-        isGameActive = false;
+function endGame() {
+    isGameActive = false;
     clearInterval(gameInterval);
     
     // Update final score and accuracy
@@ -736,26 +647,25 @@ function updateTotalScore() {
     // Hide start button
     startGameBtn.style.display = 'none';
     
-
     backgroundMusic.pause();
     hideVirtualKeyboard();
-    }
+}
 
-    function hideStartButton() {
-        startGameBtn.style.display = 'none';
-    }
+function hideStartButton() {
+    startGameBtn.style.display = 'none';
+}
 
-    function showStartButton() {
-        if (isFirstLoad || gameOver.style.display !== 'flex') {
-            startGameBtn.style.display = 'block';
-            gameOver.style.display = 'none';
-            waveComplete.style.display = 'none';
-            waveCleared.style.display = 'none';
-        }
+function showStartButton() {
+    if (isFirstLoad || gameOver.style.display !== 'flex') {
+        startGameBtn.style.display = 'block';
+        gameOver.style.display = 'none';
+        waveComplete.style.display = 'none';
+        waveCleared.style.display = 'none';
     }
+}
 
-    function initGame() {
-         debugLog("Initializing game");
+function initGame() {
+    debugLog("Initializing game");
     isFirstLoad = false;
     zombiesShot = 0;
     totalScore = 0;
@@ -770,29 +680,112 @@ function updateTotalScore() {
     correctKeystrokes = 0;
     
     gameOver.style.display = 'none';  // Ensure game over screen is hidden
-    adjustGameAreaForMobile();
+    
     startWave();
     debugLog("Calling forcePlayMusic from initGame");
     forcePlayMusic();
+}
+
+restartBtn.addEventListener('click', () => {
+    gameOver.style.display = 'none';
+    hideStartButton();
+    initGame();
+    playBackgroundMusic();
+});
+
+startGameBtn.addEventListener('click', () => {
+    debugLog("Start game button clicked");
+    hideStartButton();
+    initAudioContext();
+    initGame();
+    debugLog("Calling forcePlayMusic from start button click");
+    forcePlayMusic();
+});
+
+// Mobile-specific functions
+function adjustGameAreaForMobile() {
+    if (isMobileDevice()) {
+        const keyboardHeight = virtualKeyboard.offsetHeight;
+        document.documentElement.style.setProperty('--keyboard-height', `${keyboardHeight}px`);
+        resizeGameContainer();
+        positionPlayerForMobile();
     }
+}
 
-    restartBtn.addEventListener('click', () => {
-        gameOver.style.display = 'none';
-        hideStartButton();
-        initGame();
-        playBackgroundMusic();
-        showVirtualKeyboard();
-    });
+function resizeGameContainer() {
+    const keyboardHeight = virtualKeyboard.offsetHeight;
+    const windowHeight = window.innerHeight;
+    gameContainer.style.height = `${windowHeight - keyboardHeight}px`;
+}
 
-    startGameBtn.addEventListener('click', () => {
-        debugLog("Start game button clicked");
-        hideStartButton();
-        initAudioContext();
-        initGame();
-        debugLog("Calling forcePlayMusic from start button click");
-        forcePlayMusic();
+function positionPlayerForMobile() {
+    const gameContainerRect = gameContainer.getBoundingClientRect();
+    
+    player.style.bottom = '20px';
+    player.style.top = 'auto';
+    player.style.left = '50%';
+    player.style.transform = 'translateX(-50%)';
+}
+
+function showVirtualKeyboard() {
+    if (isMobileDevice()) {
+        virtualKeyboard.classList.remove('hidden');
+        adjustGameAreaForMobile();
+    }
+}
+
+function hideVirtualKeyboard() {
+    virtualKeyboard.classList.add('hidden');
+    if (isMobileDevice()) {
+        document.documentElement.style.setProperty('--keyboard-height', '0px');
+        resizeGameContainer();
+        positionPlayerForMobile();
+    }
+}
+
+function adjustGameDifficultyForMobile() {
+    if (isMobileDevice()) {
+        wordSpeed *= 0.85; // Reduce speed by 15% on mobile
+        baseSpawnRate *= 1.15; // Increase spawn interval by 15% on mobile
+    }
+}
+
+// Virtual keyboard event listeners
+const keys = virtualKeyboard.querySelectorAll('.key');
+keys.forEach(key => {
+    key.addEventListener('touchstart', (e) => {
+        e.preventDefault(); // Prevent default touch behavior
+        handleVirtualKeyPress(key.textContent);
+        key.classList.add('active');
     });
-    mobileStatsBtn.addEventListener('click', () => {
+    
+    key.addEventListener('touchend', (e) => {
+        e.preventDefault();
+        key.classList.remove('active');
+    });
+});
+
+function handleVirtualKeyPress(key) {
+    if (key === '⌫') {
+        // Handle backspace
+        if (currentTypedWord.length > 0) {
+            currentTypedWord = currentTypedWord.slice(0, -1);
+            if (currentTargetWord) {
+                currentTargetWord.hitIndex--;
+                currentTargetWord.element.children[currentTargetWord.hitIndex].classList.remove('hit');
+            }
+            if (currentTypedWord.length === 0) {
+                currentTargetWord = null;
+            }
+        }
+    } else {
+        updateTypedWord(key.toLowerCase());
+    }
+    typedWord.textContent = currentTypedWord;
+}
+
+// Mobile stats button and modal
+mobileStatsBtn.addEventListener('click', () => {
     updateStatsModal();
     statsModal.style.display = 'block';
 });
@@ -806,8 +799,19 @@ window.addEventListener('click', (event) => {
         statsModal.style.display = 'none';
     }
 });
-    window.addEventListener('resize', adjustGameContainerPadding);
-    window.addEventListener('orientationchange', adjustGameAreaForMobile);
-    window.addEventListener('resize', adjustGameAreaForMobile);
-    showStartButton();
+
+function updateStatsModal() {
+    document.getElementById('modal-score').textContent = scoreValue.textContent;
+    document.getElementById('modal-total-score').textContent = totalScoreValue.textContent;
+    document.getElementById('modal-wave').textContent = waveValue.textContent;
+    document.getElementById('modal-words-left').textContent = wordsLeftValue.textContent;
+    document.getElementById('modal-accuracy').textContent = accuracyValue.textContent;
+}
+
+// Event listeners for orientation change and resize
+window.addEventListener('orientationchange', adjustGameAreaForMobile);
+window.addEventListener('resize', adjustGameAreaForMobile);
+
+// Initialize the game
+showStartButton();
 });
