@@ -68,14 +68,17 @@ const keys = virtualKeyboard.querySelectorAll('.key');
   return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
 }
     function showVirtualKeyboard() {
-  if (isMobileDevice()) {
-    virtualKeyboard.classList.remove('hidden');
-    adjustGameContainerPadding();
-  }
+    if (isMobileDevice()) {
+        virtualKeyboard.classList.remove('hidden');
+        adjustGameAreaForMobile();
+    }
 }
-    function hideVirtualKeyboard() {
-  virtualKeyboard.classList.add('hidden');
-  adjustGameContainerPadding();
+   function hideVirtualKeyboard() {
+    virtualKeyboard.classList.add('hidden');
+    if (isMobileDevice()) {
+        document.documentElement.style.setProperty('--keyboard-height', '0px');
+        resizeGameContainer();
+    }
 }
     keys.forEach(key => {
   key.addEventListener('touchstart', (e) => {
@@ -311,6 +314,19 @@ const keys = virtualKeyboard.querySelectorAll('.key');
         return { x, y, edge };
     }
 }
+    function adjustGameAreaForMobile() {
+    if (isMobileDevice()) {
+        const keyboardHeight = virtualKeyboard.offsetHeight;
+        document.documentElement.style.setProperty('--keyboard-height', `${keyboardHeight}px`);
+        resizeGameContainer();
+    }
+}
+    function resizeGameContainer() {
+    const gameContainer = document.getElementById('game-container');
+    const keyboardHeight = virtualKeyboard.offsetHeight;
+    const windowHeight = window.innerHeight;
+    gameContainer.style.height = `${windowHeight - keyboardHeight}px`;
+}
 
     function spawnWordWithDelay() {
          if (wordsSpawned < waveWordCount && isGameActive && !isPaused) {
@@ -323,26 +339,21 @@ const keys = virtualKeyboard.querySelectorAll('.key');
     }
 
    function moveWords() {
-    if (isPaused) return;
+     if (isPaused) return;
 
     const playerRect = player.getBoundingClientRect();
-    const centerX = playerRect.left + playerRect.width / 2;
-    const centerY = playerRect.top + playerRect.height / 2;
+    const gameContainerRect = gameContainer.getBoundingClientRect();
 
     words.forEach((wordObj) => {
         if (!wordObj.isMoving) return;
 
-        let targetY;
         if (isMobileDevice()) {
             // For mobile, words move straight down
-            targetY = centerY;
-            const dy = targetY - (wordObj.y + wordObj.element.offsetHeight / 2);
-            const distance = Math.abs(dy);
-            
-            if (distance > 5) {
-                wordObj.y += wordObj.speed;
-                wordObj.element.style.top = `${wordObj.y}px`;
-            } else {
+            wordObj.y += wordObj.speed;
+            wordObj.element.style.top = `${wordObj.y}px`;
+
+            const wordRect = wordObj.element.getBoundingClientRect();
+            if (wordRect.bottom > gameContainerRect.bottom) {
                 endGame();
                 return;
             }
@@ -734,7 +745,7 @@ const keys = virtualKeyboard.querySelectorAll('.key');
     correctKeystrokes = 0;
     
     gameOver.style.display = 'none';  // Ensure game over screen is hidden
-    
+    adjustGameAreaForMobile();
     startWave();
     debugLog("Calling forcePlayMusic from initGame");
     forcePlayMusic();
@@ -757,5 +768,7 @@ const keys = virtualKeyboard.querySelectorAll('.key');
         forcePlayMusic();
     });
     window.addEventListener('resize', adjustGameContainerPadding);
+    window.addEventListener('orientationchange', adjustGameAreaForMobile);
+    window.addEventListener('resize', adjustGameAreaForMobile);
     showStartButton();
 });
