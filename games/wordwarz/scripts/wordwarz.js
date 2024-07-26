@@ -1,3 +1,4 @@
+// Wait for the DOM to be fully loaded before running the script
 document.addEventListener('DOMContentLoaded', (event) => {
     const gameContainer = document.getElementById('game-container');
     const typedWord = document.getElementById('typed-word');
@@ -60,73 +61,6 @@ document.addEventListener('DOMContentLoaded', (event) => {
     function updateAccuracy() {
         const accuracy = totalKeystrokes > 0 ? (correctKeystrokes / totalKeystrokes * 100).toFixed(2) : 100;
         accuracyValue.textContent = `${accuracy}%`;
-    }
-
-    function isMobileDevice() {
-    return (typeof window.orientation !== "undefined") || (navigator.userAgent.indexOf('IEMobile') !== -1);
-}
-
-   function initializeMobileLayout() {
-    if (isMobileDevice()) {
-        document.body.classList.add('mobile-device');
-        
-        // Create an input field for the native keyboard
-        const mobileInput = document.createElement('input');
-        mobileInput.id = 'mobile-input';
-        mobileInput.type = 'text';
-        mobileInput.autocomplete = 'off';
-        mobileInput.autocorrect = 'off';
-        mobileInput.autocapitalize = 'off';
-        mobileInput.spellcheck = false;
-        document.body.appendChild(mobileInput);
-
-        // Handle input changes
-        mobileInput.addEventListener('input', handleMobileInput);
-
-        // Handle keyboard showing/hiding
-        window.addEventListener('resize', adjustLayoutForKeyboard);
-
-        // Prevent zooming
-        document.addEventListener('touchstart', function(e) {
-            if (e.touches.length > 1) {
-                e.preventDefault();
-            }
-        }, { passive: false });
-
-        // Disable double-tap zoom
-        let lastTouchEnd = 0;
-        document.addEventListener('touchend', function(e) {
-            const now = (new Date()).getTime();
-            if (now - lastTouchEnd <= 300) {
-                e.preventDefault();
-            }
-            lastTouchEnd = now;
-        }, false);
-
-        // Add meta tag to prevent zooming
-        const viewportMeta = document.createElement('meta');
-        viewportMeta.name = 'viewport';
-        viewportMeta.content = 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0';
-        document.getElementsByTagName('head')[0].appendChild(viewportMeta);
-    }
-}
-
-    function showMobileKeyboard() {
-        if (isMobileDevice()) {
-            const dummyInput = document.createElement('input');
-            dummyInput.setAttribute('type', 'text');
-            dummyInput.style.position = 'absolute';
-            dummyInput.style.opacity = '0';
-            dummyInput.style.height = '0';
-            dummyInput.style.fontSize = '16px'; // Prevent zoom on iOS
-            document.body.appendChild(dummyInput);
-
-            dummyInput.focus();
-
-            setTimeout(() => {
-                dummyInput.remove();
-            }, 100);
-        }
     }
 
     muteBtn.addEventListener('click', () => {
@@ -207,190 +141,201 @@ document.addEventListener('DOMContentLoaded', (event) => {
     async function spawnWord() {
         if (wordsSpawned >= waveWordCount) return;
     
-        let minLength, maxLength;
-        if (currentWave <= 5) {
-            minLength = 3;
-            maxLength = 5;
-        } else if (currentWave <= 10) {
-            minLength = 4;
-            maxLength = 6;
-        } else {
-            minLength = 5;
-            maxLength = 8;
-        }
+    let minLength, maxLength;
+    if (currentWave <= 5) {
+        minLength = 3;
+        maxLength = 5;
+    } else if (currentWave <= 10) {
+        minLength = 4;
+        maxLength = 6;
+    } else {
+        minLength = 5;
+        maxLength = 8;
+    }
     
-        const word = await getRandomWord(minLength, maxLength);
-        const wordElement = document.createElement('div');
-        wordElement.classList.add('enemy-word');
-        word.split('').forEach(letter => {
-            const span = document.createElement('span');
-            span.textContent = letter;
-            wordElement.appendChild(span);
-        });
+    const word = await getRandomWord(minLength, maxLength);
+    const wordElement = document.createElement('div');
+    wordElement.classList.add('enemy-word');
+    word.split('').forEach(letter => {
+        const span = document.createElement('span');
+        span.textContent = letter;
+        wordElement.appendChild(span);
+    });
 
-        const bullseye = document.createElement('div');
-        bullseye.classList.add('bullseye');
-        wordElement.appendChild(bullseye);
+    const bullseye = document.createElement('div');
+    bullseye.classList.add('bullseye');
+    wordElement.appendChild(bullseye);
 
-        wordElement.style.visibility = 'hidden';
-        gameContainer.appendChild(wordElement);
-        const wordWidth = wordElement.offsetWidth;
-        const wordHeight = wordElement.offsetHeight;
-        wordElement.style.visibility = 'visible';
+    wordElement.style.visibility = 'hidden';
+    gameContainer.appendChild(wordElement);
+    const wordWidth = wordElement.offsetWidth;
+    const wordHeight = wordElement.offsetHeight;
+    wordElement.style.visibility = 'visible';
 
-        const containerRect = gameContainer.getBoundingClientRect();
-        const position = getRandomEdgePosition(wordWidth, wordHeight, containerRect);
-        wordElement.style.left = `${position.x}px`;
-        wordElement.style.top = `${position.y}px`;
+    const containerRect = gameContainer.getBoundingClientRect();
+    const position = getRandomEdgePosition(wordWidth, wordHeight, containerRect);
+    wordElement.style.left = `${position.x}px`;
+    wordElement.style.top = `${position.y}px`;
     
-        const individualWordSpeed = wordSpeed * (1 + (word.length - minLength) * 0.05);
+    const individualWordSpeed = wordSpeed * (1 + (word.length - minLength) * 0.05);
     
-        words.push({ 
-            element: wordElement, 
-            word, 
-            hitIndex: 0, 
-            x: position.x, 
-            y: position.y, 
-            speed: individualWordSpeed, 
-            bulletsInFlight: 0, 
-            isMoving: false,
-            edge: position.edge
-        });
-        wordsSpawned++;
-        updateWordsLeft();
+    words.push({ 
+        element: wordElement, 
+        word, 
+        hitIndex: 0, 
+        x: position.x, 
+        y: position.y, 
+        speed: individualWordSpeed, 
+        bulletsInFlight: 0, 
+        isMoving: false,
+        edge: position.edge
+    });
+    wordsSpawned++;
+    updateWordsLeft();
+  
 
-        wordElement.classList.add('visible');
+    wordElement.classList.add('visible');
 
-        const wordObj = words[words.length - 1];
-        setTimeout(() => {
-            wordObj.isMoving = true;
-        }, 750);
+    const wordObj = words[words.length - 1];
+    switch (position.edge) {
+        case 0: wordObj.y = 0; break;
+        case 1: wordObj.x = containerRect.width - wordWidth; break;
+        case 2: wordObj.y = containerRect.height - wordHeight; break;
+        case 3: wordObj.x = 0; break;
+    }
+    wordObj.element.style.left = `${wordObj.x}px`;
+    wordObj.element.style.top = `${wordObj.y}px`;
+
+    setTimeout(() => {
+        wordObj.isMoving = true;
+    }, 750);
     }
 
     function getRandomEdgePosition(wordWidth, wordHeight, containerRect) {
-        const edge = isMobileDevice() ? 'top' : ['top', 'right', 'bottom', 'left'][Math.floor(Math.random() * 4)];
-        let x, y;
+         const edge = Math.floor(Math.random() * 4);
+    let x, y;
 
-        switch (edge) {
-            case 'top': 
-                x = Math.random() * (containerRect.width - wordWidth);
-                y = -wordHeight;
-                break;
-            case 'right': 
-                x = containerRect.width;
-                y = Math.random() * (containerRect.height - wordHeight);
-                break;
-            case 'bottom': 
-                x = Math.random() * (containerRect.width - wordWidth);
-                y = containerRect.height;
-                break;
-            case 'left': 
-                x = -wordWidth;
-                y = Math.random() * (containerRect.height - wordHeight);
-                break;
-        }
+    switch (edge) {
+        case 0: 
+            x = Math.random() * (containerRect.width - wordWidth);
+            y = -wordHeight;
+            break;
+        case 1: 
+            x = containerRect.width;
+            y = Math.random() * (containerRect.height - wordHeight);
+            break;
+        case 2: 
+            x = Math.random() * (containerRect.width - wordWidth);
+            y = containerRect.height;
+            break;
+        case 3: 
+            x = -wordWidth;
+            y = Math.random() * (containerRect.height - wordHeight);
+            break;
+    }
 
-        return { x, y, edge };
+    return { x, y, edge };
     }
 
     function spawnWordWithDelay() {
-        if (wordsSpawned < waveWordCount && isGameActive && !isPaused) {
-            spawnWord();
-            if (wordsSpawned < waveWordCount) {
-                const delay = Math.max(500, baseSpawnRate - currentWave * 50);
-                setTimeout(spawnWordWithDelay, delay);
-            }
+         if (wordsSpawned < waveWordCount && isGameActive && !isPaused) {
+        spawnWord();
+        if (wordsSpawned < waveWordCount) {
+            const delay = Math.max(500, baseSpawnRate - currentWave * 50);
+            setTimeout(spawnWordWithDelay, delay);
         }
+    }
     }
 
     function moveWords() {
         if (isPaused) return;
 
-        const playerRect = player.getBoundingClientRect();
-        const centerX = playerRect.left + playerRect.width / 2;
-        const centerY = playerRect.top + playerRect.height / 2;
+    const playerRect = player.getBoundingClientRect();
+    const centerX = playerRect.left + playerRect.width / 2;
+    const centerY = playerRect.top + playerRect.height / 2;
 
-        words.forEach((wordObj) => {
-            if (!wordObj.isMoving) return;
+    words.forEach((wordObj) => {
+        if (!wordObj.isMoving) return;
 
-            const dx = centerX - (wordObj.x + wordObj.element.offsetWidth / 2);
-            const dy = centerY - (wordObj.y + wordObj.element.offsetHeight / 2);
-            const distance = Math.sqrt(dx * dx + dy * dy);
+        const dx = centerX - (wordObj.x + wordObj.element.offsetWidth / 2);
+        const dy = centerY - (wordObj.y + wordObj.element.offsetHeight / 2);
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        
+        if (distance > 5) {
+            const ratio = wordObj.speed / distance;
+            wordObj.x += dx * ratio;
+            wordObj.y += dy * ratio;
             
-            if (distance > 5) {
-                const ratio = wordObj.speed / distance;
-                wordObj.x += dx * ratio;
-                wordObj.y += dy * ratio;
-                
-                wordObj.element.style.left = `${wordObj.x}px`;
-                wordObj.element.style.top = `${wordObj.y}px`;
-            } else {
-                endGame();
-                return;
-            }
-        });
+            wordObj.element.style.left = `${wordObj.x}px`;
+            wordObj.element.style.top = `${wordObj.y}px`;
+        } else {
+            // The zombie has reached the player, end the game
+            endGame();
+            return; // Exit the function to prevent further processing
+        }
+    });
     }
 
     function updateTypedWord(key) {
-        if (!isGameActive || isPaused) return;
+       if (!isGameActive || isPaused) return;
 
-        totalKeystrokes++;
+    totalKeystrokes++;
 
-        if (!currentTargetWord || !words.includes(currentTargetWord)) {
-            const visibleWords = getVisibleWords();
-            const matchingWords = visibleWords.filter(w => w.word[0].toLowerCase() === key.toLowerCase());
-            
-            if (matchingWords.length > 0) {
-                const playerRect = player.getBoundingClientRect();
-                const playerCenterX = playerRect.left + playerRect.width / 2;
-                const playerCenterY = playerRect.top + playerRect.height / 2;
+    if (!currentTargetWord || !words.includes(currentTargetWord)) {
+        const visibleWords = getVisibleWords();
+        const matchingWords = visibleWords.filter(w => w.word[0].toLowerCase() === key.toLowerCase());
+        
+        if (matchingWords.length > 0) {
+            const playerRect = player.getBoundingClientRect();
+            const playerCenterX = playerRect.left + playerRect.width / 2;
+            const playerCenterY = playerRect.top + playerRect.height / 2;
 
-                currentTargetWord = matchingWords.reduce((closest, current) => {
-                    const closestRect = closest.element.getBoundingClientRect();
-                    const currentRect = current.element.getBoundingClientRect();
+            currentTargetWord = matchingWords.reduce((closest, current) => {
+                const closestRect = closest.element.getBoundingClientRect();
+                const currentRect = current.element.getBoundingClientRect();
 
-                    const closestDistance = Math.sqrt(
-                        Math.pow(closestRect.left + closestRect.width / 2 - playerCenterX, 2) +
-                        Math.pow(closestRect.top + closestRect.height / 2 - playerCenterY, 2)
-                    );
+                const closestDistance = Math.sqrt(
+                    Math.pow(closestRect.left + closestRect.width / 2 - playerCenterX, 2) +
+                    Math.pow(closestRect.top + closestRect.height / 2 - playerCenterY, 2)
+                );
 
-                    const currentDistance = Math.sqrt(
-                        Math.pow(currentRect.left + currentRect.width / 2 - playerCenterX, 2) +
-                        Math.pow(currentRect.top + currentRect.height / 2 - playerCenterY, 2)
-                    );
+                const currentDistance = Math.sqrt(
+                    Math.pow(currentRect.left + currentRect.width / 2 - playerCenterX, 2) +
+                    Math.pow(currentRect.top + currentRect.height / 2 - playerCenterY, 2)
+                );
 
-                    return currentDistance < closestDistance ? current : closest;
-                });
-            } else {
-                currentTargetWord = null;
-                currentTypedWord = '';
-                typedWord.textContent = '';
-                updateAccuracy();
-                return;
-            }
+                return currentDistance < closestDistance ? current : closest;
+            });
+        } else {
+            currentTargetWord = null;
+            currentTypedWord = '';
+            typedWord.textContent = '';
+            updateAccuracy();
+            return;
         }
+    }
 
-        if (currentTargetWord && currentTargetWord.hitIndex < currentTargetWord.word.length && 
-            currentTargetWord.word[currentTargetWord.hitIndex].toLowerCase() === key.toLowerCase()) {
-            currentTypedWord += key;
-            currentTargetWord.element.children[currentTargetWord.hitIndex].classList.add('hit');
-            currentTargetWord.hitIndex++;
-            shootBullet(currentTargetWord);
-            currentTargetWord.bulletsInFlight++;
-            lettersHitThisWave++;
-            totalScore++;
-            correctKeystrokes++;
-            updateTotalScore();
-            
-            if (currentTargetWord.hitIndex === currentTargetWord.word.length) {
-                currentTypedWord = '';
-                currentTargetWord = null;
-            }
+    if (currentTargetWord && currentTargetWord.hitIndex < currentTargetWord.word.length && 
+        currentTargetWord.word[currentTargetWord.hitIndex].toLowerCase() === key.toLowerCase()) {
+        currentTypedWord += key;
+        currentTargetWord.element.children[currentTargetWord.hitIndex].classList.add('hit');
+        currentTargetWord.hitIndex++;
+        shootBullet(currentTargetWord);
+        currentTargetWord.bulletsInFlight++;
+        lettersHitThisWave++;
+        totalScore++;
+        correctKeystrokes++;
+        updateTotalScore();
+        
+        if (currentTargetWord.hitIndex === currentTargetWord.word.length) {
+            currentTypedWord = '';
+            currentTargetWord = null;
         }
+    }
 
-        typedWord.textContent = currentTypedWord;
+    typedWord.textContent = currentTypedWord;
 
-        updateAccuracy();
+    updateAccuracy();
     }
 
     function updateTotalScore() {
@@ -399,67 +344,68 @@ document.addEventListener('DOMContentLoaded', (event) => {
 
     function handleWordCompletion(targetWord) {
         zombiesShot++;
-        scoreValue.textContent = zombiesShot;
-        wordsDefeated++;
+    scoreValue.textContent = zombiesShot;
+    wordsDefeated++;
     
-        const rect = targetWord.element.getBoundingClientRect();
-        playBloodSplatter(rect.left + rect.width / 2, rect.top + rect.height / 2);
+    const rect = targetWord.element.getBoundingClientRect();
+    playBloodSplatter(rect.left + rect.width / 2, rect.top + rect.height / 2);
     
-        if (!isMuted) {
-            splatSound.currentTime = 0;
-            splatSound.play();
-        }
-    
-        words = words.filter(w => w !== targetWord);
-        targetWord.element.remove();
-        updateWordsLeft();
-        checkWaveCompletion();
+    if (!isMuted) {
+        splatSound.currentTime = 0;
+        splatSound.play();
     }
+    
+    words = words.filter(w => w !== targetWord);
+    targetWord.element.remove();
+    updateWordsLeft();
+    checkWaveCompletion();
+    }
+
     function dazeWord(wordObj) {
         wordObj.element.classList.add('dazed');
-        wordObj.speed *= 0.75;
-        setTimeout(() => {
-            wordObj.element.classList.remove('dazed');
-            wordObj.speed = wordSpeed * (1 + (wordObj.word.length - 3) * 0.05);
-        }, 1000);
+    wordObj.speed *= 0.75;
+    setTimeout(() => {
+        wordObj.element.classList.remove('dazed');
+        wordObj.speed = wordSpeed * (1 + (wordObj.word.length - 3) * 0.05);
+    }, 1000);
     }
 
     function checkWaveCompletion() {
-        if (wordsDefeated >= waveWordCount) {
-            clearInterval(gameInterval);
-            isGameActive = false;
-            showWaveClearedPopup();
-        } else if (words.length === 0 && wordsSpawned < waveWordCount) {
-            spawnWordWithDelay();
-        }
+         if (wordsDefeated >= waveWordCount) {
+        clearInterval(gameInterval);
+        isGameActive = false;
+        showWaveClearedPopup();
+    } else if (words.length === 0 && wordsSpawned < waveWordCount) {
+        spawnWordWithDelay();
+    }
     }
 
     function showWaveClearedPopup() {
-        waveScore.textContent = lettersHitThisWave;
-        waveCleared.style.display = 'block';
-        setTimeout(() => {
-            waveCleared.style.display = 'none';
-            startNextWave();
-        }, 3000);
+         waveScore.textContent = lettersHitThisWave;
+    waveCleared.style.display = 'block';
+    setTimeout(() => {
+        waveCleared.style.display = 'none';
+        startNextWave();
+    }, 3000);
     }
 
     function startNextWave() {
         currentWave++;
-        waveWordCount++;
-        wordSpeed += 0.2;
-        baseSpawnRate = Math.max(500, baseSpawnRate - 25);
-        lettersHitThisWave = 0;
-        startWave();
+    waveWordCount ++;
+    wordSpeed += 0.2;
+    baseSpawnRate = Math.max(500, baseSpawnRate - 25);
+    lettersHitThisWave = 0;
+    startWave();
     }
 
     function isElementInViewport(el) {
         const rect = el.getBoundingClientRect();
-        return (
-            rect.top >= 0 &&
-            rect.left >= 0 &&
-            rect.bottom <= (window.innerHeight || document.documentElement.clientHeight) &&
-            rect.right <= (window.innerWidth || document.documentElement.clientWidth)
-        );
+    return (
+        rect.top >= 0 &&
+        rect.left >= 0 &&
+        rect.bottom <= (window.innerHeight || document.documentElement.clientHeight) &&
+        rect.right <= (window.innerWidth || document.documentElement.clientWidth)
+    );
     }
 
     function getVisibleWords() {
@@ -472,204 +418,198 @@ document.addEventListener('DOMContentLoaded', (event) => {
 
     function shootBullet(targetWord) {
         const bullet = document.createElement('div');
-        bullet.classList.add('bullet');
-        const playerRect = player.getBoundingClientRect();
-        const wordRect = targetWord.element.getBoundingClientRect();
-        const bullseyeRect = targetWord.element.querySelector('.bullseye').getBoundingClientRect();
+    bullet.classList.add('bullet');
+    const playerRect = player.getBoundingClientRect();
+    const wordRect = targetWord.element.getBoundingClientRect();
+    const bullseyeRect = targetWord.element.querySelector('.bullseye').getBoundingClientRect();
 
-        const startX = playerRect.left + playerRect.width / 2;
-        const startY = playerRect.top + playerRect.height / 2;
-        const endX = bullseyeRect.left + bullseyeRect.width / 2;
-        const endY = bullseyeRect.top + bullseyeRect.height / 2;
+    const startX = playerRect.left + playerRect.width / 2;
+    const startY = playerRect.top + playerRect.height / 2;
+    const endX = bullseyeRect.left + bullseyeRect.width / 2;
+    const endY = bullseyeRect.top + bullseyeRect.height / 2;
 
-        bullet.style.left = `${startX}px`;
-        bullet.style.top = `${startY}px`;
+    bullet.style.left = `${startX}px`;
+    bullet.style.top = `${startY}px`;
 
-        const angle = Math.atan2(endY - startY, endX - startX) * (180 / Math.PI);
-        bullet.style.transform = `rotate(${angle + 90}deg)`;
-        gameContainer.appendChild(bullet);
+    const angle = Math.atan2(endY - startY, endX - startX) * (180 / Math.PI);
+    bullet.style.transform = `rotate(${angle + 90}deg)`;
+    gameContainer.appendChild(bullet);
 
-        if (!isMuted) {
-            bulletShotSound.currentTime = 0;
-            bulletShotSound.play();
-        }
+    if (!isMuted) {
+        bulletShotSound.currentTime = 0;
+        bulletShotSound.play();
+    }
 
-        const animationDuration = 500;
-        const startTime = Date.now();
+    const animationDuration = 500;
+    const startTime = Date.now();
 
-        function animateBullet() {
-            const elapsedTime = Date.now() - startTime;
-            const progress = Math.min(elapsedTime / animationDuration, 1);
+   function animateBullet() {
+        const elapsedTime = Date.now() - startTime;
+        const progress = Math.min(elapsedTime / animationDuration, 1);
 
-            const currentX = startX + (endX - startX) * progress;
-            const currentY = startY + (endY - startY) * progress;
+        const currentX = startX + (endX - startX) * progress;
+        const currentY = startY + (endY - startY) * progress;
 
-            bullet.style.left = `${currentX - bullet.offsetWidth / 2}px`;
-            bullet.style.top = `${currentY - bullet.offsetHeight / 2}px`;
+        bullet.style.left = `${currentX - bullet.offsetWidth / 2}px`;
+        bullet.style.top = `${currentY - bullet.offsetHeight / 2}px`;
 
-            if (progress < 1) {
-                requestAnimationFrame(animateBullet);
-            } else {
-                bullet.remove();
-                targetWord.bulletsInFlight--;
-                dazeWord(targetWord);
-                
-                if (!isMuted) {
-                    const bulletHitSound = new Audio('https://github.com/MattyMcTech/WordWarZ/raw/main/bulletHit.mp3');
-                    bulletHitSound.volume = 0.3;
-                    bulletHitSound.play();
-                }
-                
-                if (targetWord.bulletsInFlight === 0 && targetWord.hitIndex === targetWord.word.length) {
-                    handleWordCompletion(targetWord);
-                }
+        if (progress < 1) {
+            requestAnimationFrame(animateBullet);
+        } else {
+            bullet.remove();
+            targetWord.bulletsInFlight--;
+            dazeWord(targetWord);
+            
+            // Always play the hit sound if not muted
+            if (!isMuted) {
+                const bulletHitSound = new Audio('https://github.com/MattyMcTech/WordWarZ/raw/main/bulletHit.mp3');
+                bulletHitSound.volume = 0.3;
+                bulletHitSound.play();
+            }
+            
+            // Check if the word is completed after playing the sound
+            if (targetWord.bulletsInFlight === 0 && targetWord.hitIndex === targetWord.word.length) {
+                handleWordCompletion(targetWord);
             }
         }
+    }
 
-        requestAnimationFrame(animateBullet);
+    requestAnimationFrame(animateBullet);
     }
 
     function playBloodSplatter(x, y) {
         const bloodSplatter = document.createElement('div');
-        bloodSplatter.classList.add('blood-splatter');
-        bloodSplatter.style.left = `${x - 50}px`;
-        bloodSplatter.style.top = `${y - 50}px`;
-        gameContainer.appendChild(bloodSplatter);
+    bloodSplatter.classList.add('blood-splatter');
+    bloodSplatter.style.left = `${x - 50}px`;
+    bloodSplatter.style.top = `${y - 50}px`;
+    gameContainer.appendChild(bloodSplatter);
 
-        setTimeout(() => {
-            bloodSplatter.remove();
-        }, 1000);
+    setTimeout(() => {
+        bloodSplatter.remove();
+    }, 1000);
+    }
+
+    function initAudioContext() {
+        debugLog("Initializing audio context");
+    if (!audioContext) {
+        audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        debugLog("New audio context created");
+    }
+    if (audioContext.state === 'suspended') {
+        audioContext.resume().then(() => {
+            debugLog("Audio context resumed");
+            forcePlayMusic();
+        }).catch(error => {
+            debugLog(`Error resuming audio context: ${error}`);
+        });
+    } else {
+        debugLog(`Audio context state: ${audioContext.state}`);
+        forcePlayMusic();
+    }
     }
 
     function playBackgroundMusic() {
-        debugLog("Attempting to play background music");
-        if (isMuted) {
-            debugLog("Music is muted, not playing");
-            return;
-        }
+          debugLog("Attempting to play background music");
+    if (!isMuted) {
+        backgroundMusic.play()
+            .then(() => {
+                debugLog("Music started successfully");
+            })
+            .catch(error => {
+                debugLog(`Error starting music: ${error}`);
+            });
+    } else {
+        debugLog("Music is muted, not playing");
+    }
+    }
 
-        if (!backgroundMusic) {
-            debugLog("Background music not initialized, creating new Audio object");
-            backgroundMusic = new Audio('assets/sounds/song.mp3');
-            backgroundMusic.loop = true;
-            backgroundMusic.volume = 0.1;
-        }
+    document.addEventListener('keydown', (event) => {
+         if (!isGameActive || isPaused) return;
 
-        backgroundMusic.currentTime = 0;
-        let playPromise = backgroundMusic.play();
-
-        if (playPromise !== undefined) {
-            playPromise
-                .then(() => {
-                    debugLog("Background music started successfully");
-                    musicStarted = true;
-                })
-                .catch(error => {
-                    debugLog(`Error starting background music: ${error}`);
-                    if (error.name === 'NotAllowedError') {
-                        debugLog("Autoplay prevented. User interaction required to start audio.");
-                    }
-                    setTimeout(() => {
-                        debugLog("Retrying to play background music");
-                        playBackgroundMusic();
-                    }, 1000);
-                });
-        } else {
-            debugLog("Play promise is undefined, browser might not support promises for audio playback");
-            try {
-                backgroundMusic.play();
-                debugLog("Background music started (legacy method)");
-                musicStarted = true;
-            } catch (error) {
-                debugLog(`Error starting background music (legacy method): ${error}`);
+    if (event.key === 'Backspace') {
+        if (currentTypedWord.length > 0) {
+            currentTypedWord = currentTypedWord.slice(0, -1);
+            if (currentTargetWord) {
+                currentTargetWord.hitIndex--;
+                currentTargetWord.element.children[currentTargetWord.hitIndex].classList.remove('hit');
+            }
+            if (currentTypedWord.length === 0) {
+                currentTargetWord = null;
             }
         }
+    } else if (event.key.length === 1) {
+        updateTypedWord(event.key);
     }
-    function adjustLayoutForKeyboard() {
-    if (isMobileDevice()) {
-        const gameContainer = document.getElementById('game-container');
-        const windowHeight = window.innerHeight;
-        const gameHeight = windowHeight - (windowHeight * 0.4); // Assume keyboard takes up 40% of screen height
-        gameContainer.style.height = `${gameHeight}px`;
-        gameContainer.style.bottom = 'auto';
-    }
-}
+    typedWord.textContent = currentTypedWord;
+    });
 
-    function initGame() {
-    debugLog("Initializing game");
-    isFirstLoad = false;
-    zombiesShot = 0;
-    totalScore = 0;
-    scoreValue.textContent = zombiesShot;
-    totalScoreValue.textContent = totalScore;
-    currentWave = 1;
-    waveWordCount = 5;
-    wordSpeed = 1.0;
-    baseSpawnRate = 1500;
-    lettersHitThisWave = 0;
-    totalKeystrokes = 0;
-    correctKeystrokes = 0;
-    
+    function startWave() {
+         isGameActive = true;
+    wordsDefeated = 0;
+    wordsSpawned = 0;
     words.forEach(({ element }) => element.remove());
     words = [];
     currentTypedWord = '';
     currentTargetWord = null;
     typedWord.textContent = '';
-    
-    gameOver.style.display = 'none';
     waveComplete.style.display = 'none';
+    gameOver.style.display = 'none';
     waveCleared.style.display = 'none';
-    player.style.display = 'block';
-    
     waveValue.textContent = currentWave;
     updateWordsLeft();
-    updateAccuracy();
-    
-    if (isMobileDevice()) {
-        initializeMobileLayout();
-        const mobileInput = document.getElementById('mobile-input');
-        mobileInput.style.display = 'block';
-        setTimeout(() => {
-            mobileInput.focus();
-        }, 100);
-    }
-    
-    isGameActive = true;
+
     gameInterval = setInterval(moveWords, 33);
     spawnWordWithDelay();
-    
-    if (!isMuted) {
-        playBackgroundMusic();
     }
-    
-    debugLog("Game initialized");
-}
+
+    function forcePlayMusic() {
+        debugLog("Entering forcePlayMusic function");
+    if (isMuted) {
+        debugLog("Music is muted, not playing");
+        return;
+    }
+    debugLog("Attempting to play background music");
+    backgroundMusic.currentTime = 0;
+    let playPromise = backgroundMusic.play();
+    if (playPromise !== undefined) {
+        playPromise.then(_ => {
+            debugLog("Music playback started successfully");
+        })
+        .catch(error => {
+            debugLog(`Music playback failed: ${error}`);
+            setTimeout(forcePlayMusic, 1000);
+        });
+    } else {
+        debugLog("Play promise is undefined, browser might not support promises for audio playback");
+    }
+    }
 
     function endGame() {
         isGameActive = false;
-        clearInterval(gameInterval);
-        if (isMobileDevice()) {
-        const mobileInput = document.getElementById('mobile-input');
-        mobileInput.style.display = 'none';
-    }
-        finalScoreValue.textContent = totalScore;
-        finalAccuracyValue.textContent = `${(correctKeystrokes / totalKeystrokes * 100).toFixed(2)}%`;
-        
-        words.forEach(({ element }) => element.remove());
-        words = [];
-        
-        typedWord.textContent = '';
-        waveComplete.style.display = 'none';
-        waveCleared.style.display = 'none';
-        
-        gameOver.style.display = 'flex';
-        gameOver.style.zIndex = '2000';
-        
-        startGameBtn.style.display = 'none';
-        
-        backgroundMusic.pause();
+    clearInterval(gameInterval);
+    
+    // Update final score and accuracy
+    finalScoreValue.textContent = totalScore;
+    finalAccuracyValue.textContent = `${(correctKeystrokes / totalKeystrokes * 100).toFixed(2)}%`;
+    
+    // Clear any remaining words
+    words.forEach(({ element }) => element.remove());
+    words = [];
+    
+    // Hide game elements
+    typedWord.textContent = '';
+    waveComplete.style.display = 'none';
+    waveCleared.style.display = 'none';
+    
+    // Show game over screen
+    gameOver.style.display = 'flex';
+    gameOver.style.zIndex = '2000';
+    
+    // Hide start button
+    startGameBtn.style.display = 'none';
+    
 
-        
+    backgroundMusic.pause();
     }
 
     function hideStartButton() {
@@ -685,104 +625,43 @@ document.addEventListener('DOMContentLoaded', (event) => {
         }
     }
 
-    function handleInput(key) {
-        if (!isGameActive || isPaused) return;
-        
-        if (key === 'Backspace') {
-            if (currentTypedWord.length > 0) {
-                currentTypedWord = currentTypedWord.slice(0, -1);
-                if (currentTargetWord) {
-                    currentTargetWord.hitIndex--;
-                    currentTargetWord.element.children[currentTargetWord.hitIndex].classList.remove('hit');
-                }
-                if (currentTypedWord.length === 0) {
-                    currentTargetWord = null;
-                }
-            }
-        } else if (key.length === 1) {
-            updateTypedWord(key);
-        }
-        typedWord.textContent = currentTypedWord;
+    function initGame() {
+         debugLog("Initializing game");
+    isFirstLoad = false;
+    zombiesShot = 0;
+    totalScore = 0;
+    scoreValue.textContent = zombiesShot;
+    totalScoreValue.textContent = totalScore;
+    currentWave = 1;
+    waveWordCount = 5;
+    wordSpeed = 1.0;
+    baseSpawnRate = 1500;
+    lettersHitThisWave = 0;
+    totalKeystrokes = 0;
+    correctKeystrokes = 0;
+    
+    gameOver.style.display = 'none';  // Ensure game over screen is hidden
+    
+    startWave();
+    debugLog("Calling forcePlayMusic from initGame");
+    forcePlayMusic();
     }
 
-    document.addEventListener('keydown', (event) => {
-        handleInput(event.key);
+    restartBtn.addEventListener('click', () => {
+        gameOver.style.display = 'none';
+        hideStartButton();
+        initGame();
+        playBackgroundMusic();
     });
 
-    function handleMobileTouchStart(event) {
-    if (!isGameActive || isPaused) return;
-    
-    const touch = event.touches[0];
-    const touchedElement = document.elementFromPoint(touch.clientX, touch.clientY);
-    
-    if (touchedElement && touchedElement.classList.contains('enemy-word')) {
-        const wordObj = words.find(w => w.element === touchedElement);
-        if (wordObj) {
-            currentTargetWord = wordObj;
-            currentTypedWord = '';
-            typedWord.textContent = '';
-        }
-    } else {
-        // If the touch is not on a word, show a virtual keyboard
-        showVirtualKeyboard();
-    }
-}
-    function handleMobileInput(event) {
-    const inputValue = event.target.value.toLowerCase();
-    if (inputValue) {
-        handleInput(inputValue[inputValue.length - 1]);
-        event.target.value = ''; // Clear the input after each character
-    }
-}
-    function showVirtualKeyboard() {
-    if (document.getElementById('virtual-keyboard')) return;
-
-    const keyboard = document.createElement('div');
-    keyboard.id = 'virtual-keyboard';
-    keyboard.style.position = 'fixed';
-    keyboard.style.bottom = '0';
-    keyboard.style.left = '0';
-    keyboard.style.width = '100%';
-    keyboard.style.backgroundColor = 'rgba(0,0,0,0.7)';
-    keyboard.style.padding = '10px';
-    keyboard.style.display = 'flex';
-    keyboard.style.flexWrap = 'wrap';
-    keyboard.style.justifyContent = 'center';
-    keyboard.style.zIndex = '3000';
-
-    const keys = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
-    keys.forEach(key => {
-        const button = document.createElement('button');
-        button.textContent = key;
-        button.style.margin = '5px';
-        button.style.padding = '10px';
-        button.style.fontSize = '20px';
-        button.addEventListener('click', () => handleInput(key.toLowerCase()));
-        keyboard.appendChild(button);
-    });
-
-    document.body.appendChild(keyboard);
-}
-
-    // Initialize the game
-    initializeMobileLayout();
-    showStartButton();
-
-    // Event listeners
     startGameBtn.addEventListener('click', () => {
         debugLog("Start game button clicked");
         hideStartButton();
+        initAudioContext();
         initGame();
+        debugLog("Calling forcePlayMusic from start button click");
+        forcePlayMusic();
     });
 
-   restartBtn.addEventListener('click', () => {
-        gameOver.style.display = 'none';
-        initGame();
-    });
-
-    if (!isMobileDevice()) {
-        document.addEventListener('keydown', (event) => {
-            handleInput(event.key);
-        });
-    }
+    showStartButton();
 });
