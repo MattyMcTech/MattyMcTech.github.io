@@ -597,6 +597,7 @@ function startWave() {
 
     adjustGameDifficultyForMobile();
     
+    clearInterval(gameInterval);  // Clear any existing interval
     gameInterval = setInterval(moveWords, 33);
     spawnWordWithDelay();
 }
@@ -624,6 +625,7 @@ function forcePlayMusic() {
 }
 
 function endGame() {
+    if (!isGameActive) return;  // Prevent multiple calls to endGame
     isGameActive = false;
     clearInterval(gameInterval);
     
@@ -656,12 +658,10 @@ function hideStartButton() {
 }
 
 function showStartButton() {
-    if (isFirstLoad || gameOver.style.display !== 'flex') {
-        startGameBtn.style.display = 'block';
-        gameOver.style.display = 'none';
-        waveComplete.style.display = 'none';
-        waveCleared.style.display = 'none';
-    }
+    startGameBtn.style.display = 'block';
+    gameOver.style.display = 'none';
+    waveComplete.style.display = 'none';
+    waveCleared.style.display = 'none';
 }
 
 function initGame() {
@@ -680,6 +680,8 @@ function initGame() {
     correctKeystrokes = 0;
     
     gameOver.style.display = 'none';  // Ensure game over screen is hidden
+    waveComplete.style.display = 'none';
+    waveCleared.style.display = 'none';
     
     startWave();
     debugLog("Calling forcePlayMusic from initGame");
