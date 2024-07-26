@@ -21,6 +21,8 @@ document.addEventListener('DOMContentLoaded', (event) => {
     const finalAccuracyValue = document.getElementById('final-accuracy-value');
     const startGameBtn = document.getElementById('start-game-btn');
     const volumeSlider = document.getElementById('volume-slider');
+    const virtualKeyboard = document.getElementById('virtual-keyboard');
+const keys = virtualKeyboard.querySelectorAll('.key');
 
     const splatSound = new Audio('assets/sounds/splat.mp3');
     splatSound.volume = 0.3;
@@ -62,6 +64,39 @@ document.addEventListener('DOMContentLoaded', (event) => {
         const accuracy = totalKeystrokes > 0 ? (correctKeystrokes / totalKeystrokes * 100).toFixed(2) : 100;
         accuracyValue.textContent = `${accuracy}%`;
     }
+    function isMobileDevice() {
+  return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+}
+    function showVirtualKeyboard() {
+  if (isMobileDevice()) {
+    virtualKeyboard.classList.remove('hidden');
+  }
+}
+    function hideVirtualKeyboard() {
+  virtualKeyboard.classList.add('hidden');
+}
+    keys.forEach(key => {
+  key.addEventListener('click', () => handleVirtualKeyPress(key.textContent));
+});
+
+    function handleVirtualKeyPress(key) {
+  if (key === '⌫') {
+    // Handle backspace
+    if (currentTypedWord.length > 0) {
+      currentTypedWord = currentTypedWord.slice(0, -1);
+      if (currentTargetWord) {
+        currentTargetWord.hitIndex--;
+        currentTargetWord.element.children[currentTargetWord.hitIndex].classList.remove('hit');
+      }
+      if (currentTypedWord.length === 0) {
+        currentTargetWord = null;
+      }
+    }
+  } else {
+    updateTypedWord(key.toLowerCase());
+  }
+  typedWord.textContent = currentTypedWord;
+}
 
     muteBtn.addEventListener('click', () => {
         isMuted = !isMuted;
@@ -560,6 +595,7 @@ document.addEventListener('DOMContentLoaded', (event) => {
 
     gameInterval = setInterval(moveWords, 33);
     spawnWordWithDelay();
+    showVirtualKeyboard();
     }
 
     function forcePlayMusic() {
@@ -610,6 +646,7 @@ document.addEventListener('DOMContentLoaded', (event) => {
     
 
     backgroundMusic.pause();
+    hideVirtualKeyboard();
     }
 
     function hideStartButton() {
@@ -652,6 +689,7 @@ document.addEventListener('DOMContentLoaded', (event) => {
         hideStartButton();
         initGame();
         playBackgroundMusic();
+        showVirtualKeyboard();
     });
 
     startGameBtn.addEventListener('click', () => {
