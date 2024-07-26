@@ -80,6 +80,26 @@ body, html {
     bottom: 90px;
 }
 
+#mobile-input-container {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  padding: 10px;
+  background-color: rgba(0, 0, 0, 0.7);
+  box-sizing: border-box;
+}
+
+#mobile-input {
+  width: 100%;
+  padding: 10px;
+  font-size: 16px;
+  border: none;
+  background-color: rgba(255, 255, 255, 0.2);
+  color: #fff;
+  outline: none;
+}
+
 .enemy-word {
     position: absolute;
     font-size: 28px;
