@@ -257,7 +257,6 @@ body, html {
 /* Mobile-specific styles */
 @media (max-width: 768px) {
     .mobile-device #game-container {
-        height: 100%;
         position: fixed;
         top: 0;
         left: 0;
@@ -267,46 +266,49 @@ body, html {
     }
 
     .mobile-device #player {
-        width: 80px;
-        height: 80px;
-        bottom: 20px;
+        width: 60px;
+        height: 60px;
+        bottom: 10px;
         left: 50%;
         transform: translateX(-50%);
-        top: auto;
-        position: fixed;
+        position: absolute;
     }
 
     .mobile-device #start-game-btn {
-        position: fixed;
-        bottom: 120px;
+        position: absolute;
+        bottom: 80px;
         left: 50%;
         transform: translateX(-50%);
         z-index: 2000;
-        font-size: 24px;
-        padding: 15px 30px;
+        font-size: 20px;
+        padding: 10px 20px;
     }
 
     .mobile-device #mute-btn {
-        position: fixed;
-        bottom: 20px;
-        left: 20px;
+        position: absolute;
+        bottom: 10px;
+        left: 10px;
         z-index: 2000;
+        font-size: 14px;
+        padding: 5px 10px;
     }
 
     .mobile-device #pause-btn {
-        position: fixed;
-        bottom: 20px;
-        right: 20px;
+        position: absolute;
+        bottom: 10px;
+        right: 10px;
         z-index: 2000;
+        font-size: 14px;
+        padding: 5px 10px;
     }
 
     .mobile-device #typed-word {
-        bottom: 100px;
-        font-size: 24px;
+        bottom: 70px;
+        font-size: 20px;
     }
 
     .mobile-device .enemy-word {
-        font-size: 20px;
+        font-size: 18px;
     }
 
     /* Hide elements on mobile */
@@ -317,5 +319,18 @@ body, html {
     .mobile-device #accuracy,
     .mobile-device #volume-control {
         display: none !important;
+    }
+
+    .mobile-device #mobile-input {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        padding: 10px;
+        font-size: 16px;
+        border: none;
+        background-color: rgba(255, 255, 255, 0.1);
+        color: white;
+        z-index: 2000;
     }
 }
