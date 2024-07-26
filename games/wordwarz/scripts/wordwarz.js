@@ -1,4 +1,3 @@
-// Wait for the DOM to be fully loaded before running the script
 document.addEventListener('DOMContentLoaded', (event) => {
     const gameContainer = document.getElementById('game-container');
     const typedWord = document.getElementById('typed-word');
@@ -21,7 +20,6 @@ document.addEventListener('DOMContentLoaded', (event) => {
     const finalAccuracyValue = document.getElementById('final-accuracy-value');
     const startGameBtn = document.getElementById('start-game-btn');
     const volumeSlider = document.getElementById('volume-slider');
-    const isMobileDevice = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0) || (navigator.msMaxTouchPoints > 0);
 
     const splatSound = new Audio('assets/sounds/splat.mp3');
     splatSound.volume = 0.3;
@@ -55,7 +53,6 @@ document.addEventListener('DOMContentLoaded', (event) => {
     let correctKeystrokes = 0;
     let isFirstLoad = true;
 
-
     function debugLog(message) {
         console.log(`[DEBUG] ${message}`);
     }
@@ -63,6 +60,57 @@ document.addEventListener('DOMContentLoaded', (event) => {
     function updateAccuracy() {
         const accuracy = totalKeystrokes > 0 ? (correctKeystrokes / totalKeystrokes * 100).toFixed(2) : 100;
         accuracyValue.textContent = `${accuracy}%`;
+    }
+
+    function isMobileDevice() {
+        return (typeof window.orientation !== "undefined") || (navigator.userAgent.indexOf('IEMobile') !== -1);
+    }
+
+    function initializeMobileLayout() {
+        if (isMobileDevice()) {
+            document.body.classList.add('mobile-device');
+            
+            // Prevent zooming
+            document.addEventListener('touchstart', function(e) {
+                if (e.touches.length > 1) {
+                    e.preventDefault();
+                }
+            }, { passive: false });
+
+            // Disable double-tap zoom
+            let lastTouchEnd = 0;
+            document.addEventListener('touchend', function(e) {
+                const now = (new Date()).getTime();
+                if (now - lastTouchEnd <= 300) {
+                    e.preventDefault();
+                }
+                lastTouchEnd = now;
+            }, false);
+
+            // Add meta tag to prevent zooming
+            const viewportMeta = document.createElement('meta');
+            viewportMeta.name = 'viewport';
+            viewportMeta.content = 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0';
+            document.getElementsByTagName('head')[0].appendChild(viewportMeta);
+        }
+    }
+
+    function showMobileKeyboard() {
+        if (isMobileDevice()) {
+            const dummyInput = document.createElement('input');
+            dummyInput.setAttribute('type', 'text');
+            dummyInput.style.position = 'absolute';
+            dummyInput.style.opacity = '0';
+            dummyInput.style.height = '0';
+            dummyInput.style.fontSize = '16px'; // Prevent zoom on iOS
+            document.body.appendChild(dummyInput);
+
+            dummyInput.focus();
+
+            setTimeout(() => {
+                dummyInput.remove();
+            }, 100);
+        }
     }
 
     muteBtn.addEventListener('click', () => {
@@ -93,7 +141,7 @@ document.addEventListener('DOMContentLoaded', (event) => {
         }
     });
 
-                          volumeSlider.addEventListener('input', (e) => {
+    volumeSlider.addEventListener('input', (e) => {
         const volume = parseFloat(e.target.value);
         splatSound.volume = volume * 0.6;
         backgroundMusic.volume = volume * 0.2;
@@ -204,7 +252,7 @@ document.addEventListener('DOMContentLoaded', (event) => {
     }
 
     function getRandomEdgePosition(wordWidth, wordHeight, containerRect) {
-    const edge = isMobileDevice ? 'top' : ['top', 'right', 'bottom', 'left'][Math.floor(Math.random() * 4)];
+        const edge = isMobileDevice() ? 'top' : ['top', 'right', 'bottom', 'left'][Math.floor(Math.random() * 4)];
         let x, y;
 
         switch (edge) {
@@ -351,7 +399,6 @@ document.addEventListener('DOMContentLoaded', (event) => {
         updateWordsLeft();
         checkWaveCompletion();
     }
-
     function dazeWord(wordObj) {
         wordObj.element.classList.add('dazed');
         wordObj.speed *= 0.75;
@@ -478,116 +525,95 @@ document.addEventListener('DOMContentLoaded', (event) => {
         }, 1000);
     }
 
-    function initAudioContext() {
-        debugLog("Initializing audio context");
-        if (!audioContext) {
-            audioContext = new (window.AudioContext || window.webkitAudioContext)();
-            debugLog("New audio context created");
-        }
-        if (audioContext.state === 'suspended') {
-            audioContext.resume().then(() => {
-                debugLog("Audio context resumed");
-                forcePlayMusic();
-            }).catch(error => {
-                debugLog(`Error resuming audio context: ${error}`);
-            });
-        } else {
-            debugLog(`Audio context state: ${audioContext.state}`);
-            forcePlayMusic();
-        }
-    }
-
     function playBackgroundMusic() {
-    debugLog("Attempting to play background music");
-    if (isMuted) {
-        debugLog("Music is muted, not playing");
-        return;
-    }
+        debugLog("Attempting to play background music");
+        if (isMuted) {
+            debugLog("Music is muted, not playing");
+            return;
+        }
 
-    if (!backgroundMusic) {
-        debugLog("Background music not initialized, creating new Audio object");
-        backgroundMusic = new Audio('assets/sounds/song.mp3');
-        backgroundMusic.loop = true;
-        backgroundMusic.volume = 0.1;
-    }
+        if (!backgroundMusic) {
+            debugLog("Background music not initialized, creating new Audio object");
+            backgroundMusic = new Audio('assets/sounds/song.mp3');
+            backgroundMusic.loop = true;
+            backgroundMusic.volume = 0.1;
+        }
 
-    // Reset the audio to the beginning
-    backgroundMusic.currentTime = 0;
+        backgroundMusic.currentTime = 0;
+        let playPromise = backgroundMusic.play();
 
-    // Attempt to play the music
-    let playPromise = backgroundMusic.play();
-
-    if (playPromise !== undefined) {
-        playPromise
-            .then(() => {
-                debugLog("Background music started successfully");
+        if (playPromise !== undefined) {
+            playPromise
+                .then(() => {
+                    debugLog("Background music started successfully");
+                    musicStarted = true;
+                })
+                .catch(error => {
+                    debugLog(`Error starting background music: ${error}`);
+                    if (error.name === 'NotAllowedError') {
+                        debugLog("Autoplay prevented. User interaction required to start audio.");
+                    }
+                    setTimeout(() => {
+                        debugLog("Retrying to play background music");
+                        playBackgroundMusic();
+                    }, 1000);
+                });
+        } else {
+            debugLog("Play promise is undefined, browser might not support promises for audio playback");
+            try {
+                backgroundMusic.play();
+                debugLog("Background music started (legacy method)");
                 musicStarted = true;
-            })
-            .catch(error => {
-                debugLog(`Error starting background music: ${error}`);
-                // If autoplay was prevented, we can inform the user they need to interact with the page first
-                if (error.name === 'NotAllowedError') {
-                    debugLog("Autoplay prevented. User interaction required to start audio.");
-                    // You might want to display a message to the user here
-                }
-                // Retry playing the music after a short delay
-                setTimeout(() => {
-                    debugLog("Retrying to play background music");
-                    playBackgroundMusic();
-                }, 1000);
-            });
-    } else {
-        debugLog("Play promise is undefined, browser might not support promises for audio playback");
-        // For older browsers that don't return a promise from play()
-        try {
-            backgroundMusic.play();
-            debugLog("Background music started (legacy method)");
-            musicStarted = true;
-        } catch (error) {
-            debugLog(`Error starting background music (legacy method): ${error}`);
+            } catch (error) {
+                debugLog(`Error starting background music (legacy method): ${error}`);
+            }
         }
     }
-}
 
-    function startWave() {
-        isGameActive = true;
-        wordsDefeated = 0;
-        wordsSpawned = 0;
+    function initGame() {
+        debugLog("Initializing game");
+        isFirstLoad = false;
+        zombiesShot = 0;
+        totalScore = 0;
+        scoreValue.textContent = zombiesShot;
+        totalScoreValue.textContent = totalScore;
+        currentWave = 1;
+        waveWordCount = 5;
+        wordSpeed = 1.0;
+        baseSpawnRate = 1500;
+        lettersHitThisWave = 0;
+        totalKeystrokes = 0;
+        correctKeystrokes = 0;
+        
         words.forEach(({ element }) => element.remove());
         words = [];
         currentTypedWord = '';
         currentTargetWord = null;
         typedWord.textContent = '';
-        waveComplete.style.display = 'none';
+        
         gameOver.style.display = 'none';
+        waveComplete.style.display = 'none';
         waveCleared.style.display = 'none';
+        player.style.display = 'block';
+        
         waveValue.textContent = currentWave;
         updateWordsLeft();
-
+        updateAccuracy();
+        
+        if (isMobileDevice()) {
+            initializeMobileLayout();
+            showMobileKeyboard();
+        }
+        
+        isGameActive = true;
         gameInterval = setInterval(moveWords, 33);
         spawnWordWithDelay();
-    }
-
-    function forcePlayMusic() {
-        debugLog("Entering forcePlayMusic function");
-        if (isMuted) {
-            debugLog("Music is muted, not playing");
-            return;
+        
+        if (!isMuted) {
+            playBackgroundMusic();
         }
-        debugLog("Attempting to play background music");
-        backgroundMusic.currentTime = 0;
-        let playPromise = backgroundMusic.play();
-        if (playPromise !== undefined) {
-            playPromise.then(_ => {
-                debugLog("Music playback started successfully");
-            })
-            .catch(error => {
-                debugLog(`Music playback failed: ${error}`);
-                setTimeout(forcePlayMusic, 1000);
-            });
-        } else {
-            debugLog("Play promise is undefined, browser might not support promises for audio playback");
-        }
+        
+        debugLog("Game initialized");
     }
 
     function endGame() {
@@ -625,102 +651,6 @@ document.addEventListener('DOMContentLoaded', (event) => {
         }
     }
 
-    function initGame() {
-    debugLog("Initializing game");
-    
-    // Reset game state
-    isFirstLoad = false;
-    zombiesShot = 0;
-    totalScore = 0;
-    currentWave = 1;
-    waveWordCount = 5;
-    wordSpeed = 1.0;
-    baseSpawnRate = 1500;
-    lettersHitThisWave = 0;
-    totalKeystrokes = 0;
-    correctKeystrokes = 0;
-    
-    // Update UI
-    scoreValue.textContent = zombiesShot;
-    totalScoreValue.textContent = totalScore;
-    waveValue.textContent = currentWave;
-    updateWordsLeft();
-    updateAccuracy();
-    
-    // Clear any existing words
-    words.forEach(({ element }) => element.remove());
-    words = [];
-    
-    // Reset player state
-    currentTypedWord = '';
-    currentTargetWord = null;
-    typedWord.textContent = '';
-    
-    // Hide end game screens
-    gameOver.style.display = 'none';
-    waveComplete.style.display = 'none';
-    waveCleared.style.display = 'none';
-    
-    // Show game elements
-    player.style.display = 'block';
-    
-    // Mobile-specific setup
-    if (isMobileDevice) {
-        document.body.classList.add('mobile-device');
-        player.style.bottom = '60px';
-        player.style.left = '50%';
-        player.style.transform = 'translateX(-50%)';
-        
-        // Attempt to show keyboard
-        setTimeout(() => {
-            const dummyInput = document.createElement('input');
-            dummyInput.style.position = 'fixed';
-            dummyInput.style.opacity = '0';
-            dummyInput.style.bottom = '0';
-            dummyInput.style.left = '0';
-            document.body.appendChild(dummyInput);
-            dummyInput.focus();
-            setTimeout(() => {
-                dummyInput.remove();
-            }, 100);
-        }, 100);
-    } else {
-        document.body.classList.remove('mobile-device');
-        player.style.top = '50%';
-        player.style.left = '50%';
-        player.style.transform = 'translate(-50%, -50%)';
-    }
-    
-    // Start game logic
-    isGameActive = true;
-    gameInterval = setInterval(moveWords, 33);
-    spawnWordWithDelay();
-    
-    // Start audio
-    if (!isMuted) {
-        playBackgroundMusic();
-    }
-    
-    debugLog("Game initialized");
-}
-
-
-    restartBtn.addEventListener('click', () => {
-        gameOver.style.display = 'none';
-        hideStartButton();
-        initGame();
-        playBackgroundMusic();
-    });
-
-    startGameBtn.addEventListener('click', () => {
-        debugLog("Start game button clicked");
-        hideStartButton();
-        initAudioContext();
-        initGame();
-        debugLog("Calling forcePlayMusic from start button click");
-        forcePlayMusic();
-    });
-
     function handleInput(key) {
         if (!isGameActive || isPaused) return;
         
@@ -745,27 +675,6 @@ document.addEventListener('DOMContentLoaded', (event) => {
         handleInput(event.key);
     });
 
-    
-
-    function scrollToTop() {
-        window.scrollTo(0, 0);
-    }
-
-   function initializeMobileInput() {
-    if (isMobileDevice) {
-        document.body.classList.add('mobile-device');
-        gameContainer.addEventListener('touchstart', focusMobileInput);
-        document.addEventListener('touchstart', handleMobileTouchStart);
-    }
-}
-
-
-    function focusMobileInput() {
-        if (isMobileDevice) {
-            // This function is now empty as we're not using a separate input field
-        }
-    }
-
     function handleMobileTouchStart(event) {
         if (!isGameActive || isPaused) return;
         
@@ -782,7 +691,26 @@ document.addEventListener('DOMContentLoaded', (event) => {
         }
     }
 
-
-    initializeMobileInput();
+    // Initialize the game
+    initializeMobileLayout();
     showStartButton();
+
+    // Event listeners
+    startGameBtn.addEventListener('click', () => {
+        debugLog("Start game button clicked");
+        hideStartButton();
+        initGame();
+        if (isMobileDevice()) {
+            showMobileKeyboard();
+        }
+    });
+
+    restartBtn.addEventListener('click', () => {
+        gameOver.style.display = 'none';
+        initGame();
+    });
+
+    if (isMobileDevice()) {
+        document.addEventListener('touchstart', handleMobileTouchStart);
+    }
 });
