@@ -70,13 +70,31 @@ const keys = virtualKeyboard.querySelectorAll('.key');
     function showVirtualKeyboard() {
   if (isMobileDevice()) {
     virtualKeyboard.classList.remove('hidden');
+    adjustGameContainerPadding();
   }
 }
     function hideVirtualKeyboard() {
   virtualKeyboard.classList.add('hidden');
+  adjustGameContainerPadding();
 }
     keys.forEach(key => {
-  key.addEventListener('click', () => handleVirtualKeyPress(key.textContent));
+  key.addEventListener('touchstart', (e) => {
+    e.preventDefault(); // Prevent default touch behavior
+    handleVirtualKeyPress(key.textContent);
+    key.classList.add('active');
+  });
+
+         key.addEventListener('touchend', (e) => {
+    e.preventDefault();
+    key.classList.remove('active');
+  });
+  
+  // Keep the click listener for non-touch devices
+  key.addEventListener('click', (e) => {
+    if (!e.touches) { // Only handle click if it's not a touch event
+      handleVirtualKeyPress(key.textContent);
+    }
+  });
 });
 
     function handleVirtualKeyPress(key) {
@@ -96,6 +114,13 @@ const keys = virtualKeyboard.querySelectorAll('.key');
     updateTypedWord(key.toLowerCase());
   }
   typedWord.textContent = currentTypedWord;
+}
+
+    function adjustGameContainerPadding() {
+  const keyboardHeight = virtualKeyboard.offsetHeight;
+  gameContainer.style.paddingBottom = isMobileDevice() && !virtualKeyboard.classList.contains('hidden') 
+    ? `${keyboardHeight}px` 
+    : '0';
 }
 
     muteBtn.addEventListener('click', () => {
@@ -731,6 +756,6 @@ const keys = virtualKeyboard.querySelectorAll('.key');
         debugLog("Calling forcePlayMusic from start button click");
         forcePlayMusic();
     });
-
+    window.addEventListener('resize', adjustGameContainerPadding);
     showStartButton();
 });
