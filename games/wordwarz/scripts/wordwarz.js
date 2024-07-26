@@ -204,7 +204,7 @@ document.addEventListener('DOMContentLoaded', (event) => {
     }
 
     function getRandomEdgePosition(wordWidth, wordHeight, containerRect) {
-    const edge = isMobileDevice() ? 'top' : ['top', 'right', 'bottom', 'left'][Math.floor(Math.random() * 4)];
+    const edge = isMobileDevice ? 'top' : ['top', 'right', 'bottom', 'left'][Math.floor(Math.random() * 4)];
         let x, y;
 
         switch (edge) {
@@ -687,11 +687,7 @@ document.addEventListener('DOMContentLoaded', (event) => {
         handleInput(event.key);
     });
 
-    function isMobileDevice() {
-        return (('ontouchstart' in window) ||
-            (navigator.maxTouchPoints > 0) ||
-            (navigator.msMaxTouchPoints > 0));
-    }
+    
 
     function scrollToTop() {
         window.scrollTo(0, 0);
@@ -707,7 +703,7 @@ document.addEventListener('DOMContentLoaded', (event) => {
 
 
     function focusMobileInput() {
-        if (isMobileDevice()) {
+        if (isMobileDevice) {
             // This function is now empty as we're not using a separate input field
         }
     }
