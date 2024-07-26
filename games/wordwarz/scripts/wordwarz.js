@@ -768,7 +768,7 @@ keys.forEach(key => {
 		showVirtualKeyboard();
         forcePlayMusic();
     });
-window.addEventListener('resize', adjustGameContainerPadding);
+window.addEventListener('resize', adjustGameAreaForMobile);
 window.addEventListener('orientationchange', adjustGameAreaForMobile);
 window.addEventListener('resize', adjustGameAreaForMobile);
     showStartButton();
