@@ -255,85 +255,91 @@ body, html {
 }
 
 /* Mobile-specific styles */
-.mobile-device #game-container {
-    background-size: cover;
-    background-position: center;
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: calc(100% - 240px);
-    bottom: 240px;
-    overflow: hidden;
-}
+@media (max-width: 768px) {
+    .mobile-device #game-container {
+        height: calc(100% - 50px); /* Adjust for mobile keyboard */
+        bottom: 50px;
+        position: fixed;
+    }
 
-.mobile-device #player {
-    width: 80px;
-    height: 80px;
-    bottom: 120px;
-}
+    .mobile-device #player {
+        width: 60px;
+        height: 60px;
+        bottom: 60px; /* Position above the keyboard */
+        left: 50%;
+        transform: translateX(-50%);
+        top: auto;
+    }
 
-.mobile-device .enemy-word {
-    font-size: 24px;
-}
+    .mobile-device .enemy-word {
+        font-size: 24px;
+    }
 
-.mobile-device #typed-word {
-    font-size: 28px;
-    bottom: 260px;
-}
+    .mobile-device #typed-word {
+        font-size: 28px;
+        bottom: 120px; /* Above the player */
+    }
 
-.mobile-device #score,
-.mobile-device #total-score,
-.mobile-device #wave,
-.mobile-device #words-left,
-.mobile-device #accuracy {
-    display: none !important;
-}
+    .mobile-device #score,
+    .mobile-device #total-score,
+    .mobile-device #wave,
+    .mobile-device #words-left,
+    .mobile-device #accuracy {
+        display: none !important;
+    }
 
-.mobile-device #game-over h2 {
-    font-size: 48px;
-}
+    .mobile-device #game-over h2 {
+        font-size: 48px;
+    }
 
-.mobile-device #final-score,
-.mobile-device #final-accuracy {
-    font-size: 28px;
-}
+    .mobile-device #final-score,
+    .mobile-device #final-accuracy {
+        font-size: 28px;
+    }
 
-.mobile-device #next-wave-btn,
-.mobile-device #restart-btn {
-    font-size: 20px;
-}
+    .mobile-device #next-wave-btn,
+    .mobile-device #restart-btn {
+        font-size: 20px;
+    }
 
-.mobile-device #mute-btn,
-.mobile-device #pause-btn {
-    font-size: 16px;
-    bottom: 140px;
-}
+    .mobile-device #volume-control,
+    .mobile-device #mute-btn,
+    .mobile-device #pause-btn {
+        position: fixed;
+        bottom: 10px;
+        font-size: 16px;
+        z-index: 2000;
+    }
 
-.mobile-device #volume-control {
-    bottom: 180px;
-}
+    .mobile-device #volume-control {
+        left: 10px;
+        width: 30%;
+    }
 
-.mobile-device #start-game-btn {
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    z-index: 2000;
-    font-size: 24px;
-    padding: 15px 30px;
-    background-color: #4CAF50;
-    color: #FFFFFF;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-}
+    .mobile-device #mute-btn {
+        left: 35%;
+    }
 
-.mobile-device #game-over {
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    width: 90%;
-    max-width: 300px;
+    .mobile-device #pause-btn {
+        right: 10px;
+    }
+
+    .mobile-device #start-game-btn {
+        position: fixed;
+        bottom: 70px;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 2000;
+        font-size: 24px;
+        padding: 15px 30px;
+    }
+
+    .mobile-device #game-over {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 90%;
+        max-width: 300px;
+    }
 }
