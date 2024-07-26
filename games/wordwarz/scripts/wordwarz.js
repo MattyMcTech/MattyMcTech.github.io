@@ -506,3 +506,191 @@ document.addEventListener('DOMContentLoaded', (event) => {
                 .catch(error => {
                     debugLog(`Error starting music: ${error}`);
                 });
+            } else {
+            debugLog("Music is muted, not playing");
+        }
+    }
+
+    function startWave() {
+        isGameActive = true;
+        wordsDefeated = 0;
+        wordsSpawned = 0;
+        words.forEach(({ element }) => element.remove());
+        words = [];
+        currentTypedWord = '';
+        currentTargetWord = null;
+        typedWord.textContent = '';
+        waveComplete.style.display = 'none';
+        gameOver.style.display = 'none';
+        waveCleared.style.display = 'none';
+        waveValue.textContent = currentWave;
+        updateWordsLeft();
+
+        gameInterval = setInterval(moveWords, 33);
+        spawnWordWithDelay();
+    }
+
+    function forcePlayMusic() {
+        debugLog("Entering forcePlayMusic function");
+        if (isMuted) {
+            debugLog("Music is muted, not playing");
+            return;
+        }
+        debugLog("Attempting to play background music");
+        backgroundMusic.currentTime = 0;
+        let playPromise = backgroundMusic.play();
+        if (playPromise !== undefined) {
+            playPromise.then(_ => {
+                debugLog("Music playback started successfully");
+            })
+            .catch(error => {
+                debugLog(`Music playback failed: ${error}`);
+                setTimeout(forcePlayMusic, 1000);
+            });
+        } else {
+            debugLog("Play promise is undefined, browser might not support promises for audio playback");
+        }
+    }
+
+    function endGame() {
+        isGameActive = false;
+        clearInterval(gameInterval);
+        
+        finalScoreValue.textContent = totalScore;
+        finalAccuracyValue.textContent = `${(correctKeystrokes / totalKeystrokes * 100).toFixed(2)}%`;
+        
+        words.forEach(({ element }) => element.remove());
+        words = [];
+        
+        typedWord.textContent = '';
+        waveComplete.style.display = 'none';
+        waveCleared.style.display = 'none';
+        
+        gameOver.style.display = 'flex';
+        gameOver.style.zIndex = '2000';
+        
+        startGameBtn.style.display = 'none';
+        
+        backgroundMusic.pause();
+    }
+
+    function hideStartButton() {
+        startGameBtn.style.display = 'none';
+    }
+
+    function showStartButton() {
+        if (isFirstLoad || gameOver.style.display !== 'flex') {
+            startGameBtn.style.display = 'block';
+            gameOver.style.display = 'none';
+            waveComplete.style.display = 'none';
+            waveCleared.style.display = 'none';
+        }
+    }
+
+    function initGame() {
+        debugLog("Initializing game");
+        isFirstLoad = false;
+        zombiesShot = 0;
+        totalScore = 0;
+        scoreValue.textContent = zombiesShot;
+        totalScoreValue.textContent = totalScore;
+        currentWave = 1;
+        waveWordCount = 5;
+        wordSpeed = 1.0;
+        baseSpawnRate = 1500;
+        lettersHitThisWave = 0;
+        totalKeystrokes = 0;
+        correctKeystrokes = 0;
+        
+        gameOver.style.display = 'none';
+        
+        startWave();
+        debugLog("Calling forcePlayMusic from initGame");
+        forcePlayMusic();
+    }
+
+    restartBtn.addEventListener('click', () => {
+        gameOver.style.display = 'none';
+        hideStartButton();
+        initGame();
+        playBackgroundMusic();
+    });
+
+    startGameBtn.addEventListener('click', () => {
+        debugLog("Start game button clicked");
+        hideStartButton();
+        initAudioContext();
+        initGame();
+        debugLog("Calling forcePlayMusic from start button click");
+        forcePlayMusic();
+    });
+
+    function handleInput(key) {
+        if (!isGameActive || isPaused) return;
+        
+        if (key === 'Backspace') {
+            if (currentTypedWord.length > 0) {
+                currentTypedWord = currentTypedWord.slice(0, -1);
+                if (currentTargetWord) {
+                    currentTargetWord.hitIndex--;
+                    currentTargetWord.element.children[currentTargetWord.hitIndex].classList.remove('hit');
+                }
+                if (currentTypedWord.length === 0) {
+                    currentTargetWord = null;
+                }
+            }
+        } else if (key.length === 1) {
+            updateTypedWord(key);
+        }
+        typedWord.textContent = currentTypedWord;
+    }
+
+    document.addEventListener('keydown', (event) => {
+        handleInput(event.key);
+    });
+
+    function isMobileDevice() {
+        return (('ontouchstart' in window) ||
+            (navigator.maxTouchPoints > 0) ||
+            (navigator.msMaxTouchPoints > 0));
+    }
+
+    function scrollToTop() {
+        window.scrollTo(0, 0);
+    }
+
+    function initializeMobileInput() {
+        if (isMobileDevice()) {
+            document.body.classList.add('mobile-device');
+            gameContainer.addEventListener('touchstart', focusMobileInput);
+            document.addEventListener('touchstart', handleMobileTouchStart);
+        }
+    }
+
+    function focusMobileInput() {
+        if (isMobileDevice()) {
+            // This function is now empty as we're not using a separate input field
+        }
+    }
+
+    function handleMobileTouchStart(event) {
+        if (!isGameActive || isPaused) return;
+        
+        const touch = event.touches[0];
+        const touchedElement = document.elementFromPoint(touch.clientX, touch.clientY);
+        
+        if (touchedElement && touchedElement.classList.contains('enemy-word')) {
+            const wordObj = words.find(w => w.element === touchedElement);
+            if (wordObj) {
+                currentTargetWord = wordObj;
+                currentTypedWord = '';
+                typedWord.textContent = '';
+            }
+        }
+    }
+
+    // Initialize the game
+    isMobileDevice = isMobileDevice();
+    initializeMobileInput();
+    showStartButton();
+});
