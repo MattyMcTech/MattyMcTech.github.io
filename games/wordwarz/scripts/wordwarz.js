@@ -53,7 +53,9 @@ document.addEventListener('DOMContentLoaded', (event) => {
     let totalKeystrokes = 0;
     let correctKeystrokes = 0;
     let isFirstLoad = true;
-
+    let mobileInputContainer;
+    let mobileInput;
+    initializeMobileInput();
     function debugLog(message) {
         console.log(`[DEBUG] ${message}`);
     }
@@ -76,7 +78,26 @@ document.addEventListener('DOMContentLoaded', (event) => {
             playBackgroundMusic();
         }
     });
+function initializeMobileInput() {
+  mobileInputContainer = document.getElementById('mobile-input-container');
+  mobileInput = document.getElementById('mobile-input');
 
+  if (isMobileDevice()) {
+    mobileInputContainer.style.display = 'block';
+    mobileInput.addEventListener('input', handleMobileInput);
+    gameContainer.addEventListener('click', focusMobileInput);
+  }
+}
+    function focusMobileInput() {
+  if (isMobileDevice()) {
+    mobileInput.focus();
+  }
+}
+    function handleMobileInput(event) {
+  const inputValue = event.target.value.toLowerCase();
+  updateTypedWord(inputValue[inputValue.length - 1]);
+  event.target.value = ''; // Clear the input after each character
+}
     pauseBtn.addEventListener('click', () => {
         isPaused = !isPaused;
         pauseBtn.textContent = isPaused ? 'Resume' : 'Pause';
@@ -288,15 +309,15 @@ function isMobileDevice() {
 }
 
     function updateTypedWord(key) {
-       if (!isGameActive || isPaused) return;
+  if (!isGameActive || isPaused) return;
 
-    totalKeystrokes++;
+  totalKeystrokes++;
 
-    if (!currentTargetWord || !words.includes(currentTargetWord)) {
-        const visibleWords = getVisibleWords();
-        const matchingWords = visibleWords.filter(w => w.word[0].toLowerCase() === key.toLowerCase());
-        
-        if (matchingWords.length > 0) {
+  if (!currentTargetWord || !words.includes(currentTargetWord)) {
+    const visibleWords = getVisibleWords();
+    const matchingWords = visibleWords.filter(w => w.word.toLowerCase().startsWith(currentTypedWord + key));
+    
+    if (matchingWords.length > 0) {
             const playerRect = player.getBoundingClientRect();
             const playerCenterX = playerRect.left + playerRect.width / 2;
             const playerCenterY = playerRect.top + playerRect.height / 2;
@@ -317,36 +338,36 @@ function isMobileDevice() {
 
                 return currentDistance < closestDistance ? current : closest;
             });
-        } else {
-            currentTargetWord = null;
-            currentTypedWord = '';
-            typedWord.textContent = '';
-            updateAccuracy();
-            return;
-        }
+       } else {
+      currentTargetWord = null;
+      currentTypedWord = '';
+      typedWord.textContent = '';
+      updateAccuracy();
+      return;
+    }
     }
 
     if (currentTargetWord && currentTargetWord.hitIndex < currentTargetWord.word.length && 
-        currentTargetWord.word[currentTargetWord.hitIndex].toLowerCase() === key.toLowerCase()) {
-        currentTypedWord += key;
-        currentTargetWord.element.children[currentTargetWord.hitIndex].classList.add('hit');
-        currentTargetWord.hitIndex++;
-        shootBullet(currentTargetWord);
-        currentTargetWord.bulletsInFlight++;
-        lettersHitThisWave++;
-        totalScore++;
-        correctKeystrokes++;
-        updateTotalScore();
-        
-        if (currentTargetWord.hitIndex === currentTargetWord.word.length) {
-            currentTypedWord = '';
-            currentTargetWord = null;
-        }
+      currentTargetWord.word[currentTargetWord.hitIndex].toLowerCase() === key.toLowerCase()) {
+    currentTypedWord += key;
+    currentTargetWord.element.children[currentTargetWord.hitIndex].classList.add('hit');
+    currentTargetWord.hitIndex++;
+    shootBullet(currentTargetWord);
+    currentTargetWord.bulletsInFlight++;
+    lettersHitThisWave++;
+    totalScore++;
+    correctKeystrokes++;
+    updateTotalScore();
+    
+    if (currentTargetWord.hitIndex === currentTargetWord.word.length) {
+      currentTypedWord = '';
+      currentTargetWord = null;
     }
+  }
 
     typedWord.textContent = currentTypedWord;
 
-    updateAccuracy();
+  updateAccuracy();
     }
 
     function updateTotalScore() {
@@ -407,6 +428,9 @@ function isMobileDevice() {
     baseSpawnRate = Math.max(500, baseSpawnRate - 25);
     lettersHitThisWave = 0;
     startWave();
+        if (isMobileDevice()) {
+    focusMobileInput();
+  }
     }
 
     function isElementInViewport(el) {
