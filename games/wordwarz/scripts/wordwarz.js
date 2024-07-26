@@ -639,7 +639,18 @@ document.addEventListener('DOMContentLoaded', (event) => {
         lettersHitThisWave = 0;
         totalKeystrokes = 0;
         correctKeystrokes = 0;
-        
+         if (isMobileDevice) {
+        // Force show keyboard
+        const dummyInput = document.createElement('input');
+        dummyInput.style.position = 'fixed';
+        dummyInput.style.bottom = '0';
+        dummyInput.style.left = '-9999px';
+        document.body.appendChild(dummyInput);
+        dummyInput.focus();
+        setTimeout(() => {
+            dummyInput.remove();
+        }, 100);
+    }
         gameOver.style.display = 'none';
         
         startWave();
