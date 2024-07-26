@@ -155,10 +155,16 @@ const keys = virtualKeyboard.querySelectorAll('.key');
     });
 
     volumeSlider.addEventListener('input', (e) => {
-        const volume = parseFloat(e.target.value);
-        splatSound.volume = volume * 0.6;
-        backgroundMusic.volume = volume * 0.2;
-        bulletShotSound.volume = volume * 0.6;
+        if (volumeSlider) {
+    volumeSlider.addEventListener('input', (e) => {
+        if (!isMobileDevice()) {
+            const volume = parseFloat(e.target.value);
+            splatSound.volume = volume * 0.6;
+            backgroundMusic.volume = volume * 0.2;
+            bulletShotSound.volume = volume * 0.6;
+        }
+    });
+}
     });
 
     backgroundMusic.addEventListener('play', () => {
@@ -339,7 +345,7 @@ const keys = virtualKeyboard.querySelectorAll('.key');
     }
 
    function moveWords() {
-     if (isPaused) return;
+    if (isPaused) return;
 
     const playerRect = player.getBoundingClientRect();
     const gameContainerRect = gameContainer.getBoundingClientRect();
@@ -353,7 +359,7 @@ const keys = virtualKeyboard.querySelectorAll('.key');
             wordObj.element.style.top = `${wordObj.y}px`;
 
             const wordRect = wordObj.element.getBoundingClientRect();
-            if (wordRect.bottom > gameContainerRect.bottom) {
+            if (wordRect.bottom > playerRect.top) {
                 endGame();
                 return;
             }
