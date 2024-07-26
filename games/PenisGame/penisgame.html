@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Penis Game - Dare to Yell!</title>
+    <style>
+        body {
+            font-family: 'Comic Sans MS', cursive;
+            background-color: #FFB6C1;
+            color: #FF1493;
+            text-align: center;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+        }
+        h1 {
+            font-size: 4em;
+            text-shadow: 3px 3px 0px #FF69B4;
+            margin-bottom: 20px;
+        }
+        #game-description {
+            font-size: 1.2em;
+            max-width: 600px;
+            margin-bottom: 20px;
+        }
+        button {
+            font-size: 2em;
+            padding: 15px 30px;
+            background-color: #FF69B4;
+            color: #FFFFFF;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: transform 0.1s;
+        }
+        button:active {
+            transform: scale(0.95);
+        }
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        #score-display {
+            font-size: 2.5em;
+            margin-top: 20px;
+        }
+        #volume-meter {
+            width: 300px;
+            height: 30px;
+            background-color: #FFFFFF;
+            margin-top: 20px;
+            border-radius: 15px;
+            overflow: hidden;
+        }
+        #volume-bar {
+            width: 0%;
+            height: 100%;
+            background-color: #FF69B4;
+            transition: width 0.1s;
+        }
+        #result-display {
+            font-size: 2em;
+            margin-top: 20px;
+            font-weight: bold;
+        }
+        #recording-indicator {
+            font-size: 1.5em;
+            margin-top: 20px;
+            color: #FF0000;
+            font-weight: bold;
+            visibility: hidden;
+        }
+        #leaderboard {
+            margin-top: 30px;
+            background-color: #FFFFFF;
+            padding: 20px;
+            border-radius: 10px;
+            width: 80%;
+            max-width: 800px;
+        }
+        #leaderboard h2 {
+            color: #FF1493;
+        }
+        #leaderboard-list {
+            list-style-type: none;
+            padding: 0;
+            text-align: left;
+        }
+        #leaderboard-list li {
+            margin: 10px 0;
+            font-size: 1.2em;
+            display: flex;
+            justify-content: space-between;
+        }
+        #name-input {
+            font-size: 1.2em;
+            padding: 10px;
+            margin-bottom: 20px;
+            border: 2px solid #FF69B4;
+            border-radius: 5px;
+        }
+        #browser-warning {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background-color: #FF4500;
+            color: white;
+            text-align: center;
+            padding: 10px;
+            font-size: 1.2em;
+            z-index: 1000;
+        }
+    </style>
+</head>
+<body>
+    <h1>The Penis Game</h1>
+    <div id="game-description">
+        Welcome to the Penis Game! The goal is simple: yell "PENIS" as loud as you can. 
+        But be careful where you play - this game is not for the faint of heart or those in quiet public spaces!
+    </div>
+    <input type="text" id="name-input" placeholder="Enter your name" maxlength="20">
+    <button id="yell-button" disabled>YELL "PENIS"!</button>
+    <div id="score-display">Score: 0.00</div>
+    <div id="volume-meter"><div id="volume-bar"></div></div>
+    <div id="recording-indicator">🔴 RECORDING</div>
+    <div id="result-display"></div>
+    
+    <div id="leaderboard">
+        <h2>Top 25 Leaderboard</h2>
+        <ol id="leaderboard-list">
+            <!-- Leaderboard entries will be inserted here -->
+        </ol>
+    </div>
+    <div id="browser-warning">
+        ⚠️ For the best experience, please use Google Chrome. Some features may not work in your current browser.
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/gun/gun.js"></script>
+    <script>
+        // Initialize Gun
+        const gun = Gun(['https://gun-manhattan.herokuapp.com/gun']);
+        const leaderboardDB = gun.get('penis-game-leaderboard');
+
+        let currentScore = 0;
+        let playerName = '';
+        let leaderboardEntries = new Set();
+        let updateTimeout = null;
+        let lastSubmissionTime = 0;
+        const SUBMISSION_COOLDOWN = 3000; // 3 seconds cooldown
+
+        const yellButton = document.getElementById('yell-button');
+        const scoreDisplay = document.getElementById('score-display');
+        const volumeBar = document.getElementById('volume-bar');
+        const recordingIndicator = document.getElementById('recording-indicator');
+        const resultDisplay = document.getElementById('result-display');
+        const leaderboardList = document.getElementById('leaderboard-list');
+        const nameInput = document.getElementById('name-input');
+
+        function isChrome() {
+            return /Chrome/.test(navigator.userAgent) && /Google Inc/.test(navigator.vendor);
+        }
+
+        if (!isChrome()) {
+            document.getElementById('browser-warning').style.display = 'block';
+        }
+
+        nameInput.addEventListener('input', function() {
+            playerName = this.value.trim();
+            yellButton.disabled = playerName === '';
+        });
+
+        function updateScore(newScore) {
+            currentScore = newScore;
+            scoreDisplay.textContent = `Score: ${currentScore.toFixed(2)}`;
+        }
+
+        function updateVolumeMeter(volume) {
+            volumeBar.style.width = `${volume * 100}%`;
+        }
+
+        function displayResult(success, message) {
+            resultDisplay.textContent = message;
+            resultDisplay.style.color = success ? '#00FF00' : '#FF0000';
+        }
+
+        function addScoreToLeaderboard() {
+            const now = Date.now();
+            if (now - lastSubmissionTime < SUBMISSION_COOLDOWN) {
+                console.log('Submission attempted too soon after last submission. Ignoring.');
+                return;
+            }
+
+            if (!playerName) {
+                console.log('No player name, not adding to leaderboard');
+                return;
+            }
+            
+            const playerEntry = { name: playerName, score: currentScore, timestamp: now };
+            const entryKey = `entry_${playerName}_${now}`;
+            
+            console.log('Attempting to add score:', playerEntry);
+
+            // Add the new entry
+            leaderboardDB.get(entryKey).put(playerEntry);
+            console.log('Score added to leaderboard:', playerEntry);
+
+            // Update the last submission time
+            lastSubmissionTime = now;
+        }
+
+        function debounce(func, wait) {
+            return function(...args) {
+                clearTimeout(updateTimeout);
+                updateTimeout = setTimeout(() => func.apply(this, args), wait);
+            };
+        }
+
+        const debouncedUpdateLeaderboard = debounce(() => {
+            const sortedEntries = Array.from(leaderboardEntries).sort((a, b) => b.score - a.score).slice(0, 25);
+            leaderboardEntries = new Set(sortedEntries);
+            updateLeaderboardDisplay();
+        }, 1000);
+
+        function updateLeaderboardDisplay() {
+            leaderboardList.innerHTML = '';
+            const entries = Array.from(leaderboardEntries);
+
+            entries.forEach((entry, index) => {
+                const li = document.createElement('li');
+                li.innerHTML = `<span>${index + 1}. ${entry.name}</span> <span>${entry.score.toFixed(2)}</span>`;
+                if (entry.name === playerName) {
+                    li.style.fontWeight = 'bold';
+                }
+                leaderboardList.appendChild(li);
+            });
+        }
+
+        function initializeLeaderboard() {
+            console.log('Initializing leaderboard...');
+            const seenEntries = new Set();
+            leaderboardDB.map().on((data, key) => {
+                if (data && data.name && data.score) {
+                    const entryKey = `${data.name}_${data.timestamp}`;
+                    if (!seenEntries.has(entryKey)) {
+                        console.log('Received leaderboard entry:', data);
+                        leaderboardEntries.add(data);
+                        seenEntries.add(entryKey);
+                        debouncedUpdateLeaderboard();
+                    } else {
+                        console.log('Duplicate entry ignored:', data);
+                    }
+                }
+            });
+        }
+
+        yellButton.addEventListener('click', async () => {
+            if (!playerName) {
+                alert("Please enter your name before yelling!");
+                return;
+            }
+
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                const analyser = audioContext.createAnalyser();
+                const microphone = audioContext.createMediaStreamSource(stream);
+                microphone.connect(analyser);
+                analyser.fftSize = 256;
+                const bufferLength = analyser.frequencyBinCount;
+                const dataArray = new Uint8Array(bufferLength);
+
+                let startTime = Date.now();
+                let maxVolume = 0;
+                let recognitionResult = '';
+                let speechDetected = false;
+
+                recordingIndicator.style.visibility = 'visible';
+
+                // Set up speech recognition
+                const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+                const recognition = new SpeechRecognition();
+                recognition.lang = 'en-US';
+                recognition.interimResults = true;
+                recognition.continuous = true;
+
+                recognition.start();
+
+                recognition.onresult = function(event) {
+                    const result = event.results[event.results.length - 1];
+                    recognitionResult = result[0].transcript.toLowerCase();
+                    if (result.isFinal) {
+                        speechDetected = true;
+                        endRecording();
+                    }
+                };
+
+                recognition.onerror = function(event) {
+                    console.error('Speech recognition error:', event.error);
+                };
+
+                function checkVolume() {
+                    analyser.getByteFrequencyData(dataArray);
+                    const volume = dataArray.reduce((a, b) => a + b) / bufferLength;
+                    maxVolume = Math.max(maxVolume, volume);
+                    updateVolumeMeter(volume / 255);
+
+                    if (Date.now() - startTime < 2000 && !speechDetected) {
+                        requestAnimationFrame(checkVolume);
+                    } else {
+                        endRecording();
+                    }
+                }
+
+                function endRecording() {
+                    recognition.stop();
+                    stream.getTracks().forEach(track => track.stop());
+                    recordingIndicator.style.visibility = 'hidden';
+                    processResult();
+                }
+
+                function calculateScore(volume) {
+                    return Math.min(100, (volume / 255) * 100);
+                }
+
+                function processResult() {
+                    const score = calculateScore(maxVolume);
+                    updateScore(score);
+
+                    if (recognitionResult.includes('penis') || (maxVolume > 50 && score > 80)) {
+                        addScoreToLeaderboard();
+                        displayResult(true, `Awesome! You yelled "PENIS" with a score of ${score.toFixed(2)}!`);
+                    } else if (recognitionResult) {
+                        displayResult(false, `Oops! You said "${recognitionResult}" instead of "PENIS". Try again!`);
+                    } else if (maxVolume > 50) {
+                        displayResult(false, `We heard a yell (score: ${score.toFixed(2)}), but it wasn't loud enough. Try yelling "PENIS" louder!`);
+                    } else {
+                        displayResult(false, "We didn't hear a loud enough yell. Try again!");
+                    }
+                }
+
+                checkVolume();
+
+                // Set a timeout to end recording after 2 seconds
+                setTimeout(endRecording, 2000);
+
+            } catch (err) {
+                console.error('Error accessing microphone:', err);
+                alert('Unable to access microphone. Please make sure you have given permission and try again.');
+            }
+        });
+
+        // Initialize the leaderboard when the page loads
+        initializeLeaderboard();
+    </script>
+</body>
+</html>

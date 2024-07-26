@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WordSmasher - Cowboy vs Zombies</title>
+    <link rel="stylesheet" href="styles/wordwarz.css">
+</head>
+<body>
+<div id="game-container">
+    <div id="player"></div>
+    <div id="typed-word"></div>
+    <div id="score">Zombies Shot: <span id="score-value">0</span></div>
+    <div id="total-score">Score: <span id="total-score-value">0</span></div>
+    <div id="wave">Zombie Wave: <span id="wave-value">1</span></div>
+    <div id="words-left">Zombies Left: <span id="words-left-value">5</span></div>
+    <div id="accuracy">Accuracy: <span id="accuracy-value">100%</span></div>
+    <div id="game-over">
+        <h2>GAME OVER</h2>
+        <div id="final-score">Final Score: <span id="final-score-value">0</span></div>
+        <div id="final-accuracy">Accuracy: <span id="final-accuracy-value">100%</span></div>
+        <button id="restart-btn">Restart Game</button>
+    </div>
+    <div id="wave-complete">
+        <h2>Wave Cleared!</h2>
+        <button id="next-wave-btn">Next Wave</button>
+    </div>
+    <div id="wave-cleared">
+        Wave Cleared!
+        <p>Score: <span id="wave-score">0</span></p>
+    </div>
+    <button id="mute-btn">Mute Sound</button>
+    <button id="pause-btn">Pause</button>
+    <button id="start-game-btn">Start Game</button>
+    <div id="debug-info"></div>
+    <div id="volume-control">
+        <label for="volume-slider">Volume:</label>
+        <input type="range" id="volume-slider" min="0" max="1" step="0.1" value="0.5">
+    </div>
+</div>
+
+<script src="scripts/wordwarz.js"></script>
+
+<div>
+    <a href="../index.html" style="color: #FFD700; text-shadow: 0 0 5px #FFD700;">Back to Game Selection</a>
+</div>
+<div>
+    <a href="https://wordsmasher.io/leaderboard" style="color: #FFD700; text-shadow: 0 0 5px #FFD700;">Zombie Slayer Hall of Fame</a>
+</div>
+<div>
+    <a href="https://wordsmasher.io/tutorial" style="color: #FFD700; text-shadow: 0 0 5px #FFD700;">Cowboy Survival Guide</a>
+</div>
+<div>
+    <a href="https://wordsmasher.io/settings" style="color: #FFD700; text-shadow: 0 0 5px #FFD700;">Apocalypse Settings</a>
+</div>
+</body>
+</html>
