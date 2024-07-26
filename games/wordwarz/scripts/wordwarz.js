@@ -203,7 +203,7 @@ document.addEventListener('DOMContentLoaded', (event) => {
     }
 
     function getRandomEdgePosition(wordWidth, wordHeight, containerRect) {
-        const edge = isMobileDevice ? 'top' : ['top', 'right', 'bottom', 'left'][Math.floor(Math.random() * 4)];
+    const edge = isMobileDevice() ? 'top' : ['top', 'right', 'bottom', 'left'][Math.floor(Math.random() * 4)];
         let x, y;
 
         switch (edge) {
@@ -697,12 +697,12 @@ document.addEventListener('DOMContentLoaded', (event) => {
     }
 
     function initializeMobileInput() {
-        if (isMobileDevice()) {
-            document.body.classList.add('mobile-device');
-            gameContainer.addEventListener('touchstart', focusMobileInput);
-            document.addEventListener('touchstart', handleMobileTouchStart);
-        }
+    if (isMobileDevice()) {
+        document.body.classList.add('mobile-device');
+        gameContainer.addEventListener('touchstart', focusMobileInput);
+        document.addEventListener('touchstart', handleMobileTouchStart);
     }
+}
 
     function focusMobileInput() {
         if (isMobileDevice()) {
@@ -726,8 +726,7 @@ document.addEventListener('DOMContentLoaded', (event) => {
         }
     }
 
-    // Initialize the game
-    isMobileDevice = isMobileDevice();
+
     initializeMobileInput();
     showStartButton();
 });
