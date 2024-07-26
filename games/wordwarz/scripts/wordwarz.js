@@ -497,19 +497,56 @@ document.addEventListener('DOMContentLoaded', (event) => {
     }
 
     function playBackgroundMusic() {
-        debugLog("Attempting to play background music");
-        if (!isMuted) {
-            backgroundMusic.play()
-                .then(() => {
-                    debugLog("Music started successfully");
-                })
-                .catch(error => {
-                    debugLog(`Error starting music: ${error}`);
-                });
-            } else {
-            debugLog("Music is muted, not playing");
+    debugLog("Attempting to play background music");
+    if (isMuted) {
+        debugLog("Music is muted, not playing");
+        return;
+    }
+
+    if (!backgroundMusic) {
+        debugLog("Background music not initialized, creating new Audio object");
+        backgroundMusic = new Audio('assets/sounds/song.mp3');
+        backgroundMusic.loop = true;
+        backgroundMusic.volume = 0.1;
+    }
+
+    // Reset the audio to the beginning
+    backgroundMusic.currentTime = 0;
+
+    // Attempt to play the music
+    let playPromise = backgroundMusic.play();
+
+    if (playPromise !== undefined) {
+        playPromise
+            .then(() => {
+                debugLog("Background music started successfully");
+                musicStarted = true;
+            })
+            .catch(error => {
+                debugLog(`Error starting background music: ${error}`);
+                // If autoplay was prevented, we can inform the user they need to interact with the page first
+                if (error.name === 'NotAllowedError') {
+                    debugLog("Autoplay prevented. User interaction required to start audio.");
+                    // You might want to display a message to the user here
+                }
+                // Retry playing the music after a short delay
+                setTimeout(() => {
+                    debugLog("Retrying to play background music");
+                    playBackgroundMusic();
+                }, 1000);
+            });
+    } else {
+        debugLog("Play promise is undefined, browser might not support promises for audio playback");
+        // For older browsers that don't return a promise from play()
+        try {
+            backgroundMusic.play();
+            debugLog("Background music started (legacy method)");
+            musicStarted = true;
+        } catch (error) {
+            debugLog(`Error starting background music (legacy method): ${error}`);
         }
     }
+}
 
     function startWave() {
         isGameActive = true;
