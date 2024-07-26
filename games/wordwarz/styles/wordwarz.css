@@ -151,7 +151,7 @@ body, html {
     margin: 0 0 20px 0;
 }
 
-#next-wave-btn, #restart-btn, #start-game-btn {
+#next-wave-btn, #restart-btn {
     font-family: 'Roboto', sans-serif;
     font-size: 24px;
     padding: 10px 20px;
@@ -163,7 +163,7 @@ body, html {
     transition: background-color 0.3s;
 }
 
-#next-wave-btn:hover, #restart-btn:hover, #start-game-btn:hover {
+#next-wave-btn:hover, #restart-btn:hover {
     background-color: #45a049;
 }
 
@@ -198,6 +198,27 @@ body, html {
     cursor: pointer;
     border-radius: 5px;
     transition: background-color 0.3s;
+}
+
+#start-game-btn {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 2000;
+    font-family: 'Roboto', sans-serif;
+    font-size: 24px;
+    padding: 10px 20px;
+    background-color: #4CAF50;
+    color: #FFFFFF;
+    border: none;
+    cursor: pointer;
+    border-radius: 5px;
+    transition: background-color 0.3s;
+}
+
+#mute-btn:hover, #pause-btn:hover, #start-game-btn:hover {
+    background-color: #45a049;
 }
 
 #mute-btn { left: 10px; }
@@ -252,85 +273,4 @@ body, html {
 #volume-slider {
     width: 100px;
     margin-left: 10px;
-}
-
-/* Mobile-specific styles */
-@media (max-width: 768px) {
-    .mobile-device #game-container {
-        position: fixed;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        overflow: hidden;
-    }
-
-    .mobile-device #player {
-        width: 60px;
-        height: 60px;
-        bottom: 10px;
-        left: 50%;
-        transform: translateX(-50%);
-        position: absolute;
-    }
-
-    .mobile-device #start-game-btn {
-        position: absolute;
-        bottom: 80px;
-        left: 50%;
-        transform: translateX(-50%);
-        z-index: 2000;
-        font-size: 20px;
-        padding: 10px 20px;
-    }
-
-    .mobile-device #mute-btn {
-        position: absolute;
-        bottom: 10px;
-        left: 10px;
-        z-index: 2000;
-        font-size: 14px;
-        padding: 5px 10px;
-    }
-
-    .mobile-device #pause-btn {
-        position: absolute;
-        bottom: 10px;
-        right: 10px;
-        z-index: 2000;
-        font-size: 14px;
-        padding: 5px 10px;
-    }
-
-    .mobile-device #typed-word {
-        bottom: 70px;
-        font-size: 20px;
-    }
-
-    .mobile-device .enemy-word {
-        font-size: 18px;
-    }
-
-    /* Hide elements on mobile */
-    .mobile-device #score,
-    .mobile-device #total-score,
-    .mobile-device #wave,
-    .mobile-device #words-left,
-    .mobile-device #accuracy,
-    .mobile-device #volume-control {
-        display: none !important;
-    }
-
-    .mobile-device #mobile-input {
-        position: fixed;
-        bottom: 0;
-        left: 0;
-        width: 100%;
-        padding: 10px;
-        font-size: 16px;
-        border: none;
-        background-color: rgba(255, 255, 255, 0.1);
-        color: white;
-        z-index: 2000;
-    }
 }
