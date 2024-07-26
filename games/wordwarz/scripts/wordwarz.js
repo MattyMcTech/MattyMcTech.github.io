@@ -23,6 +23,9 @@ document.addEventListener('DOMContentLoaded', (event) => {
     const volumeSlider = document.getElementById('volume-slider');
     const virtualKeyboard = document.getElementById('virtual-keyboard');
 const keys = virtualKeyboard.querySelectorAll('.key');
+    const mobileStatsBtn = document.getElementById('mobile-stats-btn');
+const statsModal = document.getElementById('stats-modal');
+const closeModal = statsModal.querySelector('.close');
 
     const splatSound = new Audio('assets/sounds/splat.mp3');
     splatSound.volume = 0.3;
@@ -445,10 +448,26 @@ const keys = virtualKeyboard.querySelectorAll('.key');
 
     updateAccuracy();
     }
-
-    function updateTotalScore() {
-        totalScoreValue.textContent = totalScore;
+function updateStatsModal() {
+    document.getElementById('modal-score').textContent = scoreValue.textContent;
+    document.getElementById('modal-total-score').textContent = totalScoreValue.textContent;
+    document.getElementById('modal-wave').textContent = waveValue.textContent;
+    document.getElementById('modal-words-left').textContent = wordsLeftValue.textContent;
+    document.getElementById('modal-accuracy').textContent = accuracyValue.textContent;
+}
+    function updateScore() {
+    scoreValue.textContent = zombiesShot;
+    if (isMobileDevice()) {
+        document.getElementById('modal-score').textContent = zombiesShot;
     }
+}
+
+function updateTotalScore() {
+    totalScoreValue.textContent = totalScore;
+    if (isMobileDevice()) {
+        document.getElementById('modal-total-score').textContent = totalScore;
+    }
+}
 
     function handleWordCompletion(targetWord) {
         zombiesShot++;
@@ -773,6 +792,20 @@ const keys = virtualKeyboard.querySelectorAll('.key');
         debugLog("Calling forcePlayMusic from start button click");
         forcePlayMusic();
     });
+    mobileStatsBtn.addEventListener('click', () => {
+    updateStatsModal();
+    statsModal.style.display = 'block';
+});
+
+closeModal.addEventListener('click', () => {
+    statsModal.style.display = 'none';
+});
+
+window.addEventListener('click', (event) => {
+    if (event.target == statsModal) {
+        statsModal.style.display = 'none';
+    }
+});
     window.addEventListener('resize', adjustGameContainerPadding);
     window.addEventListener('orientationchange', adjustGameAreaForMobile);
     window.addEventListener('resize', adjustGameAreaForMobile);
