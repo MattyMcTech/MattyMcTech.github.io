@@ -29,6 +29,56 @@ body, html {
     background-size: contain;
     z-index: 1000;
 }
+.mobile-device #game-container {
+    background-size: cover;
+    background-position: center;
+}
+
+.mobile-device #player {
+    width: 80px;
+    height: 80px;
+}
+
+.mobile-device .enemy-word {
+    font-size: 24px;
+}
+
+.mobile-device #typed-word {
+    font-size: 28px;
+    bottom: 60px;
+}
+
+.mobile-device #score,
+.mobile-device #total-score,
+.mobile-device #wave,
+.mobile-device #words-left,
+.mobile-device #accuracy {
+    font-size: 24px;
+}
+
+.mobile-device #game-over h2 {
+    font-size: 48px;
+}
+
+.mobile-device #final-score,
+.mobile-device #final-accuracy {
+    font-size: 28px;
+}
+
+.mobile-device #next-wave-btn,
+.mobile-device #restart-btn,
+.mobile-device #start-game-btn {
+    font-size: 20px;
+}
+
+.mobile-device #mute-btn,
+.mobile-device #pause-btn {
+    font-size: 16px;
+}
+
+.mobile-device #volume-control {
+    bottom: 90px;
+}
 
 .enemy-word {
     position: absolute;
