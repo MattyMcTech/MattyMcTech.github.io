@@ -174,8 +174,8 @@ const keys = virtualKeyboard.querySelectorAll('.key');
     }
 
     async function spawnWord() {
-        if (wordsSpawned >= waveWordCount) return;
-    
+    if (wordsSpawned >= waveWordCount) return;
+
     let minLength, maxLength;
     if (currentWave <= 5) {
         minLength = 3;
@@ -187,7 +187,7 @@ const keys = virtualKeyboard.querySelectorAll('.key');
         minLength = 5;
         maxLength = 8;
     }
-    
+
     const word = await getRandomWord(minLength, maxLength);
     const wordElement = document.createElement('div');
     wordElement.classList.add('enemy-word');
@@ -211,9 +211,9 @@ const keys = virtualKeyboard.querySelectorAll('.key');
     const position = getRandomEdgePosition(wordWidth, wordHeight, containerRect);
     wordElement.style.left = `${position.x}px`;
     wordElement.style.top = `${position.y}px`;
-    
+
     const individualWordSpeed = wordSpeed * (1 + (word.length - minLength) * 0.05);
-    
+
     words.push({ 
         element: wordElement, 
         word, 
@@ -227,16 +227,21 @@ const keys = virtualKeyboard.querySelectorAll('.key');
     });
     wordsSpawned++;
     updateWordsLeft();
-  
 
     wordElement.classList.add('visible');
 
     const wordObj = words[words.length - 1];
-    switch (position.edge) {
-        case 0: wordObj.y = 0; break;
-        case 1: wordObj.x = containerRect.width - wordWidth; break;
-        case 2: wordObj.y = containerRect.height - wordHeight; break;
-        case 3: wordObj.x = 0; break;
+    if (isMobileDevice()) {
+        // For mobile, words always start at the top
+        wordObj.y = -wordHeight;
+    } else {
+        // Existing logic for desktop
+        switch (position.edge) {
+            case 0: wordObj.y = 0; break;
+            case 1: wordObj.x = containerRect.width - wordWidth; break;
+            case 2: wordObj.y = containerRect.height - wordHeight; break;
+            case 3: wordObj.x = 0; break;
+        }
     }
     wordObj.element.style.left = `${wordObj.x}px`;
     wordObj.element.style.top = `${wordObj.y}px`;
@@ -244,33 +249,43 @@ const keys = virtualKeyboard.querySelectorAll('.key');
     setTimeout(() => {
         wordObj.isMoving = true;
     }, 750);
-    }
+}
 
     function getRandomEdgePosition(wordWidth, wordHeight, containerRect) {
-         const edge = Math.floor(Math.random() * 4);
-    let x, y;
+    if (isMobileDevice()) {
+        // For mobile, only spawn from the top
+        return {
+            x: Math.random() * (containerRect.width - wordWidth),
+            y: -wordHeight,
+            edge: 0
+        };
+    } else {
+        // Existing logic for desktop
+        const edge = Math.floor(Math.random() * 4);
+        let x, y;
 
-    switch (edge) {
-        case 0: 
-            x = Math.random() * (containerRect.width - wordWidth);
-            y = -wordHeight;
-            break;
-        case 1: 
-            x = containerRect.width;
-            y = Math.random() * (containerRect.height - wordHeight);
-            break;
-        case 2: 
-            x = Math.random() * (containerRect.width - wordWidth);
-            y = containerRect.height;
-            break;
-        case 3: 
-            x = -wordWidth;
-            y = Math.random() * (containerRect.height - wordHeight);
-            break;
-    }
+        switch (edge) {
+            case 0: 
+                x = Math.random() * (containerRect.width - wordWidth);
+                y = -wordHeight;
+                break;
+            case 1: 
+                x = containerRect.width;
+                y = Math.random() * (containerRect.height - wordHeight);
+                break;
+            case 2: 
+                x = Math.random() * (containerRect.width - wordWidth);
+                y = containerRect.height;
+                break;
+            case 3: 
+                x = -wordWidth;
+                y = Math.random() * (containerRect.height - wordHeight);
+                break;
+        }
 
-    return { x, y, edge };
+        return { x, y, edge };
     }
+}
 
     function spawnWordWithDelay() {
          if (wordsSpawned < waveWordCount && isGameActive && !isPaused) {
@@ -282,8 +297,8 @@ const keys = virtualKeyboard.querySelectorAll('.key');
     }
     }
 
-    function moveWords() {
-        if (isPaused) return;
+   function moveWords() {
+    if (isPaused) return;
 
     const playerRect = player.getBoundingClientRect();
     const centerX = playerRect.left + playerRect.width / 2;
@@ -292,24 +307,40 @@ const keys = virtualKeyboard.querySelectorAll('.key');
     words.forEach((wordObj) => {
         if (!wordObj.isMoving) return;
 
-        const dx = centerX - (wordObj.x + wordObj.element.offsetWidth / 2);
-        const dy = centerY - (wordObj.y + wordObj.element.offsetHeight / 2);
-        const distance = Math.sqrt(dx * dx + dy * dy);
-        
-        if (distance > 5) {
-            const ratio = wordObj.speed / distance;
-            wordObj.x += dx * ratio;
-            wordObj.y += dy * ratio;
+        let targetY;
+        if (isMobileDevice()) {
+            // For mobile, words move straight down
+            targetY = centerY;
+            const dy = targetY - (wordObj.y + wordObj.element.offsetHeight / 2);
+            const distance = Math.abs(dy);
             
-            wordObj.element.style.left = `${wordObj.x}px`;
-            wordObj.element.style.top = `${wordObj.y}px`;
+            if (distance > 5) {
+                wordObj.y += wordObj.speed;
+                wordObj.element.style.top = `${wordObj.y}px`;
+            } else {
+                endGame();
+                return;
+            }
         } else {
-            // The zombie has reached the player, end the game
-            endGame();
-            return; // Exit the function to prevent further processing
+            // Existing logic for desktop
+            const dx = centerX - (wordObj.x + wordObj.element.offsetWidth / 2);
+            const dy = centerY - (wordObj.y + wordObj.element.offsetHeight / 2);
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            
+            if (distance > 5) {
+                const ratio = wordObj.speed / distance;
+                wordObj.x += dx * ratio;
+                wordObj.y += dy * ratio;
+                
+                wordObj.element.style.left = `${wordObj.x}px`;
+                wordObj.element.style.top = `${wordObj.y}px`;
+            } else {
+                endGame();
+                return;
+            }
         }
     });
-    }
+}
 
     function updateTypedWord(key) {
        if (!isGameActive || isPaused) return;
