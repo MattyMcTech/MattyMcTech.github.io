@@ -2,81 +2,101 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-    <title>WordSmasher - Cowboy vs Zombies</title>
-    <link rel="stylesheet" href="styles/wordwarz.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Word War Z: The Typing Game</title>
+    <link rel="stylesheet" href="path/to/your/styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Creepster&family=Roboto:wght@700&display=swap" rel="stylesheet">
 </head>
 <body>
-<div id="game-container">
-    <div id="player"></div>
-    <div id="typed-word"></div>
-   <div id="virtual-keyboard" class="hidden">
-  <div class="keyboard-row">
-    <button class="key">Q</button>
-    <button class="key">W</button>
-    <button class="key">E</button>
-    <button class="key">R</button>
-    <button class="key">T</button>
-    <button class="key">Y</button>
-    <button class="key">U</button>
-    <button class="key">I</button>
-    <button class="key">O</button>
-    <button class="key">P</button>
-  </div>
-  <div class="keyboard-row">
-    <button class="key">A</button>
-    <button class="key">S</button>
-    <button class="key">D</button>
-    <button class="key">F</button>
-    <button class="key">G</button>
-    <button class="key">H</button>
-    <button class="key">J</button>
-    <button class="key">K</button>
-    <button class="key">L</button>
-  </div>
-  <div class="keyboard-row">
-    <button class="key">Z</button>
-    <button class="key">X</button>
-    <button class="key">C</button>
-    <button class="key">V</button>
-    <button class="key">B</button>
-    <button class="key">N</button>
-    <button class="key">M</button>
-    <button class="key" id="backspace">⌫</button>
-  </div>
-</div>
-    <div id="player"></div>
-    <div id="typed-word"></div>
-    <div id="score">Zombies Shot: <span id="score-value">0</span></div>
-    <div id="total-score">Score: <span id="total-score-value">0</span></div>
-    <div id="wave">Zombie Wave: <span id="wave-value">1</span></div>
-    <div id="words-left">Zombies Left: <span id="words-left-value">5</span></div>
-    <div id="accuracy">Accuracy: <span id="accuracy-value">100%</span></div>
-    <div id="game-over">
-        <h2>GAME OVER</h2>
-        <div id="final-score">Final Score: <span id="final-score-value">0</span></div>
-        <div id="final-accuracy">Accuracy: <span id="final-accuracy-value">100%</span></div>
-        <button id="restart-btn">Restart Game</button>
+    <div id="game-container">
+        <div id="player"></div>
+        
+        <div id="typed-word"></div>
+        
+        <div id="score">Zombies Shot: <span id="score-value">0</span></div>
+        <div id="total-score">Score: <span id="total-score-value">0</span></div>
+        <div id="wave">Zombie Wave: <span id="wave-value">1</span></div>
+        <div id="words-left">Zombies Left: <span id="words-left-value">5</span></div>
+        <div id="accuracy">Accuracy: <span id="accuracy-value">100%</span></div>
+        
+        <div id="game-over">
+            <h2>GAME OVER</h2>
+            <div id="final-score">Final Score: <span id="final-score-value">0</span></div>
+            <div id="final-accuracy">Accuracy: <span id="final-accuracy-value">100%</span></div>
+            <button id="restart-btn">Restart Game</button>
+        </div>
+        
+        <div id="wave-complete">
+            <h2>Wave Cleared!</h2>
+            <button id="next-wave-btn">Next Wave</button>
+        </div>
+        
+        <div id="wave-cleared">
+            Wave Cleared!
+            <p>Score: <span id="wave-score">0</span></p>
+        </div>
+        
+        <button id="mute-btn">Mute Sound</button>
+        <button id="pause-btn">Pause</button>
+        <button id="start-game-btn">Start Game</button>
+        
+        <div id="debug-info"></div>
+        
+        <div id="volume-control">
+            Volume: <input type="range" id="volume-slider" min="0" max="1" step="0.1" value="0.5">
+        </div>
     </div>
-    <div id="wave-complete">
-        <h2>Wave Cleared!</h2>
-        <button id="next-wave-btn">Next Wave</button>
+
+    <div id="virtual-keyboard" class="hidden">
+        <div class="keyboard-row">
+            <button class="key">Q</button>
+            <button class="key">W</button>
+            <button class="key">E</button>
+            <button class="key">R</button>
+            <button class="key">T</button>
+            <button class="key">Y</button>
+            <button class="key">U</button>
+            <button class="key">I</button>
+            <button class="key">O</button>
+            <button class="key">P</button>
+        </div>
+        <div class="keyboard-row">
+            <button class="key">A</button>
+            <button class="key">S</button>
+            <button class="key">D</button>
+            <button class="key">F</button>
+            <button class="key">G</button>
+            <button class="key">H</button>
+            <button class="key">J</button>
+            <button class="key">K</button>
+            <button class="key">L</button>
+        </div>
+        <div class="keyboard-row">
+            <button class="key">Z</button>
+            <button class="key">X</button>
+            <button class="key">C</button>
+            <button class="key">V</button>
+            <button class="key">B</button>
+            <button class="key">N</button>
+            <button class="key">M</button>
+            <button class="key" id="backspace">⌫</button>
+        </div>
     </div>
-    <div id="wave-cleared">
-        Wave Cleared!
-        <p>Score: <span id="wave-score">0</span></p>
+
+    <button id="mobile-stats-btn" class="mobile-only">Stats</button>
+
+    <div id="stats-modal" class="modal mobile-only">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Game Stats</h2>
+            <p>Score: <span id="modal-score">0</span></p>
+            <p>Total Score: <span id="modal-total-score">0</span></p>
+            <p>Wave: <span id="modal-wave">1</span></p>
+            <p>Words Left: <span id="modal-words-left">5</span></p>
+            <p>Accuracy: <span id="modal-accuracy">100%</span></p>
+        </div>
     </div>
-    <button id="mute-btn">Mute Sound</button>
-    <button id="pause-btn">Pause</button>
-    <button id="start-game-btn">Start Game</button>
-    <div id="debug-info"></div>
-    <div id="volume-control">
-    Volume: <input type="range" id="volume-slider" min="0" max="1" step="0.1" value="0.5">
-</div>
-</div>
 
-<script src="scripts/wordwarz.js"></script>
-
-
+    <script src="path/to/your/game-script.js"></script>
 </body>
 </html>
