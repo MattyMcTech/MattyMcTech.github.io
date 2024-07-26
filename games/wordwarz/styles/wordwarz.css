@@ -257,19 +257,19 @@ body, html {
 /* Mobile-specific styles */
 @media (max-width: 768px) {
     .mobile-device #game-container {
-        height: calc(100% - 250px); /* Adjust for mobile keyboard */
-        bottom: 250px;
+        height: 100%;
         position: fixed;
         top: 0;
         left: 0;
         right: 0;
+        bottom: 0;
         overflow: hidden;
     }
 
     .mobile-device #player {
         width: 80px;
         height: 80px;
-        bottom: 260px; /* Position just above the keyboard area */
+        bottom: 20px;
         left: 50%;
         transform: translateX(-50%);
         top: auto;
@@ -278,7 +278,7 @@ body, html {
 
     .mobile-device #start-game-btn {
         position: fixed;
-        bottom: 300px; /* Position above the player */
+        bottom: 120px;
         left: 50%;
         transform: translateX(-50%);
         z-index: 2000;
@@ -286,34 +286,36 @@ body, html {
         padding: 15px 30px;
     }
 
-    .mobile-device #volume-control {
-        position: fixed;
-        bottom: 210px;
-        left: 10px;
-        width: 30%;
-        z-index: 2000;
-    }
-
     .mobile-device #mute-btn {
         position: fixed;
-        bottom: 210px;
-        left: 35%;
+        bottom: 20px;
+        left: 20px;
         z-index: 2000;
     }
 
     .mobile-device #pause-btn {
         position: fixed;
-        bottom: 210px;
-        right: 10px;
+        bottom: 20px;
+        right: 20px;
         z-index: 2000;
     }
 
     .mobile-device #typed-word {
-        bottom: 340px; /* Above the player */
+        bottom: 100px;
         font-size: 24px;
     }
 
     .mobile-device .enemy-word {
         font-size: 20px;
+    }
+
+    /* Hide elements on mobile */
+    .mobile-device #score,
+    .mobile-device #total-score,
+    .mobile-device #wave,
+    .mobile-device #words-left,
+    .mobile-device #accuracy,
+    .mobile-device #volume-control {
+        display: none !important;
     }
 }
