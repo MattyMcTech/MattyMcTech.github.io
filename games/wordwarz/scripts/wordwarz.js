@@ -212,30 +212,42 @@ document.addEventListener('DOMContentLoaded', (event) => {
     }
 
     function getRandomEdgePosition(wordWidth, wordHeight, containerRect) {
-         const edge = Math.floor(Math.random() * 4);
-    let x, y;
+    // Check if the device is mobile (you may want to adjust this threshold)
+    const isMobile = window.innerWidth <= 768;
 
-    switch (edge) {
-        case 0: 
-            x = Math.random() * (containerRect.width - wordWidth);
-            y = -wordHeight;
-            break;
-        case 1: 
-            x = containerRect.width;
-            y = Math.random() * (containerRect.height - wordHeight);
-            break;
-        case 2: 
-            x = Math.random() * (containerRect.width - wordWidth);
-            y = containerRect.height;
-            break;
-        case 3: 
-            x = -wordWidth;
-            y = Math.random() * (containerRect.height - wordHeight);
-            break;
+    let x, y, edge;
+
+    if (isMobile) {
+        // For mobile, always spawn from the top
+        edge = 0;
+        x = Math.random() * (containerRect.width - wordWidth);
+        y = -wordHeight;
+    } else {
+        // For desktop, keep the original four-sided spawn
+        edge = Math.floor(Math.random() * 4);
+
+        switch (edge) {
+            case 0: // Top
+                x = Math.random() * (containerRect.width - wordWidth);
+                y = -wordHeight;
+                break;
+            case 1: // Right
+                x = containerRect.width;
+                y = Math.random() * (containerRect.height - wordHeight);
+                break;
+            case 2: // Bottom
+                x = Math.random() * (containerRect.width - wordWidth);
+                y = containerRect.height;
+                break;
+            case 3: // Left
+                x = -wordWidth;
+                y = Math.random() * (containerRect.height - wordHeight);
+                break;
+        }
     }
 
     return { x, y, edge };
-    }
+}
 
     function spawnWordWithDelay() {
          if (wordsSpawned < waveWordCount && isGameActive && !isPaused) {
