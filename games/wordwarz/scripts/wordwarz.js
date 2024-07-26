@@ -63,37 +63,37 @@ document.addEventListener('DOMContentLoaded', (event) => {
     }
 
     function isMobileDevice() {
-        return (typeof window.orientation !== "undefined") || (navigator.userAgent.indexOf('IEMobile') !== -1);
-    }
+    return (typeof window.orientation !== "undefined") || (navigator.userAgent.indexOf('IEMobile') !== -1);
+}
 
     function initializeMobileLayout() {
-        if (isMobileDevice()) {
-            document.body.classList.add('mobile-device');
-            
-            // Prevent zooming
-            document.addEventListener('touchstart', function(e) {
-                if (e.touches.length > 1) {
-                    e.preventDefault();
-                }
-            }, { passive: false });
+    if (isMobileDevice()) {
+        document.body.classList.add('mobile-device');
+        
+        // Prevent zooming
+        document.addEventListener('touchstart', function(e) {
+            if (e.touches.length > 1) {
+                e.preventDefault();
+            }
+        }, { passive: false });
 
-            // Disable double-tap zoom
-            let lastTouchEnd = 0;
-            document.addEventListener('touchend', function(e) {
-                const now = (new Date()).getTime();
-                if (now - lastTouchEnd <= 300) {
-                    e.preventDefault();
-                }
-                lastTouchEnd = now;
-            }, false);
+        // Disable double-tap zoom
+        let lastTouchEnd = 0;
+        document.addEventListener('touchend', function(e) {
+            const now = (new Date()).getTime();
+            if (now - lastTouchEnd <= 300) {
+                e.preventDefault();
+            }
+            lastTouchEnd = now;
+        }, false);
 
-            // Add meta tag to prevent zooming
-            const viewportMeta = document.createElement('meta');
-            viewportMeta.name = 'viewport';
-            viewportMeta.content = 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0';
-            document.getElementsByTagName('head')[0].appendChild(viewportMeta);
-        }
+        // Add meta tag to prevent zooming
+        const viewportMeta = document.createElement('meta');
+        viewportMeta.name = 'viewport';
+        viewportMeta.content = 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0';
+        document.getElementsByTagName('head')[0].appendChild(viewportMeta);
     }
+}
 
     function showMobileKeyboard() {
         if (isMobileDevice()) {
@@ -571,50 +571,50 @@ document.addEventListener('DOMContentLoaded', (event) => {
     }
 
     function initGame() {
-        debugLog("Initializing game");
-        isFirstLoad = false;
-        zombiesShot = 0;
-        totalScore = 0;
-        scoreValue.textContent = zombiesShot;
-        totalScoreValue.textContent = totalScore;
-        currentWave = 1;
-        waveWordCount = 5;
-        wordSpeed = 1.0;
-        baseSpawnRate = 1500;
-        lettersHitThisWave = 0;
-        totalKeystrokes = 0;
-        correctKeystrokes = 0;
-        
-        words.forEach(({ element }) => element.remove());
-        words = [];
-        currentTypedWord = '';
-        currentTargetWord = null;
-        typedWord.textContent = '';
-        
-        gameOver.style.display = 'none';
-        waveComplete.style.display = 'none';
-        waveCleared.style.display = 'none';
-        player.style.display = 'block';
-        
-        waveValue.textContent = currentWave;
-        updateWordsLeft();
-        updateAccuracy();
-        
-        if (isMobileDevice()) {
-            initializeMobileLayout();
-            showMobileKeyboard();
-        }
-        
-        isGameActive = true;
-        gameInterval = setInterval(moveWords, 33);
-        spawnWordWithDelay();
-        
-        if (!isMuted) {
-            playBackgroundMusic();
-        }
-        
-        debugLog("Game initialized");
+    debugLog("Initializing game");
+    isFirstLoad = false;
+    zombiesShot = 0;
+    totalScore = 0;
+    scoreValue.textContent = zombiesShot;
+    totalScoreValue.textContent = totalScore;
+    currentWave = 1;
+    waveWordCount = 5;
+    wordSpeed = 1.0;
+    baseSpawnRate = 1500;
+    lettersHitThisWave = 0;
+    totalKeystrokes = 0;
+    correctKeystrokes = 0;
+    
+    words.forEach(({ element }) => element.remove());
+    words = [];
+    currentTypedWord = '';
+    currentTargetWord = null;
+    typedWord.textContent = '';
+    
+    gameOver.style.display = 'none';
+    waveComplete.style.display = 'none';
+    waveCleared.style.display = 'none';
+    player.style.display = 'block';
+    
+    waveValue.textContent = currentWave;
+    updateWordsLeft();
+    updateAccuracy();
+    
+    if (isMobileDevice()) {
+        initializeMobileLayout();
+        // Remove showMobileKeyboard call
     }
+    
+    isGameActive = true;
+    gameInterval = setInterval(moveWords, 33);
+    spawnWordWithDelay();
+    
+    if (!isMuted) {
+        playBackgroundMusic();
+    }
+    
+    debugLog("Game initialized");
+}
 
     function endGame() {
         isGameActive = false;
@@ -676,20 +676,52 @@ document.addEventListener('DOMContentLoaded', (event) => {
     });
 
     function handleMobileTouchStart(event) {
-        if (!isGameActive || isPaused) return;
-        
-        const touch = event.touches[0];
-        const touchedElement = document.elementFromPoint(touch.clientX, touch.clientY);
-        
-        if (touchedElement && touchedElement.classList.contains('enemy-word')) {
-            const wordObj = words.find(w => w.element === touchedElement);
-            if (wordObj) {
-                currentTargetWord = wordObj;
-                currentTypedWord = '';
-                typedWord.textContent = '';
-            }
+    if (!isGameActive || isPaused) return;
+    
+    const touch = event.touches[0];
+    const touchedElement = document.elementFromPoint(touch.clientX, touch.clientY);
+    
+    if (touchedElement && touchedElement.classList.contains('enemy-word')) {
+        const wordObj = words.find(w => w.element === touchedElement);
+        if (wordObj) {
+            currentTargetWord = wordObj;
+            currentTypedWord = '';
+            typedWord.textContent = '';
         }
+    } else {
+        // If the touch is not on a word, show a virtual keyboard
+        showVirtualKeyboard();
     }
+}
+    function showVirtualKeyboard() {
+    if (document.getElementById('virtual-keyboard')) return;
+
+    const keyboard = document.createElement('div');
+    keyboard.id = 'virtual-keyboard';
+    keyboard.style.position = 'fixed';
+    keyboard.style.bottom = '0';
+    keyboard.style.left = '0';
+    keyboard.style.width = '100%';
+    keyboard.style.backgroundColor = 'rgba(0,0,0,0.7)';
+    keyboard.style.padding = '10px';
+    keyboard.style.display = 'flex';
+    keyboard.style.flexWrap = 'wrap';
+    keyboard.style.justifyContent = 'center';
+    keyboard.style.zIndex = '3000';
+
+    const keys = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+    keys.forEach(key => {
+        const button = document.createElement('button');
+        button.textContent = key;
+        button.style.margin = '5px';
+        button.style.padding = '10px';
+        button.style.fontSize = '20px';
+        button.addEventListener('click', () => handleInput(key.toLowerCase()));
+        keyboard.appendChild(button);
+    });
+
+    document.body.appendChild(keyboard);
+}
 
     // Initialize the game
     initializeMobileLayout();
@@ -700,9 +732,6 @@ document.addEventListener('DOMContentLoaded', (event) => {
         debugLog("Start game button clicked");
         hideStartButton();
         initGame();
-        if (isMobileDevice()) {
-            showMobileKeyboard();
-        }
     });
 
     restartBtn.addEventListener('click', () => {
@@ -710,7 +739,11 @@ document.addEventListener('DOMContentLoaded', (event) => {
         initGame();
     });
 
-    if (isMobileDevice()) {
+     if (isMobileDevice()) {
         document.addEventListener('touchstart', handleMobileTouchStart);
+    } else {
+        document.addEventListener('keydown', (event) => {
+            handleInput(event.key);
+        });
     }
 });
