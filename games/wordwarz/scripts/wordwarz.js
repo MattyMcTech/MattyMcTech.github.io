@@ -137,6 +137,11 @@ document.addEventListener('DOMContentLoaded', (event) => {
         }
         return result;
     }
+function isMobileDevice() {
+    return (('ontouchstart' in window) ||
+        (navigator.maxTouchPoints > 0) ||
+        (navigator.msMaxTouchPoints > 0));
+}
 
     async function spawnWord() {
         if (wordsSpawned >= waveWordCount) return;
@@ -212,12 +217,11 @@ document.addEventListener('DOMContentLoaded', (event) => {
     }
 
     function getRandomEdgePosition(wordWidth, wordHeight, containerRect) {
-    // Check if the device is mobile (you may want to adjust this threshold)
-    const isMobile = window.innerWidth <= 768;
+    const mobile = isMobileDevice();
 
     let x, y, edge;
 
-    if (isMobile) {
+    if (mobile) {
         // For mobile, always spawn from the top
         edge = 0;
         x = Math.random() * (containerRect.width - wordWidth);
