@@ -144,8 +144,8 @@ function isMobileDevice() {
 }
 
     async function spawnWord() {
-        if (wordsSpawned >= waveWordCount) return;
-    
+    if (wordsSpawned >= waveWordCount) return;
+
     let minLength, maxLength;
     if (currentWave <= 5) {
         minLength = 3;
@@ -157,7 +157,7 @@ function isMobileDevice() {
         minLength = 5;
         maxLength = 8;
     }
-    
+
     const word = await getRandomWord(minLength, maxLength);
     const wordElement = document.createElement('div');
     wordElement.classList.add('enemy-word');
@@ -181,9 +181,9 @@ function isMobileDevice() {
     const position = getRandomEdgePosition(wordWidth, wordHeight, containerRect);
     wordElement.style.left = `${position.x}px`;
     wordElement.style.top = `${position.y}px`;
-    
+
     const individualWordSpeed = wordSpeed * (1 + (word.length - minLength) * 0.05);
-    
+
     words.push({ 
         element: wordElement, 
         word, 
@@ -197,53 +197,44 @@ function isMobileDevice() {
     });
     wordsSpawned++;
     updateWordsLeft();
-  
 
     wordElement.classList.add('visible');
 
     const wordObj = words[words.length - 1];
-    switch (position.edge) {
-        case 0: wordObj.y = 0; break;
-        case 1: wordObj.x = containerRect.width - wordWidth; break;
-        case 2: wordObj.y = containerRect.height - wordHeight; break;
-        case 3: wordObj.x = 0; break;
-    }
-    wordObj.element.style.left = `${wordObj.x}px`;
-    wordObj.element.style.top = `${wordObj.y}px`;
-
     setTimeout(() => {
         wordObj.isMoving = true;
     }, 750);
-    }
+}
 
-    function getRandomEdgePosition(wordWidth, wordHeight, containerRect) {
+  function getRandomEdgePosition(wordWidth, wordHeight, containerRect) {
     const mobile = isMobileDevice();
 
     let x, y, edge;
 
     if (mobile) {
         // For mobile, always spawn from the top
-        edge = 0;
+        edge = 'top';
         x = Math.random() * (containerRect.width - wordWidth);
         y = -wordHeight;
     } else {
         // For desktop, keep the original four-sided spawn
-        edge = Math.floor(Math.random() * 4);
+        const edges = ['top', 'right', 'bottom', 'left'];
+        edge = edges[Math.floor(Math.random() * edges.length)];
 
         switch (edge) {
-            case 0: // Top
+            case 'top':
                 x = Math.random() * (containerRect.width - wordWidth);
                 y = -wordHeight;
                 break;
-            case 1: // Right
+            case 'right':
                 x = containerRect.width;
                 y = Math.random() * (containerRect.height - wordHeight);
                 break;
-            case 2: // Bottom
+            case 'bottom':
                 x = Math.random() * (containerRect.width - wordWidth);
                 y = containerRect.height;
                 break;
-            case 3: // Left
+            case 'left':
                 x = -wordWidth;
                 y = Math.random() * (containerRect.height - wordHeight);
                 break;
@@ -264,7 +255,7 @@ function isMobileDevice() {
     }
 
     function moveWords() {
-        if (isPaused) return;
+    if (isPaused) return;
 
     const playerRect = player.getBoundingClientRect();
     const centerX = playerRect.left + playerRect.width / 2;
@@ -273,8 +264,12 @@ function isMobileDevice() {
     words.forEach((wordObj) => {
         if (!wordObj.isMoving) return;
 
-        const dx = centerX - (wordObj.x + wordObj.element.offsetWidth / 2);
-        const dy = centerY - (wordObj.y + wordObj.element.offsetHeight / 2);
+        const wordRect = wordObj.element.getBoundingClientRect();
+        const wordCenterX = wordRect.left + wordRect.width / 2;
+        const wordCenterY = wordRect.top + wordRect.height / 2;
+
+        const dx = centerX - wordCenterX;
+        const dy = centerY - wordCenterY;
         const distance = Math.sqrt(dx * dx + dy * dy);
         
         if (distance > 5) {
@@ -290,7 +285,7 @@ function isMobileDevice() {
             return; // Exit the function to prevent further processing
         }
     });
-    }
+}
 
     function updateTypedWord(key) {
        if (!isGameActive || isPaused) return;
