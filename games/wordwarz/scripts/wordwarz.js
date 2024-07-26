@@ -626,37 +626,84 @@ document.addEventListener('DOMContentLoaded', (event) => {
     }
 
     function initGame() {
-        debugLog("Initializing game");
-        isFirstLoad = false;
-        zombiesShot = 0;
-        totalScore = 0;
-        scoreValue.textContent = zombiesShot;
-        totalScoreValue.textContent = totalScore;
-        currentWave = 1;
-        waveWordCount = 5;
-        wordSpeed = 1.0;
-        baseSpawnRate = 1500;
-        lettersHitThisWave = 0;
-        totalKeystrokes = 0;
-        correctKeystrokes = 0;
-         if (isMobileDevice) {
-        // Force show keyboard
-        const dummyInput = document.createElement('input');
-        dummyInput.style.position = 'fixed';
-        dummyInput.style.bottom = '0';
-        dummyInput.style.left = '-9999px';
-        document.body.appendChild(dummyInput);
-        dummyInput.focus();
-        setTimeout(() => {
-            dummyInput.remove();
-        }, 100);
-    }
-        gameOver.style.display = 'none';
+    debugLog("Initializing game");
+    
+    // Reset game state
+    isFirstLoad = false;
+    zombiesShot = 0;
+    totalScore = 0;
+    currentWave = 1;
+    waveWordCount = 5;
+    wordSpeed = 1.0;
+    baseSpawnRate = 1500;
+    lettersHitThisWave = 0;
+    totalKeystrokes = 0;
+    correctKeystrokes = 0;
+    
+    // Update UI
+    scoreValue.textContent = zombiesShot;
+    totalScoreValue.textContent = totalScore;
+    waveValue.textContent = currentWave;
+    updateWordsLeft();
+    updateAccuracy();
+    
+    // Clear any existing words
+    words.forEach(({ element }) => element.remove());
+    words = [];
+    
+    // Reset player state
+    currentTypedWord = '';
+    currentTargetWord = null;
+    typedWord.textContent = '';
+    
+    // Hide end game screens
+    gameOver.style.display = 'none';
+    waveComplete.style.display = 'none';
+    waveCleared.style.display = 'none';
+    
+    // Show game elements
+    player.style.display = 'block';
+    
+    // Mobile-specific setup
+    if (isMobileDevice) {
+        document.body.classList.add('mobile-device');
+        player.style.bottom = '60px';
+        player.style.left = '50%';
+        player.style.transform = 'translateX(-50%)';
         
-        startWave();
-        debugLog("Calling forcePlayMusic from initGame");
-        forcePlayMusic();
+        // Attempt to show keyboard
+        setTimeout(() => {
+            const dummyInput = document.createElement('input');
+            dummyInput.style.position = 'fixed';
+            dummyInput.style.opacity = '0';
+            dummyInput.style.bottom = '0';
+            dummyInput.style.left = '0';
+            document.body.appendChild(dummyInput);
+            dummyInput.focus();
+            setTimeout(() => {
+                dummyInput.remove();
+            }, 100);
+        }, 100);
+    } else {
+        document.body.classList.remove('mobile-device');
+        player.style.top = '50%';
+        player.style.left = '50%';
+        player.style.transform = 'translate(-50%, -50%)';
     }
+    
+    // Start game logic
+    isGameActive = true;
+    gameInterval = setInterval(moveWords, 33);
+    spawnWordWithDelay();
+    
+    // Start audio
+    if (!isMuted) {
+        playBackgroundMusic();
+    }
+    
+    debugLog("Game initialized");
+}
+
 
     restartBtn.addEventListener('click', () => {
         gameOver.style.display = 'none';
