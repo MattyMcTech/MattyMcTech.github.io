@@ -323,7 +323,37 @@ body, html {
   background-color: #45a049;
 }
 @media (max-width: 768px) {
-  #game-container {
-    padding-bottom: 200px;
-  }
+    #game-container {
+        padding-bottom: 200px; /* Make room for the virtual keyboard */
+    }
+
+    #player {
+        width: 80px;
+        height: 80px;
+    }
+
+    .enemy-word {
+        font-size: 24px;
+    }
+
+    #typed-word {
+        font-size: 28px;
+        bottom: 220px; /* Position above the virtual keyboard */
+    }
+
+    #score, #total-score, #wave, #words-left, #accuracy {
+        font-size: 24px;
+    }
+
+    #game-over, #wave-complete {
+        font-size: 36px;
+    }
+
+    #game-over h2 {
+        font-size: 48px;
+    }
+
+    #final-score, #final-accuracy {
+        font-size: 28px;
+    }
 }
