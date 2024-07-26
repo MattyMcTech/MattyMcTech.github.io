@@ -280,12 +280,13 @@ body, html {
     bottom: 60px;
 }
 
+/* Hide all game information on mobile */
 .mobile-device #score,
 .mobile-device #total-score,
 .mobile-device #wave,
 .mobile-device #words-left,
 .mobile-device #accuracy {
-    display: none;
+    display: none !important;
 }
 
 .mobile-device #game-over h2 {
@@ -298,8 +299,7 @@ body, html {
 }
 
 .mobile-device #next-wave-btn,
-.mobile-device #restart-btn,
-.mobile-device #start-game-btn {
+.mobile-device #restart-btn {
     font-size: 20px;
 }
 
@@ -312,12 +312,20 @@ body, html {
     bottom: 90px;
 }
 
+/* Position the start game button in the middle of the screen */
 .mobile-device #start-game-btn {
     position: fixed;
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
     z-index: 2000;
+    font-size: 24px;
+    padding: 15px 30px;
+    background-color: #4CAF50;
+    color: #FFFFFF;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
 }
 
 .mobile-device #game-over {
