@@ -339,13 +339,12 @@ keys.forEach(key => {
     }
     }
 
-    function moveWords() {
+   function moveWords() {
     if (isPaused) return;
 
     const playerRect = player.getBoundingClientRect();
-    const gameContainerRect = gameContainer.getBoundingClientRect();
-	    const centerX = playerRect.left + playerRect.width / 2;
-        const centerY = playerRect.top + playerRect.height / 2;
+    const centerX = playerRect.left + playerRect.width / 2;
+    const centerY = playerRect.top + playerRect.height / 2;
 
     words.forEach((wordObj) => {
         if (!wordObj.isMoving) return;
@@ -356,7 +355,7 @@ keys.forEach(key => {
             wordObj.element.style.top = `${wordObj.y}px`;
 
             const wordRect = wordObj.element.getBoundingClientRect();
-            if (wordRect.bottom > playerRect.top) {
+            if (wordRect.top > playerRect.bottom) {
                 endGame();
                 return;
             }
@@ -647,7 +646,12 @@ keys.forEach(key => {
     }
     typedWord.textContent = currentTypedWord;
     });
-
+function adjustGameDifficultyForMobile() {
+    if (isMobileDevice()) {
+        wordSpeed *= 0.85; // Reduce speed by 15% on mobile
+        baseSpawnRate *= 1.15; // Increase spawn interval by 15% on mobile
+    }
+}
     function startWave() {
          isGameActive = true;
     wordsDefeated = 0;
@@ -664,6 +668,7 @@ keys.forEach(key => {
     updateWordsLeft();
 
     gameInterval = setInterval(moveWords, 33);
+	adjustGameDifficultyForMobile();
 	showVirtualKeyboard();
     spawnWordWithDelay();
     }
