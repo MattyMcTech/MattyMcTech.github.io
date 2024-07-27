@@ -85,6 +85,7 @@ function adjustGameAreaForMobile() {
         const keyboardHeight = virtualKeyboard.offsetHeight;
         document.documentElement.style.setProperty('--keyboard-height', `${keyboardHeight}px`);
         resizeGameContainer();
+        positionPlayerForMobile();
     }
 }
 function resizeGameContainer() {
@@ -93,11 +94,23 @@ function resizeGameContainer() {
     const windowHeight = window.innerHeight;
     gameContainer.style.height = `${windowHeight - keyboardHeight}px`;
 }
+function positionPlayerForMobile() {
+    const player = document.getElementById('player');
+    const gameContainer = document.getElementById('game-container');
+    const gameContainerRect = gameContainer.getBoundingClientRect();
+    
+    player.style.bottom = '20px';
+    player.style.top = 'auto';
+    player.style.left = '50%';
+    player.style.transform = 'translateX(-50%)';
+}
+
 function hideVirtualKeyboard() {
     virtualKeyboard.classList.add('hidden');
     if (isMobileDevice()) {
         document.documentElement.style.setProperty('--keyboard-height', '0px');
         resizeGameContainer();
+        positionPlayerForMobile();
     }
 }
 function handleVirtualKeyPress(key) {
@@ -166,12 +179,16 @@ keys.forEach(key => {
         }
     });
 
+    if (volumeSlider) {
     volumeSlider.addEventListener('input', (e) => {
-        const volume = parseFloat(e.target.value);
-        splatSound.volume = volume * 0.6;
-        backgroundMusic.volume = volume * 0.2;
-        bulletShotSound.volume = volume * 0.6;
+        if (!isMobileDevice()) {
+            const volume = parseFloat(e.target.value);
+            splatSound.volume = volume * 0.6;
+            backgroundMusic.volume = volume * 0.2;
+            bulletShotSound.volume = volume * 0.6;
+        }
     });
+}
 
     backgroundMusic.addEventListener('play', () => {
         debugLog("Background music play event triggered");
