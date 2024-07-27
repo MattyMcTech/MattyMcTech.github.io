@@ -343,23 +343,18 @@ keys.forEach(key => {
     if (isPaused) return;
 
     const playerRect = player.getBoundingClientRect();
-    const centerX = playerRect.left + playerRect.width / 2;
-    const centerY = playerRect.top + playerRect.height / 2;
+    const gameContainerRect = gameContainer.getBoundingClientRect();
 
     words.forEach((wordObj) => {
         if (!wordObj.isMoving) return;
 
-        let targetY;
         if (isMobileDevice()) {
             // For mobile, words move straight down
-            targetY = centerY;
-            const dy = targetY - (wordObj.y + wordObj.element.offsetHeight / 2);
-            const distance = Math.abs(dy);
-            
-            if (distance > 5) {
-                wordObj.y += wordObj.speed;
-                wordObj.element.style.top = `${wordObj.y}px`;
-            } else {
+            wordObj.y += wordObj.speed;
+            wordObj.element.style.top = `${wordObj.y}px`;
+
+            const wordRect = wordObj.element.getBoundingClientRect();
+            if (wordRect.bottom > playerRect.top) {
                 endGame();
                 return;
             }
