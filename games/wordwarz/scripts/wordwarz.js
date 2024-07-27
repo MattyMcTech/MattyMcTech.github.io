@@ -332,7 +332,6 @@ function adjustGameContainerPadding() {
     const playerRect = player.getBoundingClientRect();
     const centerX = playerRect.left + playerRect.width / 2;
     const centerY = playerRect.top + playerRect.height / 2;
-	const playerRect = player.getBoundingClientRect();
     const gameContainerRect = gameContainer.getBoundingClientRect();
 
     words.forEach((wordObj) => {
