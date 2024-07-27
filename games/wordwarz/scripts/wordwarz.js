@@ -572,7 +572,7 @@ function adjustGameContainerPadding() {
             // Always play the hit sound if not muted
             if (!isMuted) {
                 const bulletHitSound = new Audio('https://github.com/MattyMcTech/WordWarZ/raw/main/bulletHit.mp3');
-                bulletHitSound.volume = 0.3;
+                bulletHitSound.volume = bulletShotSound.volume;
                 bulletHitSound.play();
             }
             
