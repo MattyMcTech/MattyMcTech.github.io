@@ -69,10 +69,10 @@ const keys = virtualKeyboard.querySelectorAll('.key');
         || (window.innerWidth <= 800 && window.innerHeight <= 600);
 }
 function showVirtualKeyboard() {
-  if (isMobileDevice()) {
-    virtualKeyboard.classList.remove('hidden');
-    adjustGameContainerPadding();
-  }
+    if (isMobileDevice()) {
+        virtualKeyboard.classList.remove('hidden');
+        adjustGameAreaForMobile();
+    }
 }
 function adjustGameDifficultyForMobile() {
     if (isMobileDevice()) {
@@ -80,9 +80,25 @@ function adjustGameDifficultyForMobile() {
         baseSpawnRate *= 1.15; // Increase spawn interval by 15% on mobile
     }
 }
+function adjustGameAreaForMobile() {
+    if (isMobileDevice()) {
+        const keyboardHeight = virtualKeyboard.offsetHeight;
+        document.documentElement.style.setProperty('--keyboard-height', `${keyboardHeight}px`);
+        resizeGameContainer();
+    }
+}
+function resizeGameContainer() {
+    const gameContainer = document.getElementById('game-container');
+    const keyboardHeight = virtualKeyboard.offsetHeight;
+    const windowHeight = window.innerHeight;
+    gameContainer.style.height = `${windowHeight - keyboardHeight}px`;
+}
 function hideVirtualKeyboard() {
-  virtualKeyboard.classList.add('hidden');
-  adjustGameContainerPadding();
+    virtualKeyboard.classList.add('hidden');
+    if (isMobileDevice()) {
+        document.documentElement.style.setProperty('--keyboard-height', '0px');
+        resizeGameContainer();
+    }
 }
 function handleVirtualKeyPress(key) {
   if (key === '⌫') {
@@ -316,6 +332,8 @@ function adjustGameContainerPadding() {
     const playerRect = player.getBoundingClientRect();
     const centerX = playerRect.left + playerRect.width / 2;
     const centerY = playerRect.top + playerRect.height / 2;
+	const playerRect = player.getBoundingClientRect();
+    const gameContainerRect = gameContainer.getBoundingClientRect();
 
     words.forEach((wordObj) => {
         if (!wordObj.isMoving) return;
@@ -326,7 +344,7 @@ function adjustGameContainerPadding() {
             wordObj.element.style.top = `${wordObj.y}px`;
 
             const wordRect = wordObj.element.getBoundingClientRect();
-            if (wordRect.top > playerRect.bottom) {
+            if (wordRect.bottom > gameContainerRect.bottom) {
                 endGame();
                 return;
             }
@@ -718,7 +736,7 @@ function adjustGameContainerPadding() {
     correctKeystrokes = 0;
     
     gameOver.style.display = 'none';  // Ensure game over screen is hidden
-    
+    adjustGameAreaForMobile();
     startWave();
     debugLog("Calling forcePlayMusic from initGame");
     forcePlayMusic();
@@ -731,6 +749,8 @@ function adjustGameContainerPadding() {
         playBackgroundMusic();
     });
 window.addEventListener('resize', adjustGameContainerPadding);
+window.addEventListener('orientationchange', adjustGameAreaForMobile);
+window.addEventListener('resize', adjustGameAreaForMobile);
     startGameBtn.addEventListener('click', () => {
         debugLog("Start game button clicked");
         hideStartButton();
