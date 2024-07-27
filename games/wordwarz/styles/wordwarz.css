@@ -372,3 +372,16 @@ body, html {
         font-size: 18px;
     }
 }
+@media (max-width: 768px) {
+    .mobile-hide {
+        display: none !important;
+    }
+
+    #game-container {
+        padding-top: 10px; /* Add some top padding to compensate for removed elements */
+    }
+
+    #typed-word {
+        top: 10px; /* Adjust the position of the typed word */
+    }
+}
