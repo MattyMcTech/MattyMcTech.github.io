@@ -65,8 +65,7 @@ document.addEventListener('DOMContentLoaded', (event) => {
     }
 	
 	function isMobileDevice() {
-    return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) 
-        || (window.innerWidth <= 800 && window.innerHeight <= 600);
+    return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ;
 }
 
     muteBtn.addEventListener('click', () => {
