@@ -3,18 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-    <title>WordSmasher - Cowboy vs Zombies</title>
+    <title>WordWarZ</title>
     <link rel="stylesheet" href="styles/wordwarz.css">
 </head>
 <body>
 <div id="game-container">
-    <div id="player"></div>
+    div id="player"></div>
     <div id="typed-word"></div>
-    <div id="score">Zombies Shot: <span id="score-value">0</span></div>
-    <div id="total-score">Score: <span id="total-score-value">0</span></div>
-    <div id="wave">Zombie Wave: <span id="wave-value">1</span></div>
-    <div id="words-left">Zombies Left: <span id="words-left-value">5</span></div>
-    <div id="accuracy">Accuracy: <span id="accuracy-value">100%</span></div>
+    <div id="score" class="mobile-hide">Zombies Shot: <span id="score-value">0</span></div>
+    <div id="total-score" class="mobile-hide">Score: <span id="total-score-value">0</span></div>
+    <div id="wave" class="mobile-hide">Zombie Wave: <span id="wave-value">1</span></div>
+    <div id="words-left" class="mobile-hide">Zombies Left: <span id="words-left-value">5</span></div>
+    <div id="accuracy" class="mobile-hide">Accuracy: <span id="accuracy-value">100%</span></div>
     <div id="game-over">
         <h2>GAME OVER</h2>
         <div id="final-score">Final Score: <span id="final-score-value">0</span></div>
@@ -71,10 +71,10 @@
     <button class="key" id="backspace">⌫</button>
   </div>
 </div>
-<div id="volume-control">
-        <label for="volume-slider">Volume:</label>
-        <input type="range" id="volume-slider" min="0" max="1" step="0.1" value="0.5">
-    </div>
+<div id="volume-control" class="mobile-hide">
+    <label for="volume-slider">Volume:</label>
+    <input type="range" id="volume-slider" min="0" max="1" step="0.1" value="0.5">
+</div>
 <script src="scripts/wordwarz.js"></script>
 
 
