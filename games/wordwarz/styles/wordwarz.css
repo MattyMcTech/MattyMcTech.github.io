@@ -281,7 +281,7 @@ body, html {
   left: 0;
   width: 100%;
   background-color: rgba(0, 0, 0, 0.8);
-  padding: 10px;
+  padding: 10px 5px;
   box-sizing: border-box;
   z-index: 1000;
 }
@@ -294,8 +294,8 @@ body, html {
 
 .key {
   font-family: 'Roboto', sans-serif;
-  font-size: 18px;
-  padding: 10px;
+  font-size: 20px;
+  padding: 12px 0;
   margin: 0 2px;
   background-color: #4CAF50;
   color: #FFFFFF;
@@ -303,7 +303,10 @@ body, html {
   border-radius: 5px;
   cursor: pointer;
   transition: background-color 0.3s;
-  touch-action: manipulation; /* This prevents double-tap zoom */
+  touch-action: manipulation;
+  flex-grow: 1;
+  min-width: 8%;
+  text-align: center;
 }
 
 .key:hover, .key:active {
@@ -311,46 +314,35 @@ body, html {
 }
 
 #backspace {
-  width: 60px;
+  min-width: 12%;
 }
-
 .hidden {
   display: none;
 }
 
 /* Adjust the game container to make room for the keyboard on mobile */
 @media (max-width: 768px) {
-    #game-container {
-        padding-bottom: 200px; /* Make room for the virtual keyboard */
-    }
+  #game-container {
+    padding-bottom: 240px;
+  }
+  
+  #virtual-keyboard {
+    padding: 5px 2px;
+  }
+  
+  .key {
+    font-size: 18px;
+    padding: 10px 0;
+  }
+}
 
-    #player {
-        width: 80px;
-        height: 80px;
-    }
-
-    .enemy-word {
-        font-size: 24px;
-    }
-
-    #typed-word {
-        font-size: 28px;
-        bottom: 220px; /* Position above the virtual keyboard */
-    }
-
-    #score, #total-score, #wave, #words-left, #accuracy {
-        font-size: 24px;
-    }
-
-    #game-over, #wave-complete {
-        font-size: 36px;
-    }
-
-    #game-over h2 {
-        font-size: 48px;
-    }
-
-    #final-score, #final-accuracy {
-        font-size: 28px;
-    }
+@media (max-width: 320px) {
+  .key {
+    font-size: 16px;
+    padding: 8px 0;
+  }
+  
+  #virtual-keyboard {
+    padding: 3px 1px;
+  }
 }
