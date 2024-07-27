@@ -71,10 +71,18 @@ const keys = virtualKeyboard.querySelectorAll('.key');
 function showVirtualKeyboard() {
   if (isMobileDevice()) {
     virtualKeyboard.classList.remove('hidden');
+    adjustGameContainerPadding();
   }
+}
+function adjustGameDifficultyForMobile() {
+    if (isMobileDevice()) {
+        wordSpeed *= 0.85; // Reduce speed by 15% on mobile
+        baseSpawnRate *= 1.15; // Increase spawn interval by 15% on mobile
+    }
 }
 function hideVirtualKeyboard() {
   virtualKeyboard.classList.add('hidden');
+  adjustGameContainerPadding();
 }
 function handleVirtualKeyPress(key) {
   if (key === '⌫') {
@@ -98,6 +106,12 @@ keys.forEach(key => {
   key.addEventListener('touchstart', (e) => {
     e.preventDefault(); // Prevent default touch behavior
     handleVirtualKeyPress(key.textContent);
+    key.classList.add('active');
+  });
+  
+  key.addEventListener('touchend', (e) => {
+    e.preventDefault();
+    key.classList.remove('active');
   });
   
   // Keep the click listener for non-touch devices
@@ -173,7 +187,12 @@ keys.forEach(key => {
             return fallbackGetRandomWord(length);
         }
     }
-
+function adjustGameContainerPadding() {
+  const keyboardHeight = virtualKeyboard.offsetHeight;
+  gameContainer.style.paddingBottom = isMobileDevice() && !virtualKeyboard.classList.contains('hidden') 
+    ? `${keyboardHeight}px` 
+    : '0';
+}
     function fallbackGetRandomWord(length) {
         const characters = 'abcdefghijklmnopqrstuvwxyz';
         let result = '';
@@ -240,24 +259,8 @@ keys.forEach(key => {
 
     wordElement.classList.add('visible');
 
-    const wordObj = words[words.length - 1];
-    if (isMobileDevice()) {
-        // For mobile, words always start at the top
-        wordObj.y = -wordHeight;
-    } else {
-        // Existing logic for desktop
-        switch (position.edge) {
-            case 0: wordObj.y = 0; break;
-            case 1: wordObj.x = containerRect.width - wordWidth; break;
-            case 2: wordObj.y = containerRect.height - wordHeight; break;
-            case 3: wordObj.x = 0; break;
-        }
-    }
-    wordObj.element.style.left = `${wordObj.x}px`;
-    wordObj.element.style.top = `${wordObj.y}px`;
-
     setTimeout(() => {
-        wordObj.isMoving = true;
+        words[words.length - 1].isMoving = true;
     }, 750);
 }
 
@@ -317,17 +320,13 @@ keys.forEach(key => {
     words.forEach((wordObj) => {
         if (!wordObj.isMoving) return;
 
-        let targetY;
         if (isMobileDevice()) {
             // For mobile, words move straight down
-            targetY = centerY;
-            const dy = targetY - (wordObj.y + wordObj.element.offsetHeight / 2);
-            const distance = Math.abs(dy);
-            
-            if (distance > 5) {
-                wordObj.y += wordObj.speed;
-                wordObj.element.style.top = `${wordObj.y}px`;
-            } else {
+            wordObj.y += wordObj.speed;
+            wordObj.element.style.top = `${wordObj.y}px`;
+
+            const wordRect = wordObj.element.getBoundingClientRect();
+            if (wordRect.top > playerRect.bottom) {
                 endGame();
                 return;
             }
@@ -632,6 +631,7 @@ keys.forEach(key => {
     gameOver.style.display = 'none';
     waveCleared.style.display = 'none';
     waveValue.textContent = currentWave;
+	adjustGameDifficultyForMobile();
 	showVirtualKeyboard();
     updateWordsLeft();
 
@@ -730,7 +730,7 @@ keys.forEach(key => {
         initGame();
         playBackgroundMusic();
     });
-
+window.addEventListener('resize', adjustGameContainerPadding);
     startGameBtn.addEventListener('click', () => {
         debugLog("Start game button clicked");
         hideStartButton();
