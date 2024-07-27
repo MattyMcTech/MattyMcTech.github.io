@@ -322,27 +322,52 @@ body, html {
 
 /* Adjust the game container to make room for the keyboard on mobile */
 @media (max-width: 768px) {
-  #game-container {
-    padding-bottom: 240px;
-  }
-  
-  #virtual-keyboard {
-    padding: 5px 2px;
-  }
-  
-  .key {
-    font-size: 18px;
-    padding: 10px 0;
-  }
+    #game-container {
+        padding-bottom: 240px; /* Make room for the virtual keyboard */
+    }
+
+    #player {
+        width: 70px;
+        height: 70px;
+        bottom: 260px; /* Position above the virtual keyboard */
+    }
+
+    .enemy-word {
+        font-size: 22px;
+    }
+
+    #typed-word {
+        font-size: 26px;
+        bottom: 250px; /* Position above the virtual keyboard */
+    }
+
+    #score, #total-score, #wave, #words-left, #accuracy {
+        font-size: 20px;
+    }
+
+    #game-over, #wave-complete {
+        font-size: 34px;
+    }
+
+    #game-over h2 {
+        font-size: 42px;
+    }
+
+    #final-score, #final-accuracy {
+        font-size: 26px;
+    }
 }
 
 @media (max-width: 320px) {
-  .key {
-    font-size: 16px;
-    padding: 8px 0;
-  }
-  
-  #virtual-keyboard {
-    padding: 3px 1px;
-  }
+    .enemy-word {
+        font-size: 20px;
+    }
+
+    #typed-word {
+        font-size: 24px;
+    }
+
+    #score, #total-score, #wave, #words-left, #accuracy {
+        font-size: 18px;
+    }
 }
