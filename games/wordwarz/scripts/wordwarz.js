@@ -94,7 +94,17 @@ function handleVirtualKeyPress(key) {
   typedWord.textContent = currentTypedWord;
 }
 keys.forEach(key => {
-  key.addEventListener('click', () => handleVirtualKeyPress(key.textContent));
+  key.addEventListener('touchstart', (e) => {
+    e.preventDefault(); // Prevent default touch behavior
+    handleVirtualKeyPress(key.textContent);
+  });
+  
+  // Keep the click listener for non-touch devices
+  key.addEventListener('click', (e) => {
+    if (!e.touches) { // Only handle click if it's not a touch event
+      handleVirtualKeyPress(key.textContent);
+    }
+  });
 });
 
     muteBtn.addEventListener('click', () => {
