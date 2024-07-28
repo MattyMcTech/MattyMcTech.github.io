@@ -146,22 +146,22 @@
     <script>
         // Initialize Gun
         const gun = Gun(['https://gun-manhattan.herokuapp.com/gun']);
-        const leaderboardDB = gun.get('penis-game-leaderboard');
+    const leaderboardDB = gun.get('penis-game-leaderboard');
 
-        let currentScore = 0;
-        let playerName = '';
-        let leaderboardEntries = new Set();
-        let updateTimeout = null;
-        let lastSubmissionTime = 0;
-        const SUBMISSION_COOLDOWN = 3000; // 3 seconds cooldown
+       let currentScore = 0;
+    let playerName = '';
+    let leaderboardEntries = [];
+    let updateTimeout = null;
+    let lastSubmissionTime = 0;
+    const SUBMISSION_COOLDOWN = 3000;
 
-        const yellButton = document.getElementById('yell-button');
-        const scoreDisplay = document.getElementById('score-display');
-        const volumeBar = document.getElementById('volume-bar');
-        const recordingIndicator = document.getElementById('recording-indicator');
-        const resultDisplay = document.getElementById('result-display');
-        const leaderboardList = document.getElementById('leaderboard-list');
-        const nameInput = document.getElementById('name-input');
+       const yellButton = document.getElementById('yell-button');
+    const scoreDisplay = document.getElementById('score-display');
+    const volumeBar = document.getElementById('volume-bar');
+    const recordingIndicator = document.getElementById('recording-indicator');
+    const resultDisplay = document.getElementById('result-display');
+    const leaderboardList = document.getElementById('leaderboard-list');
+    const nameInput = document.getElementById('name-input');
 
         function isChrome() {
             return /Chrome/.test(navigator.userAgent) && /Google Inc/.test(navigator.vendor);
@@ -190,30 +190,30 @@
             resultDisplay.style.color = success ? '#00FF00' : '#FF0000';
         }
 
-        function addScoreToLeaderboard() {
-            const now = Date.now();
-            if (now - lastSubmissionTime < SUBMISSION_COOLDOWN) {
-                console.log('Submission attempted too soon after last submission. Ignoring.');
-                return;
-            }
-
-            if (!playerName) {
-                console.log('No player name, not adding to leaderboard');
-                return;
-            }
-            
-            const playerEntry = { name: playerName, score: currentScore, timestamp: now };
-            const entryKey = `entry_${playerName}_${now}`;
-            
-            console.log('Attempting to add score:', playerEntry);
-
-            // Add the new entry
-            leaderboardDB.get(entryKey).put(playerEntry);
-            console.log('Score added to leaderboard:', playerEntry);
-
-            // Update the last submission time
-            lastSubmissionTime = now;
+         function addScoreToLeaderboard() {
+        const now = Date.now();
+        if (now - lastSubmissionTime < SUBMISSION_COOLDOWN) {
+            console.log('Submission attempted too soon after last submission. Ignoring.');
+            return;
         }
+
+        if (!playerName) {
+            console.log('No player name, not adding to leaderboard');
+            return;
+        }
+        
+        const playerEntry = { name: playerName, score: currentScore, timestamp: now };
+        const entryKey = `entry_${now}_${Math.random().toString(36).substr(2, 9)}`;
+        
+        console.log('Attempting to add score:', playerEntry);
+
+        // Add the new entry
+        leaderboardDB.get(entryKey).put(playerEntry);
+        console.log('Score added to leaderboard:', playerEntry);
+
+        // Update the last submission time
+        lastSubmissionTime = now;
+    }
 
         function debounce(func, wait) {
             return function(...args) {
@@ -229,36 +229,34 @@
         }, 1000);
 
         function updateLeaderboardDisplay() {
-            leaderboardList.innerHTML = '';
-            const entries = Array.from(leaderboardEntries);
+        leaderboardList.innerHTML = '';
+        const sortedEntries = leaderboardEntries.sort((a, b) => b.score - a.score).slice(0, 25);
 
-            entries.forEach((entry, index) => {
-                const li = document.createElement('li');
-                li.innerHTML = `<span>${index + 1}. ${entry.name}</span> <span>${entry.score.toFixed(2)}</span>`;
-                if (entry.name === playerName) {
-                    li.style.fontWeight = 'bold';
-                }
-                leaderboardList.appendChild(li);
-            });
-        }
+        sortedEntries.forEach((entry, index) => {
+            const li = document.createElement('li');
+            li.innerHTML = `<span>${index + 1}. ${entry.name}</span> <span>${entry.score.toFixed(2)}</span>`;
+            if (entry.name === playerName) {
+                li.style.fontWeight = 'bold';
+            }
+            leaderboardList.appendChild(li);
+        });
+    }
 
-        function initializeLeaderboard() {
-            console.log('Initializing leaderboard...');
-            const seenEntries = new Set();
-            leaderboardDB.map().on((data, key) => {
-                if (data && data.name && data.score) {
-                    const entryKey = `${data.name}_${data.timestamp}`;
-                    if (!seenEntries.has(entryKey)) {
-                        console.log('Received leaderboard entry:', data);
-                        leaderboardEntries.add(data);
-                        seenEntries.add(entryKey);
-                        debouncedUpdateLeaderboard();
-                    } else {
-                        console.log('Duplicate entry ignored:', data);
-                    }
+         function initializeLeaderboard() {
+        console.log('Initializing leaderboard...');
+        leaderboardDB.map().once((data, key) => {
+            if (data && data.name && data.score) {
+                console.log('Received leaderboard entry:', data);
+                const existingIndex = leaderboardEntries.findIndex(entry => entry.name === data.name && entry.timestamp === data.timestamp);
+                if (existingIndex === -1) {
+                    leaderboardEntries.push(data);
+                } else {
+                    leaderboardEntries[existingIndex] = data;
                 }
-            });
-        }
+                updateLeaderboardDisplay();
+            }
+        });
+    }
 
         yellButton.addEventListener('click', async () => {
             if (!playerName) {
@@ -358,6 +356,7 @@
 
         // Initialize the leaderboard when the page loads
         initializeLeaderboard();
+        setInterval(initializeLeaderboard, 10000);
     </script>
 </body>
 </html>
