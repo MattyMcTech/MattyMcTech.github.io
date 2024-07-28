@@ -1,13 +1,12 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>The Penis Game - Dare to Yell!</title>
     <style>
         body {
-            font-family: 'Roboto', Arial, Helvetica, sans-serif;
+            font-family: 'Arial', 'Helvetica', sans-serif;
             background-color: #FFB6C1;
             color: #FF1493;
             text-align: center;
@@ -20,22 +19,23 @@
             min-height: 100vh;
         }
         h1 {
-            font-size: 4em;
-            text-shadow: 3px 3px 0px #FF69B4;
+            font-size: 3em;
+            text-shadow: 2px 2px 0px #FF69B4;
             margin-bottom: 20px;
         }
         #game-description {
-            font-size: 1.2em;
+            font-size: 1.1em;
             max-width: 600px;
             margin-bottom: 20px;
         }
         button {
-            font-size: 2em;
-            padding: 15px 30px;
+            font-family: 'Arial', 'Helvetica', sans-serif;
+            font-size: 1.5em;
+            padding: 12px 24px;
             background-color: #FF69B4;
             color: #FFFFFF;
             border: none;
-            border-radius: 50px;
+            border-radius: 25px;
             cursor: pointer;
             transition: transform 0.1s;
         }
@@ -140,28 +140,29 @@
         </ol>
     </div>
     <div id="browser-warning">
-        ⚠️ For the best experience, please use Google Chrome. Some features may not work in your current browser.
+        ⚠️ For the best experience, please use Google Chrome (desktop or mobile). Some features may not work in other browsers.
     </div>
+    
     <script src="https://cdn.jsdelivr.net/npm/gun/gun.js"></script>
     <script>
         // Initialize Gun
         const gun = Gun(['https://gun-manhattan.herokuapp.com/gun']);
-    const leaderboardDB = gun.get('penis-game-leaderboard');
+        const leaderboardDB = gun.get('penis-game-leaderboard');
 
-       let currentScore = 0;
-    let playerName = '';
-    let leaderboardEntries = [];
-    let updateTimeout = null;
-    let lastSubmissionTime = 0;
-    const SUBMISSION_COOLDOWN = 3000;
+        let currentScore = 0;
+        let playerName = '';
+        let leaderboardEntries = [];
+        let updateTimeout = null;
+        let lastSubmissionTime = 0;
+        const SUBMISSION_COOLDOWN = 3000; // 3 seconds cooldown
 
-       const yellButton = document.getElementById('yell-button');
-    const scoreDisplay = document.getElementById('score-display');
-    const volumeBar = document.getElementById('volume-bar');
-    const recordingIndicator = document.getElementById('recording-indicator');
-    const resultDisplay = document.getElementById('result-display');
-    const leaderboardList = document.getElementById('leaderboard-list');
-    const nameInput = document.getElementById('name-input');
+        const yellButton = document.getElementById('yell-button');
+        const scoreDisplay = document.getElementById('score-display');
+        const volumeBar = document.getElementById('volume-bar');
+        const recordingIndicator = document.getElementById('recording-indicator');
+        const resultDisplay = document.getElementById('result-display');
+        const leaderboardList = document.getElementById('leaderboard-list');
+        const nameInput = document.getElementById('name-input');
 
         function isChrome() {
             const isChromium = window.chrome;
@@ -209,73 +210,97 @@
             resultDisplay.style.color = success ? '#00FF00' : '#FF0000';
         }
 
-         function addScoreToLeaderboard() {
-        const now = Date.now();
-        if (now - lastSubmissionTime < SUBMISSION_COOLDOWN) {
-            console.log('Submission attempted too soon after last submission. Ignoring.');
-            return;
+        function addScoreToLeaderboard() {
+            const now = Date.now();
+            if (now - lastSubmissionTime < SUBMISSION_COOLDOWN) {
+                console.log('Submission attempted too soon after last submission. Ignoring.');
+                return;
+            }
+
+            if (!playerName) {
+                console.log('No player name, not adding to leaderboard');
+                return;
+            }
+            
+            const playerEntry = { name: playerName, score: currentScore, timestamp: now };
+            const entryKey = `entry_${now}_${Math.random().toString(36).substr(2, 9)}`;
+            
+            console.log('Attempting to add score:', playerEntry);
+
+            // Add the new entry
+            leaderboardDB.get(entryKey).put(playerEntry);
+            console.log('Score added to leaderboard:', playerEntry);
+
+            // Update the last submission time
+            lastSubmissionTime = now;
         }
-
-        if (!playerName) {
-            console.log('No player name, not adding to leaderboard');
-            return;
-        }
-        
-        const playerEntry = { name: playerName, score: currentScore, timestamp: now };
-        const entryKey = `entry_${now}_${Math.random().toString(36).substr(2, 9)}`;
-        
-        console.log('Attempting to add score:', playerEntry);
-
-        // Add the new entry
-        leaderboardDB.get(entryKey).put(playerEntry);
-        console.log('Score added to leaderboard:', playerEntry);
-
-        // Update the last submission time
-        lastSubmissionTime = now;
-    }
-
-        function debounce(func, wait) {
-            return function(...args) {
-                clearTimeout(updateTimeout);
-                updateTimeout = setTimeout(() => func.apply(this, args), wait);
-            };
-        }
-
-        const debouncedUpdateLeaderboard = debounce(() => {
-            const sortedEntries = Array.from(leaderboardEntries).sort((a, b) => b.score - a.score).slice(0, 25);
-            leaderboardEntries = new Set(sortedEntries);
-            updateLeaderboardDisplay();
-        }, 1000);
 
         function updateLeaderboardDisplay() {
-        leaderboardList.innerHTML = '';
-        const sortedEntries = leaderboardEntries.sort((a, b) => b.score - a.score).slice(0, 25);
+            leaderboardList.innerHTML = '';
+            const sortedEntries = leaderboardEntries.sort((a, b) => b.score - a.score).slice(0, 25);
 
-        sortedEntries.forEach((entry, index) => {
-            const li = document.createElement('li');
-            li.innerHTML = `<span>${index + 1}. ${entry.name}</span> <span>${entry.score.toFixed(2)}</span>`;
-            if (entry.name === playerName) {
-                li.style.fontWeight = 'bold';
-            }
-            leaderboardList.appendChild(li);
-        });
-    }
-
-         function initializeLeaderboard() {
-        console.log('Initializing leaderboard...');
-        leaderboardDB.map().once((data, key) => {
-            if (data && data.name && data.score) {
-                console.log('Received leaderboard entry:', data);
-                const existingIndex = leaderboardEntries.findIndex(entry => entry.name === data.name && entry.timestamp === data.timestamp);
-                if (existingIndex === -1) {
-                    leaderboardEntries.push(data);
-                } else {
-                    leaderboardEntries[existingIndex] = data;
+            sortedEntries.forEach((entry, index) => {
+                const li = document.createElement('li');
+                li.innerHTML = `<span>${index + 1}. ${entry.name}</span> <span>${entry.score.toFixed(2)}</span>`;
+                if (entry.name === playerName) {
+                    li.style.fontWeight = 'bold';
                 }
-                updateLeaderboardDisplay();
+                leaderboardList.appendChild(li);
+            });
+        }
+
+        function initializeLeaderboard() {
+            console.log('Initializing leaderboard...');
+            leaderboardDB.map().once((data, key) => {
+                if (data && data.name && data.score) {
+                    console.log('Received leaderboard entry:', data);
+                    const existingIndex = leaderboardEntries.findIndex(entry => entry.name === data.name && entry.timestamp === data.timestamp);
+                    if (existingIndex === -1) {
+                        leaderboardEntries.push(data);
+                    } else {
+                        leaderboardEntries[existingIndex] = data;
+                    }
+                    updateLeaderboardDisplay();
+                }
+            });
+        }
+
+        function calculateLevenshteinDistance(a, b) {
+            if (a.length === 0) return b.length;
+            if (b.length === 0) return a.length;
+
+            const matrix = [];
+
+            for (let i = 0; i <= b.length; i++) {
+                matrix[i] = [i];
             }
-        });
-    }
+
+            for (let j = 0; j <= a.length; j++) {
+                matrix[0][j] = j;
+            }
+
+            for (let i = 1; i <= b.length; i++) {
+                for (let j = 1; j <= a.length; j++) {
+                    if (b.charAt(i - 1) === a.charAt(j - 1)) {
+                        matrix[i][j] = matrix[i - 1][j - 1];
+                    } else {
+                        matrix[i][j] = Math.min(
+                            matrix[i - 1][j - 1] + 1,
+                            matrix[i][j - 1] + 1,
+                            matrix[i - 1][j] + 1
+                        );
+                    }
+                }
+            }
+
+            return matrix[b.length][a.length];
+        }
+
+        function isSimilarToPenis(word) {
+            const threshold = 2; // Allow up to 2 character differences
+            const distance = calculateLevenshteinDistance(word.toLowerCase(), "penis");
+            return distance <= threshold;
+        }
 
         yellButton.addEventListener('click', async () => {
             if (!playerName) {
@@ -350,9 +375,12 @@
                     const score = calculateScore(maxVolume);
                     updateScore(score);
 
-                    if (recognitionResult.includes('penis') || (maxVolume > 50 && score > 80)) {
+                    const usingChrome = isChrome();
+                    const wordIsValid = usingChrome ? recognitionResult.includes('penis') : isSimilarToPenis(recognitionResult);
+
+                    if (wordIsValid || (maxVolume > 50 && score > 80)) {
                         addScoreToLeaderboard();
-                        displayResult(true, `Awesome! You yelled "PENIS" with a score of ${score.toFixed(2)}!`);
+                        displayResult(true, `Awesome! You yelled "${recognitionResult}" with a score of ${score.toFixed(2)}!`);
                     } else if (recognitionResult) {
                         displayResult(false, `Oops! You said "${recognitionResult}" instead of "PENIS". Try again!`);
                     } else if (maxVolume > 50) {
@@ -375,7 +403,10 @@
 
         // Initialize the leaderboard when the page loads
         initializeLeaderboard();
-        setInterval(initializeLeaderboard, 10000);
+
+        // Periodically refresh the leaderboard
+        setInterval(initializeLeaderboard, 10000); // Refresh every 10 seconds
     </script>
 </body>
 </html>
+</antArtif
