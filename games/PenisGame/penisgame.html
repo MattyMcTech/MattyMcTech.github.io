@@ -308,7 +308,7 @@
                 return;
             }
 
-            const SpeechRecognition = window.webkitSpeechRecognition;
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
             if (!SpeechRecognition) {
                 alert('Speech Recognition API is not supported in this browser.');
                 return;
@@ -316,7 +316,7 @@
 
             try {
                 const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                const audioContext = new ( window.webkitAudioContext)();
+                const audioContext = new ( window.AudioContext || window.webkitAudioContext)();
                 const analyser = audioContext.createAnalyser();
                 const microphone = audioContext.createMediaStreamSource(stream);
                 microphone.connect(analyser);
@@ -386,7 +386,7 @@
                     if (wordIsValid || (maxVolume > 50 && score > 80)) {
                         addScoreToLeaderboard();
                         displayResult(true, `Awesome! You yelled "${recognitionResult}" with a score of ${score.toFixed(2)}!`);
-                    } else if (recognitionResult) {
+                    } else if (1) {
                         displayResult(false, `Oops! You said "${recognitionResult}" instead of "PENIS". Try again!`);
                     } else if (maxVolume > 50) {
                         displayResult(false, `We heard a yell (score: ${score.toFixed(2)}), but it wasn't loud enough. Try yelling "PENIS" louder!`);
