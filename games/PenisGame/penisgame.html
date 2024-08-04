@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>The Penis Game - Dare to Yell!</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         body {
             font-family: 'Arial', 'Helvetica', sans-serif;
@@ -118,6 +119,11 @@
             font-size: 1.2em;
             z-index: 1000;
         }
+        #comparison-chart {
+            width: 80%;
+            max-width: 600px;
+            margin: 20px auto;
+        }
     </style>
 </head>
 <body>
@@ -133,6 +139,10 @@
     <div id="recording-indicator">🔴 RECORDING</div>
     <div id="result-display"></div>
     
+    <div id="comparison-chart">
+        <canvas id="volumeChart"></canvas>
+    </div>
+
     <div id="leaderboard">
         <h2>Top 25 Leaderboard</h2>
         <ol id="leaderboard-list">
@@ -140,7 +150,7 @@
         </ol>
     </div>
     <div id="browser-warning">
-        ⚠️ For the best experience, please use Google Chrome (desktop or mobile). Some features may not work in other browsers.
+        You're not using Chrome. You can still play, but you'll need to yell as loud as you can!
     </div>
     
     <script src="https://cdn.jsdelivr.net/npm/gun/gun.js"></script>
@@ -148,13 +158,16 @@
         // Initialize Gun
         const gun = Gun(['https://gun-manhattan.herokuapp.com/gun']);
         const leaderboardDB = gun.get('penis-game-leaderboard');
+        const volumeHistoryDB = gun.get('penis-game-volume-history');
 
         let currentScore = 0;
         let playerName = '';
         let leaderboardEntries = [];
+        let volumeHistory = [];
         let updateTimeout = null;
         let lastSubmissionTime = 0;
         const SUBMISSION_COOLDOWN = 3000; // 3 seconds cooldown
+        const MAX_LEADERBOARD_SIZE = 25;
 
         const yellButton = document.getElementById('yell-button');
         const scoreDisplay = document.getElementById('score-display');
@@ -163,6 +176,7 @@
         const resultDisplay = document.getElementById('result-display');
         const leaderboardList = document.getElementById('leaderboard-list');
         const nameInput = document.getElementById('name-input');
+        const volumeChart = document.getElementById('volumeChart');
 
         function isChrome() {
             const isChromium = window.chrome;
@@ -187,8 +201,7 @@
             }
         }
 
-       if (!isChrome()) {
-            document.getElementById('browser-warning').textContent = "You're not using Chrome. You can still play, but you'll need to yell as loud as you can!";
+        if (!isChrome()) {
             document.getElementById('browser-warning').style.display = 'block';
         }
 
@@ -211,34 +224,38 @@
             resultDisplay.style.color = success ? '#00FF00' : '#FF0000';
         }
 
-        function addScoreToLeaderboard() {
-            const now = Date.now();
-            if (now - lastSubmissionTime < SUBMISSION_COOLDOWN) {
-                console.log('Submission attempted too soon after last submission. Ignoring.');
-                return;
-            }
+        function addScoreToLeaderboard(playerName, score) {
+            leaderboardDB.once((data) => {
+                let leaderboard = data ? Object.values(data) : [];
+                leaderboard.sort((a, b) => b.score - a.score);
 
-            if (!playerName) {
-                console.log('No player name, not adding to leaderboard');
-                return;
-            }
-            
-            const playerEntry = { name: playerName, score: currentScore, timestamp: now };
-            const entryKey = `entry_${now}_${Math.random().toString(36).substr(2, 9)}`;
-            
-            console.log('Attempting to add score:', playerEntry);
+                const playerIndex = leaderboard.findIndex(entry => entry.name === playerName);
+                if (playerIndex !== -1) {
+                    // Player already on leaderboard, update if new score is higher
+                    if (score > leaderboard[playerIndex].score) {
+                        leaderboard[playerIndex] = { name: playerName, score: score };
+                    } else {
+                        return; // New score isn't higher, don't update
+                    }
+                } else if (leaderboard.length < MAX_LEADERBOARD_SIZE || score > leaderboard[leaderboard.length - 1].score) {
+                    // Add new entry if leaderboard isn't full or score beats the lowest score
+                    leaderboard.push({ name: playerName, score: score });
+                } else {
+                    return; // Score doesn't make it to the leaderboard
+                }
 
-            // Add the new entry
-            leaderboardDB.get(entryKey).put(playerEntry);
-            console.log('Score added to leaderboard:', playerEntry);
+                // Sort and trim leaderboard
+                leaderboard.sort((a, b) => b.score - a.score);
+                leaderboard = leaderboard.slice(0, MAX_LEADERBOARD_SIZE);
 
-            // Update the last submission time
-            lastSubmissionTime = now;
+                // Update leaderboard in database
+                leaderboardDB.put(leaderboard);
+            });
         }
 
         function updateLeaderboardDisplay() {
             leaderboardList.innerHTML = '';
-            const sortedEntries = leaderboardEntries.sort((a, b) => b.score - a.score).slice(0, 25);
+            const sortedEntries = leaderboardEntries.sort((a, b) => b.score - a.score).slice(0, MAX_LEADERBOARD_SIZE);
 
             sortedEntries.forEach((entry, index) => {
                 const li = document.createElement('li');
@@ -252,224 +269,194 @@
 
         function initializeLeaderboard() {
             console.log('Initializing leaderboard...');
-            leaderboardDB.map().once((data, key) => {
-                if (data && data.name && data.score) {
-                    console.log('Received leaderboard entry:', data);
-                    const existingIndex = leaderboardEntries.findIndex(entry => entry.name === data.name && entry.timestamp === data.timestamp);
-                    if (existingIndex === -1) {
-                        leaderboardEntries.push(data);
-                    } else {
-                        leaderboardEntries[existingIndex] = data;
-                    }
+            leaderboardDB.once((data) => {
+                if (data) {
+                    leaderboardEntries = Object.values(data);
                     updateLeaderboardDisplay();
                 }
             });
         }
 
-        function calculateLevenshteinDistance(a, b) {
-            if (a.length === 0) return b.length;
-            if (b.length === 0) return a.length;
-
-            const matrix = [];
-
-            for (let i = 0; i <= b.length; i++) {
-                matrix[i] = [i];
+        function addVolumeToHistory(volume) {
+            volumeHistory.push(volume);
+            if (volumeHistory.length > 2000) {
+                volumeHistory.shift();
             }
-
-            for (let j = 0; j <= a.length; j++) {
-                matrix[0][j] = j;
-            }
-
-            for (let i = 1; i <= b.length; i++) {
-                for (let j = 1; j <= a.length; j++) {
-                    if (b.charAt(i - 1) === a.charAt(j - 1)) {
-                        matrix[i][j] = matrix[i - 1][j - 1];
-                    } else {
-                        matrix[i][j] = Math.min(
-                            matrix[i - 1][j - 1] + 1,
-                            matrix[i][j - 1] + 1,
-                            matrix[i - 1][j] + 1
-                        );
-                    }
-                }
-            }
-
-            return matrix[b.length][a.length];
+            volumeHistoryDB.put(volumeHistory);
         }
 
-        function isSimilarToPenis(word) {
-            const threshold = 2; // Allow up to 2 character differences
-            const distance = calculateLevenshteinDistance(word.toLowerCase(), "penis");
-            return distance <= threshold;
+        function updateComparisonChart(currentVolume) {
+            const ctx = volumeChart.getContext('2d');
+            const volumeData = volumeHistory.concat(currentVolume);
+            const labels = Array.from({ length: volumeData.length }, (_, i) => i + 1);
+            const currentIndex = volumeData.length - 1;
+
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Volume History',
+                        data: volumeData,
+                        borderColor: 'rgba(75, 192, 192, 1)',
+                        fill: false
+                    }, {
+                        label: 'Your Yell',
+                        data: Array(currentIndex).fill(null).concat(currentVolume),
+                        pointRadius: 5,
+                        pointBackgroundColor: 'red'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    title: {
+                        display: true,
+                        text: 'Your Yell Compared to Past 2000 Yells'
+                    },
+                    scales: {
+                        x: {
+                            display: true,
+                            title: {
+                                display: true,
+                                text: 'Yell Number'
+                            }
+                        },
+                        y: {
+                            display: true,
+                            title: {
+                                display: true,
+                                text: 'Volume'
+                            },
+                            min: 0,
+                            max: 255
+                        }
+                    }
+                }
+            });
+        }
+
+        function getPercentileRank(volume) {
+            const sortedVolumes = [...volumeHistory].sort((a, b) => a - b);
+            const index = sortedVolumes.findIndex(v => v >= volume);
+            return Math.round((index / sortedVolumes.length) * 100);
         }
 
         yellButton.addEventListener('click', async () => {
-    if (!playerName) {
-        alert("Please enter your name before yelling!");
-        return;
-    }
+            if (!playerName) {
+                alert("Please enter your name before yelling!");
+                return;
+            }
 
-    if (isChrome()) {
-        // Chrome-specific logic
-        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-        if (!SpeechRecognition) {
-            alert('Speech Recognition API is not supported in this browser.');
-            return;
-        }
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                const analyser = audioContext.createAnalyser();
+                const microphone = audioContext.createMediaStreamSource(stream);
+                microphone.connect(analyser);
+                analyser.fftSize = 256;
+                const bufferLength = analyser.frequencyBinCount;
+                const dataArray = new Uint8Array(bufferLength);
 
-        try {
-            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-            const analyser = audioContext.createAnalyser();
-            const microphone = audioContext.createMediaStreamSource(stream);
-            microphone.connect(analyser);
-            analyser.fftSize = 256;
-            const bufferLength = analyser.frequencyBinCount;
-            const dataArray = new Uint8Array(bufferLength);
+                let startTime = Date.now();
+                let maxVolume = 0;
+                let recognitionResult = '';
+                let speechDetected = false;
 
-            let startTime = Date.now();
-            let maxVolume = 0;
-            let recognitionResult = '';
-            let speechDetected = false;
+                recordingIndicator.style.visibility = 'visible';
 
-            recordingIndicator.style.visibility = 'visible';
+                if (isChrome()) {
+                    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+                    const recognition = new SpeechRecognition();
+                    recognition.lang = 'en-US';
+                    recognition.interimResults = true;
+                    recognition.continuous = true;
 
-            // Set up speech recognition
-            const recognition = new SpeechRecognition();
-            recognition.lang = 'en-US';
-            recognition.interimResults = true;
-            recognition.continuous = true;
+                    recognition.start();
 
-            recognition.start();
+                    recognition.onresult = function(event) {
+                        const result = event.results[event.results.length - 1];
+                        recognitionResult = result[0].transcript.toLowerCase();
+                        if (result.isFinal) {
+                            speechDetected = true;
+                            endRecording();
+                        }
+                    };
 
-            recognition.onresult = function(event) {
-                const result = event.results[event.results.length - 1];
-                recognitionResult = result[0].transcript.toLowerCase();
-                if (result.isFinal) {
-                    speechDetected = true;
-                    endRecording();
+                    recognition.onerror = function(event) {
+                        console.error('Speech recognition error:', event.error);
+                    };
                 }
-            };
 
-            recognition.onerror = function(event) {
-                console.error('Speech recognition error:', event.error);
-            };
+                function checkVolume() {
+                    analyser.getByteFrequencyData(dataArray);
+                    const volume = dataArray.reduce((a, b) => a + b) / bufferLength;
+                    maxVolume = Math.max(maxVolume, volume);
+                    updateVolumeMeter(volume / 255);
 
-            function checkVolume() {
-                analyser.getByteFrequencyData(dataArray);
-                const volume = dataArray.reduce((a, b) => a + b) / bufferLength;
-                maxVolume = Math.max(maxVolume, volume);
-                updateVolumeMeter(volume / 255);
-
-                if (Date.now() - startTime < 2000 && !speechDetected) {
-                    requestAnimationFrame(checkVolume);
-                } else {
-                    endRecording();
+                    if (Date.now() - startTime < 2000 && (!isChrome() || !speechDetected)) {
+                        requestAnimationFrame(checkVolume);
+                    } else {
+                        endRecording();
+                    }
                 }
-            }
 
-            function endRecording() {
-                recognition.stop();
-                stream.getTracks().forEach(track => track.stop());
-                recordingIndicator.style.visibility = 'hidden';
-                processResult();
-            }
-
-            function calculateScore(volume) {
-                return Math.min(100, (volume / 255) * 100);
-            }
-
-            function processResult() {
-                const score = calculateScore(maxVolume);
-                updateScore(score);
-
-                if (recognitionResult.includes('penis') || (maxVolume > 50 && score > 80)) {
-                    addScoreToLeaderboard();
-                    displayResult(true, `Awesome! You yelled "${recognitionResult}" with a score of ${score.toFixed(2)}!`);
-                } else if (recognitionResult) {
-                    displayResult(false, `Oops! You said "${recognitionResult}" instead of "PENIS". Try again!`);
-                } else if (maxVolume > 50) {
-                    displayResult(false, `We heard a yell (score: ${score.toFixed(2)}), but it wasn't loud enough. Try yelling "PENIS" louder!`);
-                } else {
-                    displayResult(false, "We didn't hear a loud enough yell. Try again!");
+                function endRecording() {
+                    if (isChrome()) {
+                        recognition.stop();
+                    }
+                    stream.getTracks().forEach(track => track.stop());
+                    recordingIndicator.style.visibility = 'hidden';
+                    processResult();
                 }
-            }
 
-            checkVolume();
-
-            // Set a timeout to end recording after 2 seconds
-            setTimeout(endRecording, 2000);
-
-        } catch (err) {
-            console.error('Error accessing microphone:', err);
-            alert('Unable to access microphone. Please make sure you have given permission and try again.');
-        }
-    } else {
-        // Non-Chrome logic
-        try {
-            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-            const analyser = audioContext.createAnalyser();
-            const microphone = audioContext.createMediaStreamSource(stream);
-            microphone.connect(analyser);
-            analyser.fftSize = 256;
-            const bufferLength = analyser.frequencyBinCount;
-            const dataArray = new Uint8Array(bufferLength);
-
-            let startTime = Date.now();
-            let maxVolume = 0;
-
-            recordingIndicator.style.visibility = 'visible';
-
-            function checkVolume() {
-                analyser.getByteFrequencyData(dataArray);
-                const volume = dataArray.reduce((a, b) => a + b) / bufferLength;
-                maxVolume = Math.max(maxVolume, volume);
-                updateVolumeMeter(volume / 255);
-
-                if (Date.now() - startTime < 2000) {
-                    requestAnimationFrame(checkVolume);
-                } else {
-                    endRecording();
+                function calculateScore(volume) {
+                    return Math.min(100, (volume / 255) * 100);
                 }
-            }
+                function processResult() {
+                    const score = calculateScore(maxVolume);
+                    updateScore(score);
+                    addVolumeToHistory(maxVolume);
+                    updateComparisonChart(maxVolume);
 
-            function endRecording() {
-                stream.getTracks().forEach(track => track.stop());
-                recordingIndicator.style.visibility = 'hidden';
-                processResult();
-            }
+                    const percentileRank = getPercentileRank(maxVolume);
 
-            function calculateScore(volume) {
-                return Math.min(100, (volume / 255) * 100);
-            }
-
-            function processResult() {
-                const score = calculateScore(maxVolume);
-                updateScore(score);
-
-                if (score > 80) {
-                    addScoreToLeaderboard();
-                    displayResult(true, `Awesome! You yelled with a score of ${score.toFixed(2)}!`);
-                } else {
-                    displayResult(false, `We heard a yell (score: ${score.toFixed(2)}), but it wasn't loud enough. Try yelling "PENIS" louder!`);
+                    if (isChrome()) {
+                        if (recognitionResult.includes('penis') || (maxVolume > 50 && score > 80)) {
+                            addScoreToLeaderboard(playerName, score);
+                            displayResult(true, `Awesome! You yelled "${recognitionResult}" with a score of ${score.toFixed(2)}! You're louder than ${percentileRank}% of past yells.`);
+                        } else if (recognitionResult) {
+                            displayResult(false, `Oops! You said "${recognitionResult}" instead of "PENIS". Your volume was louder than ${percentileRank}% of past yells. Try again!`);
+                        } else {
+                            displayResult(false, `We didn't hear "PENIS". Your volume was louder than ${percentileRank}% of past yells. Try again!`);
+                        }
+                    } else {
+                        if (score > 80) {
+                            addScoreToLeaderboard(playerName, score);
+                            displayResult(true, `Awesome! You yelled with a score of ${score.toFixed(2)}! You're louder than ${percentileRank}% of past yells.`);
+                        } else {
+                            displayResult(false, `We heard a yell (score: ${score.toFixed(2)}), but it wasn't loud enough. You're louder than ${percentileRank}% of past yells. Try yelling "PENIS" louder!`);
+                        }
+                    }
                 }
+
+                checkVolume();
+
+                // Set a timeout to end recording after 2 seconds
+                setTimeout(endRecording, 2000);
+
+            } catch (err) {
+                console.error('Error accessing microphone:', err);
+                alert('Unable to access microphone. Please make sure you have given permission and try again.');
             }
+        });
 
-            checkVolume();
-
-            // Set a timeout to end recording after 2 seconds
-            setTimeout(endRecording, 2000);
-
-        } catch (err) {
-            console.error('Error accessing microphone:', err);
-            alert('Unable to access microphone. Please make sure you have given permission and try again.');
-        }
-    }
-});
-
-        // Initialize the leaderboard when the page loads
+        // Initialize the leaderboard and volume history when the page loads
         initializeLeaderboard();
+        volumeHistoryDB.once(data => {
+            if (data) {
+                volumeHistory = data;
+            }
+        });
 
         // Periodically refresh the leaderboard
         setInterval(initializeLeaderboard, 10000); // Refresh every 10 seconds
