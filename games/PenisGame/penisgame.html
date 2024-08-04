@@ -187,7 +187,8 @@
             }
         }
 
-        if (!isChrome()) {
+       if (!isChrome()) {
+            document.getElementById('browser-warning').textContent = "You're not using Chrome. You can still play, but you'll need to yell as loud as you can!";
             document.getElementById('browser-warning').style.display = 'block';
         }
 
@@ -303,108 +304,169 @@
         }
 
         yellButton.addEventListener('click', async () => {
-            if (!playerName) {
-                alert("Please enter your name before yelling!");
-                return;
+    if (!playerName) {
+        alert("Please enter your name before yelling!");
+        return;
+    }
+
+    if (isChrome()) {
+        // Chrome-specific logic
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (!SpeechRecognition) {
+            alert('Speech Recognition API is not supported in this browser.');
+            return;
+        }
+
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            const analyser = audioContext.createAnalyser();
+            const microphone = audioContext.createMediaStreamSource(stream);
+            microphone.connect(analyser);
+            analyser.fftSize = 256;
+            const bufferLength = analyser.frequencyBinCount;
+            const dataArray = new Uint8Array(bufferLength);
+
+            let startTime = Date.now();
+            let maxVolume = 0;
+            let recognitionResult = '';
+            let speechDetected = false;
+
+            recordingIndicator.style.visibility = 'visible';
+
+            // Set up speech recognition
+            const recognition = new SpeechRecognition();
+            recognition.lang = 'en-US';
+            recognition.interimResults = true;
+            recognition.continuous = true;
+
+            recognition.start();
+
+            recognition.onresult = function(event) {
+                const result = event.results[event.results.length - 1];
+                recognitionResult = result[0].transcript.toLowerCase();
+                if (result.isFinal) {
+                    speechDetected = true;
+                    endRecording();
+                }
+            };
+
+            recognition.onerror = function(event) {
+                console.error('Speech recognition error:', event.error);
+            };
+
+            function checkVolume() {
+                analyser.getByteFrequencyData(dataArray);
+                const volume = dataArray.reduce((a, b) => a + b) / bufferLength;
+                maxVolume = Math.max(maxVolume, volume);
+                updateVolumeMeter(volume / 255);
+
+                if (Date.now() - startTime < 2000 && !speechDetected) {
+                    requestAnimationFrame(checkVolume);
+                } else {
+                    endRecording();
+                }
             }
 
-            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-            if (!SpeechRecognition) {
-                alert('Speech Recognition API is not supported in this browser.');
-                return;
+            function endRecording() {
+                recognition.stop();
+                stream.getTracks().forEach(track => track.stop());
+                recordingIndicator.style.visibility = 'hidden';
+                processResult();
             }
 
-            try {
-                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                const audioContext = new ( window.AudioContext || window.webkitAudioContext)();
-                const analyser = audioContext.createAnalyser();
-                const microphone = audioContext.createMediaStreamSource(stream);
-                microphone.connect(analyser);
-                analyser.fftSize = 256;
-                const bufferLength = analyser.frequencyBinCount;
-                const dataArray = new Uint8Array(bufferLength);
-
-                let startTime = Date.now();
-                let maxVolume = 0;
-                let recognitionResult = '';
-                let speechDetected = false;
-
-                recordingIndicator.style.visibility = 'visible';
-
-                // Set up speech recognition
-                const recognition = new SpeechRecognition();
-                recognition.lang = 'en-US';
-                recognition.interimResults = true;
-                recognition.continuous = true;
-
-                recognition.start();
-
-                recognition.onresult = function(event) {
-                    const result = event.results[event.results.length - 1];
-                    recognitionResult = result[0].transcript.toLowerCase();
-                    if (result.isFinal) {
-                        speechDetected = true;
-                        endRecording();
-                    }
-                };
-
-                recognition.onerror = function(event) {
-                    console.error('Speech recognition error:', event.error);
-                };
-
-                function checkVolume() {
-                    analyser.getByteFrequencyData(dataArray);
-                    const volume = dataArray.reduce((a, b) => a + b) / bufferLength;
-                    maxVolume = Math.max(maxVolume, volume);
-                    updateVolumeMeter(volume / 255);
-
-                    if (Date.now() - startTime < 2000 && !speechDetected) {
-                        requestAnimationFrame(checkVolume);
-                    } else {
-                        endRecording();
-                    }
-                }
-
-                function endRecording() {
-                    recognition.stop();
-                    stream.getTracks().forEach(track => track.stop());
-                    recordingIndicator.style.visibility = 'hidden';
-                    processResult();
-                }
-
-                function calculateScore(volume) {
-                    return Math.min(100, (volume / 255) * 100);
-                }
-
-                function processResult() {
-                    const score = calculateScore(maxVolume);
-                    updateScore(score);
-
-                    const usingChrome = isChrome();
-                    const wordIsValid = usingChrome ? recognitionResult.includes('penis') : isSimilarToPenis(recognitionResult);
-
-                    if (wordIsValid || (maxVolume > 50 && score > 80)) {
-                        addScoreToLeaderboard();
-                        displayResult(true, `Awesome! You yelled "${recognitionResult}" with a score of ${score.toFixed(2)}!`);
-                    } else if (1) {
-                        displayResult(false, `Oops! You said "${recognitionResult}" instead of "PENIS". Try again!`);
-                    } else if (maxVolume > 50) {
-                        displayResult(false, `We heard a yell (score: ${score.toFixed(2)}), but it wasn't loud enough. Try yelling "PENIS" louder!`);
-                    } else {
-                        displayResult(false, "We didn't hear a loud enough yell. Try again!");
-                    }
-                }
-
-                checkVolume();
-
-                // Set a timeout to end recording after 2 seconds
-                setTimeout(endRecording, 2000);
-
-            } catch (err) {
-                console.error('Error accessing microphone:', err);
-                alert('Unable to access microphone. Please make sure you have given permission and try again.');
+            function calculateScore(volume) {
+                return Math.min(100, (volume / 255) * 100);
             }
-        });
+
+            function processResult() {
+                const score = calculateScore(maxVolume);
+                updateScore(score);
+
+                if (recognitionResult.includes('penis') || (maxVolume > 50 && score > 80)) {
+                    addScoreToLeaderboard();
+                    displayResult(true, `Awesome! You yelled "${recognitionResult}" with a score of ${score.toFixed(2)}!`);
+                } else if (recognitionResult) {
+                    displayResult(false, `Oops! You said "${recognitionResult}" instead of "PENIS". Try again!`);
+                } else if (maxVolume > 50) {
+                    displayResult(false, `We heard a yell (score: ${score.toFixed(2)}), but it wasn't loud enough. Try yelling "PENIS" louder!`);
+                } else {
+                    displayResult(false, "We didn't hear a loud enough yell. Try again!");
+                }
+            }
+
+            checkVolume();
+
+            // Set a timeout to end recording after 2 seconds
+            setTimeout(endRecording, 2000);
+
+        } catch (err) {
+            console.error('Error accessing microphone:', err);
+            alert('Unable to access microphone. Please make sure you have given permission and try again.');
+        }
+    } else {
+        // Non-Chrome logic
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            const analyser = audioContext.createAnalyser();
+            const microphone = audioContext.createMediaStreamSource(stream);
+            microphone.connect(analyser);
+            analyser.fftSize = 256;
+            const bufferLength = analyser.frequencyBinCount;
+            const dataArray = new Uint8Array(bufferLength);
+
+            let startTime = Date.now();
+            let maxVolume = 0;
+
+            recordingIndicator.style.visibility = 'visible';
+
+            function checkVolume() {
+                analyser.getByteFrequencyData(dataArray);
+                const volume = dataArray.reduce((a, b) => a + b) / bufferLength;
+                maxVolume = Math.max(maxVolume, volume);
+                updateVolumeMeter(volume / 255);
+
+                if (Date.now() - startTime < 2000) {
+                    requestAnimationFrame(checkVolume);
+                } else {
+                    endRecording();
+                }
+            }
+
+            function endRecording() {
+                stream.getTracks().forEach(track => track.stop());
+                recordingIndicator.style.visibility = 'hidden';
+                processResult();
+            }
+
+            function calculateScore(volume) {
+                return Math.min(100, (volume / 255) * 100);
+            }
+
+            function processResult() {
+                const score = calculateScore(maxVolume);
+                updateScore(score);
+
+                if (score > 80) {
+                    addScoreToLeaderboard();
+                    displayResult(true, `Awesome! You yelled with a score of ${score.toFixed(2)}!`);
+                } else {
+                    displayResult(false, `We heard a yell (score: ${score.toFixed(2)}), but it wasn't loud enough. Try yelling "PENIS" louder!`);
+                }
+            }
+
+            checkVolume();
+
+            // Set a timeout to end recording after 2 seconds
+            setTimeout(endRecording, 2000);
+
+        } catch (err) {
+            console.error('Error accessing microphone:', err);
+            alert('Unable to access microphone. Please make sure you have given permission and try again.');
+        }
+    }
+});
 
         // Initialize the leaderboard when the page loads
         initializeLeaderboard();
