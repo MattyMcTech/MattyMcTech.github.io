@@ -207,6 +207,30 @@
             0% { background-position-x: 0; }
             100% { background-position-x: 1440px; }
         }
+
+        #percentile-graph {
+            width: 300px;
+            height: 20px;
+            background-color: #333;
+            margin-top: 20px;
+            position: relative;
+            display: none;
+        }
+
+        #percentile-marker {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 2px;
+            height: 100%;
+            background-color: #ff00ff;
+        }
+
+        #percentile-text {
+            margin-top: 10px;
+            font-size: 1.2em;
+            font-weight: bold;
+        }
     </style>
 </head>
 <body>
@@ -224,6 +248,11 @@
     <div id="recording-indicator">🔴 RECORDING</div>
     <div id="result-display"></div>
     
+    <div id="percentile-graph">
+        <div id="percentile-marker"></div>
+    </div>
+    <div id="percentile-text"></div>
+    
     <div id="leaderboard">
         <h2>Top 25 Leaderboard</h2>
         <ol id="leaderboard-list">
@@ -236,10 +265,12 @@
         // Initialize Gun
         const gun = Gun(['https://gun-manhattan.herokuapp.com/gun']);
         const leaderboardDB = gun.get('yell-game-leaderboard-v2');
+        const allScoresDB = gun.get('yell-game-all-scores');
 
         let currentScore = 0;
         let playerName = '';
         let leaderboardEntries = [];
+        let allScores = [];
         let lastSubmissionTime = 0;
         const SUBMISSION_COOLDOWN = 3000; // 3 seconds cooldown
 
@@ -250,6 +281,9 @@
         const resultDisplay = document.getElementById('result-display');
         const leaderboardList = document.getElementById('leaderboard-list');
         const nameInput = document.getElementById('name-input');
+        const percentileGraph = document.getElementById('percentile-graph');
+        const percentileMarker = document.getElementById('percentile-marker');
+        const percentileText = document.getElementById('percentile-text');
 
         nameInput.addEventListener('input', function() {
             playerName = this.value.trim();
@@ -268,6 +302,27 @@
         function displayResult(message, color) {
             resultDisplay.textContent = message;
             resultDisplay.style.color = color;
+        }
+
+        function addScoreToAllScores(score) {
+            allScores.push(score);
+            if (allScores.length > 1000) {
+                allScores.shift(); // Remove the oldest score if we have more than 1000
+            }
+            const scoreKey = Date.now().toString();
+            allScoresDB.get(scoreKey).put(score);
+        }
+
+        function calculatePercentile(score) {
+            const sortedScores = [...allScores].sort((a, b) => a - b);
+            const index = sortedScores.findIndex(s => s >= score);
+            return (index / sortedScores.length) * 100;
+        }
+
+        function updatePercentileGraph(percentile) {
+            percentileGraph.style.display = 'block';
+            percentileMarker.style.left = `${percentile}%`;
+            percentileText.textContent = `Your score is in the ${percentile.toFixed(1)}th percentile`;
         }
 
         function addScoreToLeaderboard() {
@@ -300,6 +355,11 @@
             } else {
                 displayResult(`Your score of ${currentScore.toFixed(2)} didn't make it to the top 25. Try again!`, '#ff00ff');
             }
+
+            // Add score to all scores and update percentile graph
+            addScoreToAllScores(currentScore);
+            const percentile = calculatePercentile(currentScore);
+            updatePercentileGraph(percentile);
         }
 
         function updateLeaderboardDisplay() {
@@ -322,12 +382,24 @@
                 if (data && data.name && data.score) {
                     console.log('Received leaderboard entry:', data);
                     const existingIndex = leaderboardEntries.findIndex(entry => entry.name === data.name && entry.timestamp === data.timestamp);
-                    if (existingIndex === -1) {
+                   if (existingIndex === -1) {
                         leaderboardEntries.push(data);
                     } else {
                         leaderboardEntries[existingIndex] = data;
                     }
                     updateLeaderboardDisplay();
+                }
+            });
+        }
+
+        function initializeAllScores() {
+            console.log('Initializing all scores...');
+            allScoresDB.map().once((score, key) => {
+                if (score !== undefined && score !== null) {
+                    allScores.push(score);
+                    if (allScores.length > 1000) {
+                        allScores.shift(); // Remove the oldest score if we have more than 1000
+                    }
                 }
             });
         }
@@ -424,11 +496,15 @@
             }
         });
 
-        // Initialize the leaderboard when the page loads
+        // Initialize the leaderboard and all scores when the page loads
         initializeLeaderboard();
+        initializeAllScores();
 
-        // Periodically refresh the leaderboard
-        setInterval(initializeLeaderboard, 10000); // Refresh every 10 seconds
+        // Periodically refresh the leaderboard and all scores
+        setInterval(() => {
+            initializeLeaderboard();
+            initializeAllScores();
+        }, 10000); // Refresh every 10 seconds
     </script>
 </body>
 </html>
