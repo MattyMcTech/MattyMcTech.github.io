@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>The Yelling Game - Dare to Yell!</title>
+    <title>The Yelling Game - How Loud Can You Yell?</title>
     <style>
         body {
             font-family: 'Arial', 'Helvetica', sans-serif;
@@ -105,19 +105,6 @@
             border: 2px solid #FF69B4;
             border-radius: 5px;
         }
-        #browser-warning {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            background-color: #FF4500;
-            color: white;
-            text-align: center;
-            padding: 10px;
-            font-size: 1.2em;
-            z-index: 1000;
-        }
     </style>
 </head>
 <body>
@@ -139,20 +126,16 @@
             <!-- Leaderboard entries will be inserted here -->
         </ol>
     </div>
-    <div id="browser-warning">
-        ⚠️ For the best experience, please use Google Chrome (desktop or mobile). Some features may not work in other browsers.
-    </div>
     
     <script src="https://cdn.jsdelivr.net/npm/gun/gun.js"></script>
     <script>
         // Initialize Gun
         const gun = Gun(['https://gun-manhattan.herokuapp.com/gun']);
-        const leaderboardDB = gun.get('penis-game-leaderboard');
+        const leaderboardDB = gun.get('yell-game-leaderboard');
 
         let currentScore = 0;
         let playerName = '';
         let leaderboardEntries = [];
-        let updateTimeout = null;
         let lastSubmissionTime = 0;
         const SUBMISSION_COOLDOWN = 3000; // 3 seconds cooldown
 
@@ -163,36 +146,6 @@
         const resultDisplay = document.getElementById('result-display');
         const leaderboardList = document.getElementById('leaderboard-list');
         const nameInput = document.getElementById('name-input');
-
-        function isChrome() {
-            const isChromium = window.chrome;
-            const winNav = window.navigator;
-            const vendorName = winNav.vendor;
-            const isOpera = typeof window.opr !== "undefined";
-            const isIEedge = winNav.userAgent.indexOf("Edge") > -1;
-            const isIOSChrome = winNav.userAgent.match("CriOS");
-
-            if (isIOSChrome) {
-                return true;
-            } else if (
-                isChromium !== null &&
-                typeof isChromium !== "undefined" &&
-                vendorName === "Google Inc." &&
-                isOpera === false &&
-                isIEedge === false
-            ) {
-                return true;
-            } else {
-                return false;
-            }
-        }
-
-        if (!isChrome()) {
-            document.getElementById('browser-warning').style.display = 'block';
-            document.getElementById('game-description').innerHTML += "<br><br>Non-Chrome users: Yell any two-syllable word to play!";
-        } else {
-            document.getElementById('game-description').innerHTML += "<br><br>Chrome users: Yell the word 'PENIS' to play!";
-        }
 
         nameInput.addEventListener('input', function() {
             playerName = this.value.trim();
@@ -268,21 +221,9 @@
             });
         }
 
-        function isTwoSyllableWord(word) {
-            // This is a simple heuristic. A more accurate method would require a dictionary or API.
-            const syllables = word.toLowerCase().match(/[aeiou]/gi);
-            return syllables && syllables.length >= 2 && word.length >= 4;
-        }
-
         yellButton.addEventListener('click', async () => {
             if (!playerName) {
                 alert("Please enter your name before yelling!");
-                return;
-            }
-
-            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-            if (!SpeechRecognition) {
-                alert('Speech Recognition API is not supported in this browser.');
                 return;
             }
 
@@ -298,31 +239,8 @@
 
                 let startTime = Date.now();
                 let maxVolume = 0;
-                let recognitionResult = '';
-                let speechDetected = false;
 
                 recordingIndicator.style.visibility = 'visible';
-
-                // Set up speech recognition
-                const recognition = new SpeechRecognition();
-                recognition.lang = 'en-US';
-                recognition.interimResults = true;
-                recognition.continuous = true;
-
-                recognition.start();
-
-                recognition.onresult = function(event) {
-                    const result = event.results[event.results.length - 1];
-                    recognitionResult = result[0].transcript.toLowerCase();
-                    if (result.isFinal) {
-                        speechDetected = true;
-                        endRecording();
-                    }
-                };
-
-                recognition.onerror = function(event) {
-                    console.error('Speech recognition error:', event.error);
-                };
 
                 function checkVolume() {
                     analyser.getByteFrequencyData(dataArray);
@@ -330,7 +248,7 @@
                     maxVolume = Math.max(maxVolume, volume);
                     updateVolumeMeter(volume / 255);
 
-                    if (Date.now() - startTime < 2000 && !speechDetected) {
+                    if (Date.now() - startTime < 2000) {
                         requestAnimationFrame(checkVolume);
                     } else {
                         endRecording();
@@ -338,7 +256,6 @@
                 }
 
                 function endRecording() {
-                    recognition.stop();
                     stream.getTracks().forEach(track => track.stop());
                     recordingIndicator.style.visibility = 'hidden';
                     processResult();
@@ -352,18 +269,11 @@
                     const score = calculateScore(maxVolume);
                     updateScore(score);
 
-                    const usingChrome = isChrome();
-                    const wordIsValid = usingChrome ? 
-                        recognitionResult.includes('penis') : 
-                        isTwoSyllableWord(recognitionResult.split(' ')[0]);
-
-                    if (wordIsValid && maxVolume > 50) {
+                    if (score > 50) {
                         addScoreToLeaderboard();
-                        displayResult(true, `Awesome! You yelled "${recognitionResult}" with a score of ${score.toFixed(2)}!`);
-                    } else if (maxVolume > 50) {
-                        displayResult(false, `We heard a yell (score: ${score.toFixed(2)}), but it wasn't valid. ${usingChrome ? 'Try yelling "PENIS" louder!' : 'Try yelling a two-syllable word louder!'}`);
+                        displayResult(true, `Wow! You yelled with a score of ${score.toFixed(2)}!`);
                     } else {
-                        displayResult(false, "We didn't hear a loud enough yell. Try again!");
+                        displayResult(false, `We didn't hear a loud enough yell. Your score: ${score.toFixed(2)}. Try yelling louder!`);
                     }
                 }
 
