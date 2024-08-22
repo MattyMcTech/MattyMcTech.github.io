@@ -285,8 +285,21 @@
         const percentileMarker = document.getElementById('percentile-marker');
         const percentileText = document.getElementById('percentile-text');
 
-        nameInput.addEventListener('input', function() {
-            playerName = this.value.trim();
+        async function filterProfanity(name) {
+            try {
+                const response = await fetch(`https://www.purgomalum.com/service/json?text=${encodeURIComponent(name)}`);
+                const data = await response.json();
+                return data.result;
+            } catch (error) {
+                console.error('Error filtering profanity:', error);
+                return name; // Return original name if there's an error
+            }
+        }
+
+        nameInput.addEventListener('input', async function() {
+            const filteredName = await filterProfanity(this.value.trim());
+            playerName = filteredName;
+            this.value = filteredName; // Update the input field with the filtered name
             yellButton.disabled = playerName === '';
         });
 
@@ -384,7 +397,7 @@
             leaderboardList.innerHTML = '';
             const sortedEntries = leaderboardEntries.sort((a, b) => b.score - a.score).slice(0, 25);
 
-           sortedEntries.forEach((entry, index) => {
+            sortedEntries.forEach((entry, index) => {
                 const li = document.createElement('li');
                 li.innerHTML = `<span>${index + 1}. ${entry.name}</span> <span>${entry.score.toFixed(2)}</span>`;
                 if (entry.name === playerName) {
