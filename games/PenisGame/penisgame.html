@@ -296,10 +296,8 @@
             }
         }
 
-        nameInput.addEventListener('input', async function() {
-            const filteredName = await filterProfanity(this.value.trim());
-            playerName = filteredName;
-            this.value = filteredName; // Update the input field with the filtered name
+        nameInput.addEventListener('input', function() {
+            playerName = this.value.trim();
             yellButton.disabled = playerName === '';
         });
 
@@ -489,6 +487,13 @@
                 return;
             }
 
+            // Check for profanity before proceeding
+            const filteredName = await filterProfanity(playerName);
+            if (filteredName !== playerName) {
+                alert("Please choose a different name without profanity.");
+                return;
+            }
+
             createYellEffect();
 
             try {
@@ -557,8 +562,33 @@
             }, 10000); // Check every 10 seconds
         }
 
-        // Initialize the game when the page loads
+        / Initialize the game when the page loads
         initializeGame();
+
+        // Function to clear the Gun database (for testing purposes)
+        function clearGunDatabase() {
+            function clearGunNode(node) {
+                node.map((data, key) => {
+                    node.get(key).put(null);
+                });
+            }
+
+            clearGunNode(leaderboardDB);
+            clearGunNode(allScoresDB);
+
+            leaderboardEntries = [];
+            allScores = [];
+
+            updateLeaderboardDisplay();
+            percentileGraph.style.display = 'none';
+            percentileText.textContent = '';
+
+            console.log('Gun database cleared');
+            alert('Database has been cleared!');
+        }
+
+        // Uncomment the following line to add a clear database button (for testing purposes)
+        // document.body.innerHTML += '<button onclick="clearGunDatabase()">Clear Database</button>';
     </script>
 </body>
 </html>
