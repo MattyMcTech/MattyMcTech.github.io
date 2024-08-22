@@ -304,63 +304,81 @@
             resultDisplay.style.color = color;
         }
 
-        function addScoreToAllScores(score) {
-            allScores.push(score);
-            if (allScores.length > 1000) {
-                allScores.shift(); // Remove the oldest score if we have more than 1000
-            }
-            const scoreKey = Date.now().toString();
-            allScoresDB.get(scoreKey).put(score);
-        }
+       function addScoreToAllScores(score) {
+    allScores.push(score);
+    if (allScores.length > 1000) {
+        allScores.shift(); // Remove the oldest score if we have more than 1000
+    }
+    const scoreKey = Date.now().toString();
+    allScoresDB.get(scoreKey).put(score);
+    console.log(`Added score ${score} to allScores. Total scores: ${allScores.length}`);
+}
 
-        function calculatePercentile(score) {
-            const sortedScores = [...allScores].sort((a, b) => a - b);
-            const index = sortedScores.findIndex(s => s >= score);
-            return (index / sortedScores.length) * 100;
-        }
+      function calculatePercentile(score) {
+    if (allScores.length === 0) {
+        console.log('No scores available for percentile calculation');
+        return 0; // Return 0th percentile if there are no scores
+    }
 
-        function updatePercentileGraph(percentile) {
-            percentileGraph.style.display = 'block';
-            percentileMarker.style.left = `${percentile}%`;
-            percentileText.textContent = `Your score is in the ${percentile.toFixed(1)}th percentile`;
-        }
+    const sortedScores = [...allScores].sort((a, b) => a - b);
+    const index = sortedScores.findIndex(s => s >= score);
+
+    if (index === -1) {
+        // If the score is higher than all existing scores
+        return 100;
+    }
+
+    // Calculate percentile
+    const percentile = ((allScores.length - index) / allScores.length) * 100;
+
+    console.log(`Percentile calculation: Score ${score}, Index ${index}, Total Scores ${allScores.length}, Percentile ${percentile.toFixed(2)}`);
+
+    return percentile;
+}
+
+       function updatePercentileGraph(percentile) {
+    percentileGraph.style.display = 'block';
+    percentileMarker.style.left = `${percentile}%`;
+    percentileText.textContent = `Your score is in the ${percentile.toFixed(1)}th percentile`;
+    console.log(`Updating percentile graph: ${percentile.toFixed(1)}th percentile`);
+}
 
         function addScoreToLeaderboard() {
-            const now = Date.now();
-            if (now - lastSubmissionTime < SUBMISSION_COOLDOWN) {
-                console.log('Submission attempted too soon after last submission. Ignoring.');
-                return;
-            }
+    const now = Date.now();
+    if (now - lastSubmissionTime < SUBMISSION_COOLDOWN) {
+        console.log('Submission attempted too soon after last submission. Ignoring.');
+        return;
+    }
 
-            if (!playerName) {
-                console.log('No player name, not adding to leaderboard');
-                return;
-            }
-            
-            const playerEntry = { name: playerName, score: currentScore, timestamp: now };
-            
-            // Check if the score is high enough to make it to the leaderboard
-            const sortedEntries = [...leaderboardEntries, playerEntry].sort((a, b) => b.score - a.score).slice(0, 25);
-            const madeLeaderboard = sortedEntries.some(entry => entry.timestamp === now);
-            
-            if (madeLeaderboard) {
-                const entryKey = `entry_${now}_${Math.random().toString(36).substr(2, 9)}`;
-                console.log('Adding score to leaderboard:', playerEntry);
-                leaderboardDB.get(entryKey).put(playerEntry);
-                
-                // Update the last submission time
-                lastSubmissionTime = now;
-                
-                displayResult(`Congratulations! Your score of ${currentScore.toFixed(2)} made it to the leaderboard!`, '#00ffff');
-            } else {
-                displayResult(`Your score of ${currentScore.toFixed(2)} didn't make it to the top 25. Try again!`, '#ff00ff');
-            }
+    if (!playerName) {
+        console.log('No player name, not adding to leaderboard');
+        return;
+    }
+    
+    const playerEntry = { name: playerName, score: currentScore, timestamp: now };
+    
+    // Check if the score is high enough to make it to the leaderboard
+    const sortedEntries = [...leaderboardEntries, playerEntry].sort((a, b) => b.score - a.score).slice(0, 25);
+    const madeLeaderboard = sortedEntries.some(entry => entry.timestamp === now);
+    
+    if (madeLeaderboard) {
+        const entryKey = `entry_${now}_${Math.random().toString(36).substr(2, 9)}`;
+        console.log('Adding score to leaderboard:', playerEntry);
+        leaderboardDB.get(entryKey).put(playerEntry);
+        
+        // Update the last submission time
+        lastSubmissionTime = now;
+        
+        displayResult(`Congratulations! Your score of ${currentScore.toFixed(2)} made it to the leaderboard!`, '#00ffff');
+    } else {
+        displayResult(`Your score of ${currentScore.toFixed(2)} didn't make it to the top 25. Try again!`, '#ff00ff');
+    }
 
-            // Add score to all scores and update percentile graph
-            addScoreToAllScores(currentScore);
-            const percentile = calculatePercentile(currentScore);
-            updatePercentileGraph(percentile);
-        }
+    // Add score to all scores and update percentile graph
+    addScoreToAllScores(currentScore);
+    const percentile = calculatePercentile(currentScore);
+    updatePercentileGraph(percentile);
+}
 
         function updateLeaderboardDisplay() {
             leaderboardList.innerHTML = '';
@@ -392,17 +410,19 @@
             });
         }
 
-        function initializeAllScores() {
-            console.log('Initializing all scores...');
-            allScoresDB.map().once((score, key) => {
-                if (score !== undefined && score !== null) {
-                    allScores.push(score);
-                    if (allScores.length > 1000) {
-                        allScores.shift(); // Remove the oldest score if we have more than 1000
-                    }
-                }
-            });
+       function initializeAllScores() {
+    console.log('Initializing all scores...');
+    allScores = []; // Reset allScores before initializing
+    allScoresDB.map().once((score, key) => {
+        if (score !== undefined && score !== null) {
+            allScores.push(score);
+            if (allScores.length > 1000) {
+                allScores.shift(); // Remove the oldest score if we have more than 1000
+            }
         }
+    });
+    console.log(`Initialized ${allScores.length} scores`);
+}
 
         function createYellEffect() {
             const effect = document.createElement('div');
