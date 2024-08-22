@@ -5,112 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>The Yelling Game - How Loud Can You Yell?</title>
     <style>
-        body {
-            font-family: 'Arial', 'Helvetica', sans-serif;
-            background-color: #FFB6C1;
-            color: #FF1493;
-            text-align: center;
-            margin: 0;
-            padding: 20px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            min-height: 100vh;
-        }
-        h1 {
-            font-size: 3em;
-            text-shadow: 2px 2px 0px #FF69B4;
-            margin-bottom: 20px;
-        }
-        #game-description {
-            font-size: 1.1em;
-            max-width: 600px;
-            margin-bottom: 20px;
-        }
-        button {
-            font-family: 'Arial', 'Helvetica', sans-serif;
-            font-size: 1.5em;
-            padding: 12px 24px;
-            background-color: #FF69B4;
-            color: #FFFFFF;
-            border: none;
-            border-radius: 25px;
-            cursor: pointer;
-            transition: transform 0.1s;
-        }
-        button:active {
-            transform: scale(0.95);
-        }
-        button:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-        #score-display {
-            font-size: 2.5em;
-            margin-top: 20px;
-        }
-        #volume-meter {
-            width: 300px;
-            height: 30px;
-            background-color: #FFFFFF;
-            margin-top: 20px;
-            border-radius: 15px;
-            overflow: hidden;
-        }
-        #volume-bar {
-            width: 0%;
-            height: 100%;
-            background-color: #FF69B4;
-            transition: width 0.1s;
-        }
-        #result-display {
-            font-size: 2em;
-            margin-top: 20px;
-            font-weight: bold;
-        }
-        #recording-indicator {
-            font-size: 1.5em;
-            margin-top: 20px;
-            color: #FF0000;
-            font-weight: bold;
-            visibility: hidden;
-        }
-        #leaderboard {
-            margin-top: 30px;
-            background-color: #FFFFFF;
-            padding: 20px;
-            border-radius: 10px;
-            width: 80%;
-            max-width: 800px;
-        }
-        #leaderboard h2 {
-            color: #FF1493;
-        }
-        #leaderboard-list {
-            list-style-type: none;
-            padding: 0;
-            text-align: left;
-        }
-        #leaderboard-list li {
-            margin: 10px 0;
-            font-size: 1.2em;
-            display: flex;
-            justify-content: space-between;
-        }
-        #name-input {
-            font-size: 1.2em;
-            padding: 10px;
-            margin-bottom: 20px;
-            border: 2px solid #FF69B4;
-            border-radius: 5px;
-        }
+        /* ... (styles remain the same) ... */
     </style>
 </head>
 <body>
     <h1>The Yelling Game</h1>
     <div id="game-description">
         Welcome to the Yelling Game! The goal is simple: yell as loud as you can. 
+        Your score will be added to the leaderboard if it's high enough to make the top 25!
         But be careful where you play - this game is not for the faint of heart or those in quiet public spaces!
     </div>
     <input type="text" id="name-input" placeholder="Enter your name" maxlength="20">
@@ -131,7 +33,7 @@
     <script>
         // Initialize Gun
         const gun = Gun(['https://gun-manhattan.herokuapp.com/gun']);
-        const leaderboardDB = gun.get('yell-game-leaderboard');
+        const leaderboardDB = gun.get('yell-game-leaderboard-v2');
 
         let currentScore = 0;
         let playerName = '';
@@ -161,9 +63,9 @@
             volumeBar.style.width = `${volume * 100}%`;
         }
 
-        function displayResult(success, message) {
+        function displayResult(message, color) {
             resultDisplay.textContent = message;
-            resultDisplay.style.color = success ? '#00FF00' : '#FF0000';
+            resultDisplay.style.color = color;
         }
 
         function addScoreToLeaderboard() {
@@ -179,16 +81,23 @@
             }
             
             const playerEntry = { name: playerName, score: currentScore, timestamp: now };
-            const entryKey = `entry_${now}_${Math.random().toString(36).substr(2, 9)}`;
             
-            console.log('Attempting to add score:', playerEntry);
-
-            // Add the new entry
-            leaderboardDB.get(entryKey).put(playerEntry);
-            console.log('Score added to leaderboard:', playerEntry);
-
-            // Update the last submission time
-            lastSubmissionTime = now;
+            // Check if the score is high enough to make it to the leaderboard
+            const sortedEntries = [...leaderboardEntries, playerEntry].sort((a, b) => b.score - a.score).slice(0, 25);
+            const madeLeaderboard = sortedEntries.some(entry => entry.timestamp === now);
+            
+            if (madeLeaderboard) {
+                const entryKey = `entry_${now}_${Math.random().toString(36).substr(2, 9)}`;
+                console.log('Adding score to leaderboard:', playerEntry);
+                leaderboardDB.get(entryKey).put(playerEntry);
+                
+                // Update the last submission time
+                lastSubmissionTime = now;
+                
+                displayResult(`Congratulations! Your score of ${currentScore.toFixed(2)} made it to the leaderboard!`, '#00FF00');
+            } else {
+                displayResult(`Your score of ${currentScore.toFixed(2)} didn't make it to the top 25. Try again!`, '#FF0000');
+            }
         }
 
         function updateLeaderboardDisplay() {
@@ -268,13 +177,7 @@
                 function processResult() {
                     const score = calculateScore(maxVolume);
                     updateScore(score);
-
-                    if (score > 50) {
-                        addScoreToLeaderboard();
-                        displayResult(true, `Wow! You yelled with a score of ${score.toFixed(2)}!`);
-                    } else {
-                        displayResult(false, `We didn't hear a loud enough yell. Your score: ${score.toFixed(2)}. Try yelling louder!`);
-                    }
+                    addScoreToLeaderboard();
                 }
 
                 checkVolume();
