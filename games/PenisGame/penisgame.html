@@ -5,10 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>The Yelling Game - How Loud Can You Yell?</title>
     <style>
+        @import url('https://fonts.googleapis.com/css2?family=Bangers&display=swap');
+
         body {
-            font-family: 'Arial', 'Helvetica', sans-serif;
-            background-color: #FFB6C1;
-            color: #FF1493;
+            font-family: 'Arial', sans-serif;
+            background-color: #1a1a1a;
+            color: #fff;
             text-align: center;
             margin: 0;
             padding: 20px;
@@ -17,97 +19,198 @@
             align-items: center;
             justify-content: center;
             min-height: 100vh;
+            overflow-x: hidden;
         }
+
         h1 {
-            font-size: 3em;
-            text-shadow: 2px 2px 0px #FF69B4;
+            font-family: 'Bangers', cursive;
+            font-size: 4em;
+            text-shadow: 3px 3px 0px #ff00ff, -3px -3px 0px #00ffff;
             margin-bottom: 20px;
+            animation: pulse 2s infinite;
         }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
         #game-description {
             font-size: 1.1em;
             max-width: 600px;
             margin-bottom: 20px;
+            background-color: rgba(255, 255, 255, 0.1);
+            padding: 15px;
+            border-radius: 10px;
         }
-        button {
-            font-family: 'Arial', 'Helvetica', sans-serif;
-            font-size: 1.5em;
-            padding: 12px 24px;
-            background-color: #FF69B4;
-            color: #FFFFFF;
+
+        #name-input {
+            font-size: 1.2em;
+            padding: 10px;
+            margin-bottom: 20px;
+            border: 2px solid #ff00ff;
+            border-radius: 5px;
+            background-color: rgba(255, 255, 255, 0.1);
+            color: #fff;
+        }
+
+        #yell-button {
+            font-family: 'Bangers', cursive;
+            font-size: 2em;
+            padding: 15px 30px;
+            background-color: #ff00ff;
+            color: #fff;
             border: none;
-            border-radius: 25px;
+            border-radius: 50px;
             cursor: pointer;
-            transition: transform 0.1s;
+            transition: all 0.3s ease;
+            box-shadow: 0 0 10px #ff00ff;
         }
-        button:active {
+
+        #yell-button:hover {
+            transform: scale(1.1);
+            box-shadow: 0 0 20px #ff00ff, 0 0 40px #ff00ff;
+        }
+
+        #yell-button:active {
             transform: scale(0.95);
         }
-        button:disabled {
+
+        #yell-button:disabled {
             opacity: 0.5;
             cursor: not-allowed;
         }
+
         #score-display {
             font-size: 2.5em;
             margin-top: 20px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
         }
+
         #volume-meter {
             width: 300px;
             height: 30px;
-            background-color: #FFFFFF;
+            background-color: rgba(255, 255, 255, 0.1);
             margin-top: 20px;
             border-radius: 15px;
             overflow: hidden;
+            position: relative;
         }
+
         #volume-bar {
             width: 0%;
             height: 100%;
-            background-color: #FF69B4;
+            background: linear-gradient(90deg, #ff00ff, #00ffff);
             transition: width 0.1s;
         }
+
+        #volume-meter::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: repeating-linear-gradient(
+                90deg,
+                rgba(255, 255, 255, 0.1),
+                rgba(255, 255, 255, 0.1) 5px,
+                transparent 5px,
+                transparent 10px
+            );
+        }
+
         #result-display {
             font-size: 2em;
             margin-top: 20px;
             font-weight: bold;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
         }
+
         #recording-indicator {
             font-size: 1.5em;
             margin-top: 20px;
-            color: #FF0000;
+            color: #ff0000;
             font-weight: bold;
             visibility: hidden;
+            animation: blink 1s infinite;
         }
+
+        @keyframes blink {
+            0% { opacity: 1; }
+            50% { opacity: 0; }
+            100% { opacity: 1; }
+        }
+
         #leaderboard {
             margin-top: 30px;
-            background-color: #FFFFFF;
+            background-color: rgba(255, 255, 255, 0.1);
             padding: 20px;
             border-radius: 10px;
             width: 80%;
             max-width: 800px;
         }
+
         #leaderboard h2 {
-            color: #FF1493;
+            color: #00ffff;
+            font-family: 'Bangers', cursive;
+            font-size: 2.5em;
+            margin-bottom: 20px;
         }
+
         #leaderboard-list {
             list-style-type: none;
             padding: 0;
             text-align: left;
         }
+
         #leaderboard-list li {
             margin: 10px 0;
             font-size: 1.2em;
             display: flex;
             justify-content: space-between;
-        }
-        #name-input {
-            font-size: 1.2em;
+            background-color: rgba(255, 255, 255, 0.05);
             padding: 10px;
-            margin-bottom: 20px;
-            border: 2px solid #FF69B4;
             border-radius: 5px;
+            transition: transform 0.2s;
+        }
+
+        #leaderboard-list li:hover {
+            transform: scale(1.02);
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+
+        .sound-wave {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 100px;
+            background: linear-gradient(transparent, rgba(255, 0, 255, 0.2));
+            z-index: -1;
+        }
+
+        .sound-wave::before {
+            content: "";
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 320'%3E%3Cpath fill='rgba(0, 255, 255, 0.2)' fill-opacity='1' d='M0,288L48,272C96,256,192,224,288,197.3C384,171,480,149,576,165.3C672,181,768,235,864,250.7C960,267,1056,245,1152,250.7C1248,256,1344,288,1392,304L1440,320L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z'%3E%3C/path%3E%3C/svg%3E");
+            background-size: 100% 100%;
+            animation: wave 10s linear infinite;
+        }
+
+        @keyframes wave {
+            0% { background-position-x: 0; }
+            100% { background-position-x: 1440px; }
         }
     </style>
 </head>
 <body>
+    <div class="sound-wave"></div>
     <h1>The Yelling Game</h1>
     <div id="game-description">
         Welcome to the Yelling Game! The goal is simple: yell as loud as you can. 
@@ -193,9 +296,9 @@
                 // Update the last submission time
                 lastSubmissionTime = now;
                 
-                displayResult(`Congratulations! Your score of ${currentScore.toFixed(2)} made it to the leaderboard!`, '#00FF00');
+                displayResult(`Congratulations! Your score of ${currentScore.toFixed(2)} made it to the leaderboard!`, '#00ffff');
             } else {
-                displayResult(`Your score of ${currentScore.toFixed(2)} didn't make it to the top 25. Try again!`, '#FF0000');
+                displayResult(`Your score of ${currentScore.toFixed(2)} didn't make it to the top 25. Try again!`, '#ff00ff');
             }
         }
 
@@ -229,11 +332,42 @@
             });
         }
 
+        function createYellEffect() {
+            const effect = document.createElement('div');
+            effect.style.position = 'fixed';
+            effect.style.top = '50%';
+            effect.style.left = '50%';
+            effect.style.width = '10px';
+            effect.style.height = '10px';
+            effect.style.borderRadius = '50%';
+            effect.style.backgroundColor = '#ff00ff';
+            effect.style.transform = 'translate(-50%, -50%)';
+            effect.style.boxShadow = '0 0 10px #ff00ff';
+            effect.style.zIndex = '1000';
+            document.body.appendChild(effect);
+
+            let size = 10;
+            let opacity = 1;
+            const interval = setInterval(() => {
+                size += 10;
+                opacity -= 0.05;
+                effect.style.width = size + 'px';
+                effect.style.height = size + 'px';
+                effect.style.opacity = opacity;
+                if (opacity <= 0) {
+                    clearInterval(interval);
+                    document.body.removeChild(effect);
+                }
+            }, 20);
+        }
+
         yellButton.addEventListener('click', async () => {
             if (!playerName) {
                 alert("Please enter your name before yelling!");
                 return;
             }
+
+            createYellEffect();
 
             try {
                 const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
