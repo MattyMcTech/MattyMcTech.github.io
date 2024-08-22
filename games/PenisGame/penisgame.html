@@ -261,334 +261,312 @@
     </div>
     
     <script src="https://cdn.jsdelivr.net/npm/gun/gun.js"></script>
-    <script>
-        // Initialize Gun
-        const gun = Gun(['https://gun-manhattan.herokuapp.com/gun']);
-        const leaderboardDB = gun.get('yell-game-leaderboard-v2');
-        const allScoresDB = gun.get('yell-game-all-scores');
+   <script>
+    // Initialize Gun
+    const gun = Gun(['https://gun-manhattan.herokuapp.com/gun']);
+    const leaderboardDB = gun.get('yell-game-leaderboard-v2');
+    const allScoresDB = gun.get('yell-game-all-scores');
 
-        let currentScore = 0;
-        let playerName = '';
-        let leaderboardEntries = [];
-        let allScores = [];
-        let lastSubmissionTime = 0;
-        const SUBMISSION_COOLDOWN = 3000; // 3 seconds cooldown
+    let currentScore = 0;
+    let playerName = '';
+    let leaderboardEntries = [];
+    let allScores = [];
+    let lastSubmissionTime = 0;
+    const SUBMISSION_COOLDOWN = 3000; // 3 seconds cooldown
 
-        const yellButton = document.getElementById('yell-button');
-        const scoreDisplay = document.getElementById('score-display');
-        const volumeBar = document.getElementById('volume-bar');
-        const recordingIndicator = document.getElementById('recording-indicator');
-        const resultDisplay = document.getElementById('result-display');
-        const leaderboardList = document.getElementById('leaderboard-list');
-        const nameInput = document.getElementById('name-input');
-        const percentileGraph = document.getElementById('percentile-graph');
-        const percentileMarker = document.getElementById('percentile-marker');
-        const percentileText = document.getElementById('percentile-text');
+    const yellButton = document.getElementById('yell-button');
+    const scoreDisplay = document.getElementById('score-display');
+    const volumeBar = document.getElementById('volume-bar');
+    const recordingIndicator = document.getElementById('recording-indicator');
+    const resultDisplay = document.getElementById('result-display');
+    const leaderboardList = document.getElementById('leaderboard-list');
+    const nameInput = document.getElementById('name-input');
+    const percentileGraph = document.getElementById('percentile-graph');
+    const percentileMarker = document.getElementById('percentile-marker');
+    const percentileText = document.getElementById('percentile-text');
 
-        async function filterProfanity(name) {
-            try {
-                const response = await fetch(`https://www.purgomalum.com/service/json?text=${encodeURIComponent(name)}`);
-                const data = await response.json();
-                return data.result;
-            } catch (error) {
-                console.error('Error filtering profanity:', error);
-                return name; // Return original name if there's an error
-            }
+    async function filterProfanity(name) {
+        try {
+            const response = await fetch(`https://www.purgomalum.com/service/json?text=${encodeURIComponent(name)}`);
+            const data = await response.json();
+            return data.result;
+        } catch (error) {
+            console.error('Error filtering profanity:', error);
+            return name; // Return original name if there's an error
+        }
+    }
+
+    nameInput.addEventListener('input', function() {
+        playerName = this.value.trim();
+        yellButton.disabled = playerName === '';
+    });
+
+    function updateScore(newScore) {
+        currentScore = newScore;
+        scoreDisplay.textContent = `Score: ${currentScore.toFixed(2)}`;
+    }
+
+    function updateVolumeMeter(volume) {
+        volumeBar.style.width = `${volume * 100}%`;
+    }
+
+    function displayResult(message, color) {
+        resultDisplay.textContent = message;
+        resultDisplay.style.color = color;
+    }
+
+    function addScoreToAllScores(score) {
+        allScores.push(score);
+        if (allScores.length > 1000) {
+            allScores.shift(); // Remove the oldest score if we have more than 1000
+        }
+        const scoreKey = Date.now().toString();
+        allScoresDB.get(scoreKey).put(score);
+        console.log(`Added score ${score} to allScores. Total scores: ${allScores.length}`);
+    }
+
+    function calculatePercentile(score) {
+        if (allScores.length === 0) {
+            console.log('No scores available for percentile calculation');
+            return 0; // Return 0th percentile if there are no scores
         }
 
-        nameInput.addEventListener('input', function() {
-            playerName = this.value.trim();
-            yellButton.disabled = playerName === '';
+        const sortedScores = [...allScores].sort((a, b) => a - b);
+        const index = sortedScores.findIndex(s => s >= score);
+
+        if (index === -1) {
+            // If the score is higher than all existing scores
+            return 100;
+        }
+
+        // Calculate percentile
+        const percentile = ((allScores.length - index) / allScores.length) * 100;
+
+        console.log(`Percentile calculation: Score ${score}, Index ${index}, Total Scores ${allScores.length}, Percentile ${percentile.toFixed(2)}`);
+
+        return percentile;
+    }
+
+    function updatePercentileGraph(percentile) {
+        percentileGraph.style.display = 'block';
+        percentileMarker.style.left = `${percentile}%`;
+        percentileText.textContent = `Your score is in the ${percentile.toFixed(1)}th percentile`;
+        console.log(`Updating percentile graph: ${percentile.toFixed(1)}th percentile`);
+    }
+
+    function addScoreToLeaderboard() {
+        const now = Date.now();
+        if (now - lastSubmissionTime < SUBMISSION_COOLDOWN) {
+            console.log('Submission attempted too soon after last submission. Ignoring.');
+            return;
+        }
+
+        if (!playerName) {
+            console.log('No player name, not adding to leaderboard');
+            return;
+        }
+        
+        const playerEntry = { name: playerName, score: currentScore, timestamp: now };
+        
+        // Check if the score is high enough to make it to the leaderboard
+        const sortedEntries = [...leaderboardEntries, playerEntry].sort((a, b) => b.score - a.score).slice(0, 25);
+        const madeLeaderboard = sortedEntries.some(entry => entry.timestamp === now);
+        
+        if (madeLeaderboard) {
+            const entryKey = `entry_${now}_${Math.random().toString(36).substr(2, 9)}`;
+            console.log('Adding score to leaderboard:', playerEntry);
+            leaderboardDB.get(entryKey).put(playerEntry);
+            
+            // Update the last submission time
+            lastSubmissionTime = now;
+            
+            displayResult(`Congratulations! Your score of ${currentScore.toFixed(2)} made it to the leaderboard!`, '#00ffff');
+        } else {
+            displayResult(`Your score of ${currentScore.toFixed(2)} didn't make it to the top 25. Try again!`, '#ff00ff');
+        }
+
+        // Add score to all scores and update percentile graph
+        addScoreToAllScores(currentScore);
+        const percentile = calculatePercentile(currentScore);
+        updatePercentileGraph(percentile);
+    }
+
+    function updateLeaderboardDisplay() {
+        leaderboardList.innerHTML = '';
+        const sortedEntries = leaderboardEntries.sort((a, b) => b.score - a.score).slice(0, 25);
+
+        sortedEntries.forEach((entry, index) => {
+            const li = document.createElement('li');
+            li.innerHTML = `<span>${index + 1}. ${entry.name}</span> <span>${entry.score.toFixed(2)}</span>`;
+            if (entry.name === playerName) {
+                li.style.fontWeight = 'bold';
+            }
+            leaderboardList.appendChild(li);
         });
+    }
 
-        function updateScore(newScore) {
-            currentScore = newScore;
-            scoreDisplay.textContent = `Score: ${currentScore.toFixed(2)}`;
-        }
-
-        function updateVolumeMeter(volume) {
-            volumeBar.style.width = `${volume * 100}%`;
-        }
-
-        function displayResult(message, color) {
-            resultDisplay.textContent = message;
-            resultDisplay.style.color = color;
-        }
-
-        function addScoreToAllScores(score) {
-            allScores.push(score);
-            if (allScores.length > 1000) {
-                allScores.shift(); // Remove the oldest score if we have more than 1000
-            }
-            const scoreKey = Date.now().toString();
-            allScoresDB.get(scoreKey).put(score);
-            console.log(`Added score ${score} to allScores. Total scores: ${allScores.length}`);
-        }
-
-        function calculatePercentile(score) {
-            if (allScores.length === 0) {
-                console.log('No scores available for percentile calculation');
-                return 0; // Return 0th percentile if there are no scores
-            }
-
-            const sortedScores = [...allScores].sort((a, b) => a - b);
-            const index = sortedScores.findIndex(s => s >= score);
-
-            if (index === -1) {
-                // If the score is higher than all existing scores
-                return 100;
-            }
-
-            // Calculate percentile
-            const percentile = ((allScores.length - index) / allScores.length) * 100;
-
-            console.log(`Percentile calculation: Score ${score}, Index ${index}, Total Scores ${allScores.length}, Percentile ${percentile.toFixed(2)}`);
-
-            return percentile;
-        }
-
-        function updatePercentileGraph(percentile) {
-            percentileGraph.style.display = 'block';
-            percentileMarker.style.left = `${percentile}%`;
-            percentileText.textContent = `Your score is in the ${percentile.toFixed(1)}th percentile`;
-            console.log(`Updating percentile graph: ${percentile.toFixed(1)}th percentile`);
-        }
-
-        function addScoreToLeaderboard() {
-            const now = Date.now();
-            if (now - lastSubmissionTime < SUBMISSION_COOLDOWN) {
-                console.log('Submission attempted too soon after last submission. Ignoring.');
-                return;
-            }
-
-            if (!playerName) {
-                console.log('No player name, not adding to leaderboard');
-                return;
-            }
-            
-            const playerEntry = { name: playerName, score: currentScore, timestamp: now };
-            
-            // Check if the score is high enough to make it to the leaderboard
-            const sortedEntries = [...leaderboardEntries, playerEntry].sort((a, b) => b.score - a.score).slice(0, 25);
-            const madeLeaderboard = sortedEntries.some(entry => entry.timestamp === now);
-            
-            if (madeLeaderboard) {
-                const entryKey = `entry_${now}_${Math.random().toString(36).substr(2, 9)}`;
-                console.log('Adding score to leaderboard:', playerEntry);
-                leaderboardDB.get(entryKey).put(playerEntry);
-                
-                // Update the last submission time
-                lastSubmissionTime = now;
-                
-                displayResult(`Congratulations! Your score of ${currentScore.toFixed(2)} made it to the leaderboard!`, '#00ffff');
-            } else {
-                displayResult(`Your score of ${currentScore.toFixed(2)} didn't make it to the top 25. Try again!`, '#ff00ff');
-            }
-
-            // Add score to all scores and update percentile graph
-            addScoreToAllScores(currentScore);
-            const percentile = calculatePercentile(currentScore);
-            updatePercentileGraph(percentile);
-        }
-
-        function updateLeaderboardDisplay() {
-            leaderboardList.innerHTML = '';
-            const sortedEntries = leaderboardEntries.sort((a, b) => b.score - a.score).slice(0, 25);
-
-            sortedEntries.forEach((entry, index) => {
-                const li = document.createElement('li');
-                li.innerHTML = `<span>${index + 1}. ${entry.name}</span> <span>${entry.score.toFixed(2)}</span>`;
-                if (entry.name === playerName) {
-                    li.style.fontWeight = 'bold';
+    function initializeLeaderboard() {
+        console.log('Initializing leaderboard...');
+        leaderboardDB.map().once((data, key) => {
+            if (data && data.name && data.score) {
+                console.log('Received leaderboard entry:', data);
+                const existingIndex = leaderboardEntries.findIndex(entry => entry.name === data.name && entry.timestamp === data.timestamp);
+                if (existingIndex === -1) {
+                    leaderboardEntries.push(data);
+                } else {
+                    leaderboardEntries[existingIndex] = data;
                 }
-                leaderboardList.appendChild(li);
-            });
-        }
-
-        function initializeLeaderboard() {
-            console.log('Initializing leaderboard...');
-            leaderboardDB.map().once((data, key) => {
-                if (data && data.name && data.score) {
-                    console.log('Received leaderboard entry:', data);
-                    const existingIndex = leaderboardEntries.findIndex(entry => entry.name === data.name && entry.timestamp === data.timestamp);
-                    if (existingIndex === -1) {
-                        leaderboardEntries.push(data);
-                    } else {
-                        leaderboardEntries[existingIndex] = data;
-                    }
-                    updateLeaderboardDisplay();
-                }
-            });
-        }
-
-        function initializeAllScores() {
-            console.log('Initializing all scores...');
-            allScores = []; // Reset allScores before initializing
-            allScoresDB.map().once((score, key) => {
-                if (score !== undefined && score !== null) {
-                    allScores.push(score);
-                    if (allScores.length > 1000) {
-                        allScores.shift(); // Remove the oldest score if we have more than 1000
-                    }
-                }
-            });
-            console.log(`Initialized ${allScores.length} scores`);
-        }
-
-        function checkForNewLeaders() {
-            console.log('Checking for new leaders...');
-            leaderboardDB.map().once((data, key) => {
-                if (data && data.name && data.score) {
-                    const existingIndex = leaderboardEntries.findIndex(entry => entry.name === data.name && entry.timestamp === data.timestamp);
-                    if (existingIndex === -1) {
-                        leaderboardEntries.push(data);
-                        console.log('New leaderboard entry:', data);
-                    } else if (data.score > leaderboardEntries[existingIndex].score) {
-                        leaderboardEntries[existingIndex] = data;
-                        console.log('Updated leaderboard entry:', data);
-                    }
-                }
-            });
-            updateLeaderboardDisplay();
-        }
-
-        function createYellEffect() {
-            const effect = document.createElement('div');
-            effect.style.position = 'fixed';
-            effect.style.top = '50%';
-            effect.style.left = '50%';
-            effect.style.width = '10px';
-            effect.style.height = '10px';
-            effect.style.borderRadius = '50%';
-            effect.style.backgroundColor = '#ff00ff';
-            effect.style.transform = 'translate(-50%, -50%)';
-            effect.style.boxShadow = '0 0 10px #ff00ff';
-            effect.style.zIndex = '1000';
-            document.body.appendChild(effect);
-
-            let size = 10;
-            let opacity = 1;
-            const interval = setInterval(() => {
-                size += 10;
-                opacity -= 0.05;
-                effect.style.width = size + 'px';
-                effect.style.height = size + 'px';
-                effect.style.opacity = opacity;
-                if (opacity <= 0) {
-                    clearInterval(interval);
-                    document.body.removeChild(effect);
-                }
-            }, 20);
-        }
-
-        yellButton.addEventListener('click', async () => {
-            if (!playerName) {
-                alert("Please enter your name before yelling!");
-                return;
-            }
-
-            // Check for profanity before proceeding
-            const filteredName = await filterProfanity(playerName);
-            if (filteredName !== playerName) {
-                alert("Please choose a different name without profanity.");
-                return;
-            }
-
-            createYellEffect();
-
-            try {
-                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-                const analyser = audioContext.createAnalyser();
-                const microphone = audioContext.createMediaStreamSource(stream);
-                microphone.connect(analyser);
-                analyser.fftSize = 256;
-                const bufferLength = analyser.frequencyBinCount;
-                const dataArray = new Uint8Array(bufferLength);
-
-                let startTime = Date.now();
-                let maxVolume = 0;
-
-                recordingIndicator.style.visibility = 'visible';
-
-                function checkVolume() {
-                    analyser.getByteFrequencyData(dataArray);
-                    const volume = dataArray.reduce((a, b) => a + b) / bufferLength;
-                    maxVolume = Math.max(maxVolume, volume);
-                    updateVolumeMeter(volume / 255);
-
-                    if (Date.now() - startTime < 2000) {
-                        requestAnimationFrame(checkVolume);
-                    } else {
-                        endRecording();
-                    }
-                }
-
-                function endRecording() {
-                    stream.getTracks().forEach(track => track.stop());
-                    recordingIndicator.style.visibility = 'hidden';
-                    processResult();
-                }
-
-                function calculateScore(volume) {
-                    return Math.min(100, (volume / 255) * 100);
-                }
-
-                function processResult() {
-                    const score = calculateScore(maxVolume);
-                    updateScore(score);
-                    addScoreToLeaderboard();
-                }
-
-                checkVolume();
-
-                // Set a timeout to end recording after 2 seconds
-                setTimeout(endRecording, 2000);
-
-            } catch (err) {
-                console.error('Error accessing microphone:', err);
-                alert('Unable to access microphone. Please make sure you have given permission and try again.');
+                updateLeaderboardDisplay();
             }
         });
+    }
 
-        function initializeGame() {
-            initializeLeaderboard();
+    function initializeAllScores() {
+        console.log('Initializing all scores...');
+        allScores = []; // Reset allScores before initializing
+        allScoresDB.map().once((score, key) => {
+            if (score !== undefined && score !== null) {
+                allScores.push(score);
+                if (allScores.length > 1000) {
+                    allScores.shift(); // Remove the oldest score if we have more than 1000
+                }
+            }
+        });
+        console.log(`Initialized ${allScores.length} scores`);
+    }
+
+    function checkForNewLeaders() {
+        console.log('Checking for new leaders...');
+        leaderboardDB.map().once((data, key) => {
+            if (data && data.name && data.score) {
+                const existingIndex = leaderboardEntries.findIndex(entry => entry.name === data.name && entry.timestamp === data.timestamp);
+                if (existingIndex === -1) {
+                    leaderboardEntries.push(data);
+                    console.log('New leaderboard entry:', data);
+                } else if (data.score > leaderboardEntries[existingIndex].score) {
+                    leaderboardEntries[existingIndex] = data;
+                    console.log('Updated leaderboard entry:', data);
+                }
+            }
+        });
+        updateLeaderboardDisplay();
+    }
+
+    function createYellEffect() {
+        const effect = document.createElement('div');
+        effect.style.position = 'fixed';
+        effect.style.top = '50%';
+        effect.style.left = '50%';
+        effect.style.width = '10px';
+        effect.style.height = '10px';
+        effect.style.borderRadius = '50%';
+        effect.style.backgroundColor = '#ff00ff';
+        effect.style.transform = 'translate(-50%, -50%)';
+        effect.style.boxShadow = '0 0 10px #ff00ff';
+        effect.style.zIndex = '1000';
+        document.body.appendChild(effect);
+
+        let size = 10;
+        let opacity = 1;
+        const interval = setInterval(() => {
+            size += 10;
+            opacity -= 0.05;
+            effect.style.width = size + 'px';
+            effect.style.height = size + 'px';
+            effect.style.opacity = opacity;
+            if (opacity <= 0) {
+                clearInterval(interval);
+                document.body.removeChild(effect);
+            }
+        }, 20);
+    }
+
+    yellButton.addEventListener('click', async () => {
+        if (!playerName) {
+            alert("Please enter your name before yelling!");
+            return;
+        }
+
+        // Check for profanity before proceeding
+        const filteredName = await filterProfanity(playerName);
+        if (filteredName !== playerName) {
+            alert("Please choose a different name without profanity.");
+            nameInput.value = '';
+            playerName = '';
+            yellButton.disabled = true;
+            return;
+        }
+
+        createYellEffect();
+
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            const analyser = audioContext.createAnalyser();
+            const microphone = audioContext.createMediaStreamSource(stream);
+            microphone.connect(analyser);
+            analyser.fftSize = 256;
+            const bufferLength = analyser.frequencyBinCount;
+            const dataArray = new Uint8Array(bufferLength);
+
+            let startTime = Date.now();
+            let maxVolume = 0;
+
+            recordingIndicator.style.visibility = 'visible';
+
+            function checkVolume() {
+                analyser.getByteFrequencyData(dataArray);
+                const volume = dataArray.reduce((a, b) => a + b) / bufferLength;
+                maxVolume = Math.max(maxVolume, volume);
+                updateVolumeMeter(volume / 255);
+
+                if (Date.now() - startTime < 2000) {
+                    requestAnimationFrame(checkVolume);
+                } else {
+                    endRecording();
+                }
+            }
+
+            function endRecording() {
+                stream.getTracks().forEach(track => track.stop());
+                recordingIndicator.style.visibility = 'hidden';
+                processResult();
+            }
+
+            function calculateScore(volume) {
+                return Math.min(100, (volume / 255) * 100);
+            }
+
+            function processResult() {
+                const score = calculateScore(maxVolume);
+                updateScore(score);
+                addScoreToLeaderboard();
+            }
+
+            checkVolume();
+
+            // Set a timeout to end recording after 2 seconds
+            setTimeout(endRecording, 2000);
+
+        } catch (err) {
+            console.error('Error accessing microphone:', err);
+            alert('Unable to access microphone. Please make sure you have given permission and try again.');
+        }
+    });
+
+    function initializeGame() {
+        initializeLeaderboard();
+        initializeAllScores();
+
+        // Periodically check for new leaders and refresh all scores
+        setInterval(() => {
+            checkForNewLeaders();
             initializeAllScores();
+        }, 10000); // Check every 10 seconds
+    }
 
-            // Periodically check for new leaders and refresh all scores
-            setInterval(() => {
-                checkForNewLeaders();
-                initializeAllScores();
-            }, 10000); // Check every 10 seconds
-        }
-
-        / Initialize the game when the page loads
-        initializeGame();
-
-        // Function to clear the Gun database (for testing purposes)
-        function clearGunDatabase() {
-            function clearGunNode(node) {
-                node.map((data, key) => {
-                    node.get(key).put(null);
-                });
-            }
-
-            clearGunNode(leaderboardDB);
-            clearGunNode(allScoresDB);
-
-            leaderboardEntries = [];
-            allScores = [];
-
-            updateLeaderboardDisplay();
-            percentileGraph.style.display = 'none';
-            percentileText.textContent = '';
-
-            console.log('Gun database cleared');
-            alert('Database has been cleared!');
-        }
-
-        // Uncomment the following line to add a clear database button (for testing purposes)
-        // document.body.innerHTML += '<button onclick="clearGunDatabase()">Clear Database</button>';
-    </script>
+    // Initialize the game when the page loads
+    initializeGame();
+</script>
 </body>
 </html>
